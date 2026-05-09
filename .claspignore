@@ -7,6 +7,9 @@
 **/.claspignore
 
 # Codex/local preview artifacts
+local_preview_v2.html
+preview-server.log
+preview-server.err
 src/local_preview_v2.html
 src/preview-server.log
 src/preview-server.err
