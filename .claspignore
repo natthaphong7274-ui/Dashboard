@@ -1,0 +1,23 @@
+# Local/dev files that must not be pushed to Google Apps Script.
+**/node_modules/**
+**/.git/**
+**/.gitignore
+**/.clasp.json
+**/.clasp.example.json
+**/.claspignore
+
+# Codex/local preview artifacts
+src/local_preview_v2.html
+src/preview-server.log
+src/preview-server.err
+
+# Project packaging/docs/tooling
+docs/**
+packages/**
+tooling/**
+
+# OS/editor noise
+**/.DS_Store
+**/Thumbs.db
+**/*.tmp
+**/*.log

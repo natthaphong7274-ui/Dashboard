@@ -1,0 +1,236 @@
+// ============================================================
+//  Auth.gs — ระบบ Login, Session, Token
+//  functions: doGet, login, logout, getSession, heartbeat
+//              _makeToken, _isLocked, _incFail, _clearFail
+// ============================================================
+
+// ✅ ถูก — ต้องใช้ createTemplateFromFile แทน
+function doGet(e) {
+  var ui = e && e.parameter && e.parameter.ui;
+  var entryFile = (ui === 'classic') ? 'Index' : 'Index_v2';
+  return HtmlService.createTemplateFromFile(entryFile)
+    .evaluate()
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .setTitle('Dashboard Realtime');
+}
+
+
+// ============================================================
+//  LOGIN — ใช้ ScriptProperties + random token
+//  token เก็บใน browser (sessionStorage) แทน UserProperties
+//  → แต่ละ browser tab มี token ของตัวเอง ไม่ปนกัน
+// ============================================================
+
+// สร้าง token แบบ random
+function _makeToken() {
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var t = '';
+  for (var i = 0; i < 32; i++) {
+    t += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return TOKEN_PREFIX + t;
+}
+
+// ล้าง token ที่หมดอายุออกจาก ScriptProperties
+function _cleanExpiredTokens() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var all   = props.getProperties();
+    var now   = Date.now();
+    Object.keys(all).forEach(function(k) {
+      if (k.indexOf(TOKEN_PREFIX) !== 0) return;
+      try {
+        var s = JSON.parse(all[k]);
+        if (now - s.loginTime > SESSION_TTL_MS) props.deleteProperty(k);
+      } catch(e) { props.deleteProperty(k); }
+    });
+  } catch(e) {}
+}
+
+// ── Login helpers: fail counter & lock ──
+function _getFailKey(u)  { return FAIL_PREFIX + u.toLowerCase(); }
+function _getLockKey(u)  { return LOCK_PREFIX + u.toLowerCase(); }
+
+function _isLocked(u) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(_getLockKey(u));
+    if (!raw) return false;
+    var d = JSON.parse(raw);
+    if (Date.now() - d.lockedAt < LOCK_TTL_MS) return { locked: true, remaining: Math.ceil((LOCK_TTL_MS - (Date.now() - d.lockedAt)) / 60000) };
+    // หมดเวลา lock แล้ว → ล้างออก
+    PropertiesService.getScriptProperties().deleteProperty(_getLockKey(u));
+    PropertiesService.getScriptProperties().deleteProperty(_getFailKey(u));
+    return false;
+  } catch(e) { return false; }
+}
+
+function _incFail(u) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var raw   = props.getProperty(_getFailKey(u));
+    var count = raw ? (JSON.parse(raw).count || 0) : 0;
+    count++;
+    props.setProperty(_getFailKey(u), JSON.stringify({ count: count, lastFail: Date.now() }));
+    if (count >= MAX_FAIL_LOGIN) {
+      props.setProperty(_getLockKey(u), JSON.stringify({ lockedAt: Date.now() }));
+      logActivity(u, '-', 'ACCOUNT_LOCKED', 'Login ผิด ' + count + ' ครั้ง → ถูก Lock 15 นาที');
+      return { locked: true, count: count };
+    }
+    return { locked: false, count: count, remaining: MAX_FAIL_LOGIN - count };
+  } catch(e) { return { locked: false, count: 0, remaining: MAX_FAIL_LOGIN }; }
+}
+
+function _clearFail(u) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.deleteProperty(_getFailKey(u));
+    props.deleteProperty(_getLockKey(u));
+  } catch(e) {}
+}
+
+// login(username, password, userAgent) → { ok, token, role, zones, displayName } | { ok:false, error }
+function login(username, password, userAgent) {
+  try {
+    var uLower = (username || '').trim().toLowerCase();
+
+    // ── ตรวจว่า account ถูก lock ไหม (Director ข้ามขั้นตอนนี้ได้) ──
+    var isDirector = false;
+    try {
+      var ss2 = SpreadsheetApp.getActiveSpreadsheet();
+      var sh2 = ss2.getSheetByName(USERS_SHEET);
+      if (sh2) {
+        var d2 = sh2.getDataRange().getValues();
+        var h2 = d2[0].map(function(h){ return String(h).trim(); });
+        var u2 = h2.indexOf('Username'), r2 = h2.indexOf('Role');
+        if (u2 >= 0 && r2 >= 0) {
+          for (var j = 1; j < d2.length; j++) {
+            if (String(d2[j][u2]||'').trim().toLowerCase() === uLower) {
+              if (String(d2[j][r2]||'').trim() === 'Director') isDirector = true;
+              break;
+            }
+          }
+        }
+      }
+    } catch(e2) {}
+
+    if (!isDirector) {
+      var lockState = _isLocked(uLower);
+      if (lockState && lockState.locked) {
+        logActivity(username, '-', 'LOGIN_BLOCKED', 'Account ถูก Lock เหลือ ' + lockState.remaining + ' นาที | UA: ' + (userAgent||'-'));
+        return { ok: false, error: 'บัญชีถูกระงับชั่วคราว กรุณารอ ' + lockState.remaining + ' นาที แล้วลองใหม่' };
+      }
+    }
+
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(USERS_SHEET);
+    if (!sheet) return { ok: false, error: 'ไม่พบ Users Sheet' };
+
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0].map(function(h){ return String(h).trim(); });
+    var uIdx = headers.indexOf('Username');
+    var pIdx = headers.indexOf('Password');
+    var rIdx = headers.indexOf('Role');
+    var zIdx = headers.indexOf('ZoneAccess');
+
+    if (uIdx < 0 || pIdx < 0) return { ok: false, error: 'Users Sheet ไม่มี column ที่ถูกต้อง' };
+
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var u   = String(row[uIdx] || '').trim();
+      var p   = String(row[pIdx] || '').trim();
+      if (u.toLowerCase() !== uLower) continue;
+
+      // ── username ตรง แต่ password ผิด ──
+      if (p !== password) {
+        var failRes = { locked: false, count: 0, remaining: MAX_FAIL_LOGIN };
+        var msg = '';
+        if (isDirector) {
+          // Director ไม่นับ fail และไม่ถูกล็อก
+          msg = 'Password ไม่ถูกต้อง';
+          logActivity(u, '-', 'LOGIN_FAIL', 'Password ผิด (Director - ไม่นับ fail) | UA: ' + (userAgent||'-'));
+        } else {
+          failRes = _incFail(uLower);
+          msg = failRes.locked
+            ? 'Password ผิด — บัญชีถูกระงับ 15 นาที (ผิดครบ ' + MAX_FAIL_LOGIN + ' ครั้ง)'
+            : 'Password ไม่ถูกต้อง (ผิดแล้ว ' + failRes.count + '/' + MAX_FAIL_LOGIN + ' ครั้ง)';
+          logActivity(u, '-', 'LOGIN_FAIL', 'Password ผิด ครั้งที่ ' + failRes.count + ' | UA: ' + (userAgent||'-'));
+        }
+        return { ok: false, error: msg };
+      }
+
+      // ── Login สำเร็จ ──
+      _clearFail(uLower);
+      var role     = rIdx >= 0 ? String(row[rIdx] || '').trim() : 'BD';
+      var zoneRaw  = zIdx >= 0 ? String(row[zIdx] || '').trim() : '';
+      var zones    = zoneRaw === 'All' ? ['All'] :
+        zoneRaw.split(/[\n,]+/).map(function(z){ return z.trim(); }).filter(Boolean);
+
+      _cleanExpiredTokens();
+      var token = _makeToken();
+      var sessionData = JSON.stringify({
+        username: u, role: role, zones: zones,
+        loginTime: Date.now(), lastActive: Date.now(),
+        userAgent: (userAgent || '').substring(0, 200)
+      });
+      PropertiesService.getScriptProperties().setProperty(token, sessionData);
+
+      logActivity(u, role, 'LOGIN', 'เข้าสู่ระบบ | Zone: ' + (zoneRaw || 'All') + ' | UA: ' + (userAgent||'-').substring(0,120));
+      return { ok: true, token: token, role: role, zones: zones, displayName: u };
+    }
+
+    // ── username ไม่มีในระบบ (ไม่นับ fail เพื่อไม่ให้ enumerate users) ──
+    return { ok: false, error: 'Username หรือ Password ไม่ถูกต้อง' };
+  } catch (err) {
+    return { ok: false, error: 'เกิดข้อผิดพลาด: ' + err.message };
+  }
+}
+
+// getSession(token, skipIdleCheck) → { ok, username, role, zones } | { ok:false, idle:true }
+function getSession(token, skipIdleCheck) {
+  if (!token || token.indexOf(TOKEN_PREFIX) !== 0) return { ok: false };
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var raw   = props.getProperty(token);
+    if (!raw) return { ok: false };
+    var s   = JSON.parse(raw);
+    var now = Date.now();
+    // ── เช็ค session หมดอายุ (8 ชั่วโมง) ──
+    if (now - s.loginTime > SESSION_TTL_MS) {
+      props.deleteProperty(token);
+      logActivity(s.username, s.role, 'SESSION_EXPIRED', 'Session หมดอายุ (8 ชั่วโมง)');
+      return { ok: false };
+    }
+    // ── เช็ค idle timeout (30 นาที) ──
+    if (!skipIdleCheck && s.lastActive && (now - s.lastActive > IDLE_TTL_MS)) {
+      props.deleteProperty(token);
+      logActivity(s.username, s.role, 'IDLE_LOGOUT', 'Logout อัตโนมัติ — ไม่มีการใช้งาน 30 นาที');
+      return { ok: false, idle: true };
+    }
+    // ── อัปเดต lastActive ──
+    s.lastActive = now;
+    props.setProperty(token, JSON.stringify(s));
+    return { ok: true, username: s.username, role: s.role, zones: s.zones, userAgent: s.userAgent || '-' };
+  } catch(e) {
+    return { ok: false };
+  }
+}
+
+// logout(token)
+function logout(token) {
+  if (token && token.indexOf(TOKEN_PREFIX) === 0) {
+    try {
+      // ดึง username ก่อนลบ token เพื่อ log
+      var raw = PropertiesService.getScriptProperties().getProperty(token);
+      if (raw) {
+        try {
+          var s = JSON.parse(raw);
+          logActivity(s.username, s.role, 'LOGOUT', 'ออกจากระบบ');
+        } catch(e2) {}
+      }
+      PropertiesService.getScriptProperties().deleteProperty(token);
+    } catch(e) {}
+  }
+  return { ok: true };
+}
+
+// ============================================================

@@ -1,0 +1,27 @@
+# Google Apps Script local config
+.clasp.json
+
+# Local preview artifacts
+src/local_preview_v2.html
+src/preview-server.log
+src/preview-server.err
+
+# Generated packages/archives
+packages/
+*.zip
+
+# Dependencies and caches
+node_modules/
+.npm/
+.cache/
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
