@@ -5684,13 +5684,32 @@ var _tsmTab = 'risk';  // 'risk' only
 var _tsmBarChart = null;
 
 function openTrkSummary(){
-  document.getElementById('tsmOverlay').classList.add('open');
+  var overlay = document.getElementById('tsmOverlay');
+  if (!overlay) {
+    alert('ไม่พบหน้าต่างสรุปติดตาม กรุณารีเฟรชหน้าแล้วลองใหม่');
+    return;
+  }
+  overlay.classList.add('open');
+  overlay.style.zIndex = '5000';
+
   // ensure tab content visibility is correct
   var riskContent     = document.getElementById('tsm_risk_content');
   var growthContent   = document.getElementById('tsm_growth_content');
   if (riskContent)     riskContent.style.display     = (_tsmTab==='risk')     ? 'block' : 'none';
   if (growthContent)   growthContent.style.display    = (_tsmTab==='growth')   ? 'block' : 'none';
-  renderTsmModal();
+
+  try {
+    if (typeof _trkData === 'undefined' || !_trkData) window._trkData = {};
+    renderTsmModal();
+  } catch (err) {
+    var subEl = document.getElementById('tsm_sub');
+    var krow = document.getElementById('tsm_krow');
+    if (subEl) subEl.textContent = 'โหลดสรุปติดตามไม่สำเร็จ';
+    if (krow) {
+      krow.innerHTML = '<div style="grid-column:1/-1;padding:18px;color:#dc2626;background:#fff0f0;border:1px solid #fca5a5;border-radius:8px;font-weight:700">❌ ' + (err && err.message ? err.message : err) + '</div>';
+    }
+    console.error('[openTrkSummary]', err);
+  }
 }
 function closeTrkSummary(){
   document.getElementById('tsmOverlay').classList.remove('open');

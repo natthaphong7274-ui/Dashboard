@@ -6,7 +6,9 @@
 
 // ── Auth / Session ──────────────────────────────────────────
 var TOKEN_PREFIX      = 'DASH_';        // prefix ของ token ใน ScriptProperties
+var FAIL_PREFIX       = 'FAIL_';        // prefix ของ failed-login counter key
 var LOCK_PREFIX       = 'LOCK_';        // prefix ของ lock key (brute-force protection)
+var LOCK_TTL_MS       = 15 * 60 * 1000; // lock duration: 15 นาที
 var SESSION_TTL_MS    = 8 * 60 * 60 * 1000;   // session timeout: 8 ชั่วโมง
 var IDLE_TTL_MS       = 30 * 60 * 1000;       // idle timeout: 30 นาที
 var MAX_FAIL_LOGIN    = 5;              // จำนวนครั้งที่ login ผิดก่อนล็อกบัญชี
