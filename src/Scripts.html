@@ -10430,8 +10430,8 @@ function _renderHomeBD(m, mp) {
   html += '</div>';
   html += '</div>'; // end 3-col grid
 
-  // ── กลุ่มเสี่ยง + Inactive — 2 column grid เหมือน Loss/Growth ──
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:start">';
+  // ── กลุ่มเสี่ยง — T03 removes the legacy Inactive column ──
+  html += '<div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px;align-items:start">';
 
   // Col 1 — กลุ่มเสี่ยง
   html += '<div>';
@@ -10515,7 +10515,7 @@ function _renderHomeBD(m, mp) {
   html += '</div>'; // end Col 1
 
   // Col 2 — Inactive
-  html += '<div>';
+  if (false) { html += '<div>';
   if (false && inactRows.length > 0) {
     html += '<div class="ccard" style="border:1.5px solid #fed7aa;background:#fffbf7">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
@@ -10557,8 +10557,8 @@ function _renderHomeBD(m, mp) {
       + '<button class="home-qbtn" style="width:100%;margin-top:8px;justify-content:center;border-color:#fed7aa;color:#c2410c;background:#fff7ed" onclick="swMain(\'risk\')">ดูรายชื่อกลุ่ม Inactive →</button>'
       + '</div>';
   }
-  html += '</div>'; // end Col 2
-  html += '</div>'; // end 2-col grid (Risk + Inactive)
+  html += '</div>'; } // end Col 2
+  html += '</div>'; // end grid (Risk only)
 
   document.getElementById('home_content').innerHTML = html;
   _homeInitMap(myRows, m);
