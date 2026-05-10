@@ -1003,6 +1003,56 @@ document.documentElement.classList.add('ui-v2');
   .ui-v2 .rm-aitem.ok{
     border-left:4px solid #12805c;
   }
+
+  /* V2.2 roadmap polish: clearer map status bands and a denser BD work surface. */
+  .ui-v2 .map-legend{
+    left:14px !important;
+    bottom:14px !important;
+    max-width:260px;
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:8px;
+    background:rgba(17,24,39,.88) !important;
+    box-shadow:0 12px 28px rgba(15,23,42,.28);
+    backdrop-filter:blur(10px);
+  }
+
+  .ui-v2 .map-legend-title{
+    color:#fff !important;
+    letter-spacing:0;
+  }
+
+  .ui-v2 .map-legend-item{
+    min-height:24px;
+    border-radius:6px !important;
+  }
+
+  .ui-v2 .leaflet-container{
+    cursor:grab;
+  }
+
+  .ui-v2 .home-hero{
+    border-radius:8px !important;
+    background:#172033 !important;
+    box-shadow:0 1px 2px rgba(16,24,40,.06),0 16px 34px rgba(16,24,40,.12) !important;
+  }
+
+  .ui-v2 .home-kpi-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+  }
+
+  .ui-v2 .home-kcard{
+    border-radius:8px !important;
+    min-height:118px;
+  }
+
+  .ui-v2 .hero-shortcuts{
+    gap:8px;
+  }
+
+  .ui-v2 .hero-sc-btn{
+    border-radius:6px !important;
+  }
 }
 
 @media (min-width:1101px) and (max-width:1360px){
