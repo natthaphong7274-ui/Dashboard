@@ -10,6 +10,7 @@ var carPg=1,carPgPer=30,carSortF='volTotal',carSortD='desc';
 var carrierLoaded=false;
 var filterState={},cmpMode='two',cmpViewMode='bar';
 var _monthlyTargets = {};  // { [monthKey]: { type, value, note, setBy, setAt } }
+var _bdMonthlyTargets = {}; // { [monthKey]: { [bdUsername]: { type, value, note, setBy, setAt } } }
 var filterCarrierSet=new Set(); // ★ carrier filter
 var FILTER_COLS=['21.00','Package','City','Province','Zone Name','AREA'];
 
@@ -6739,13 +6740,10 @@ function getZoneColor(zone){
 
 // ─── Status filter: ค่าเริ่มต้น เติบโต, ปกติ, เสี่ยง, loss ───────────────────
 var _mapStatusFilter = {
-  great:    true,   // เติบโตก้าวกระโดด (#06b6d4)
-  ok:       true,   // ปกติ / Active (#22c55e)
-  risk:     true,   // กลุ่มเสี่ยง (#eab308)
-  // T03: loss/inactive/lossinact removed
-  loss:     false,
-  inactive: false,
-  lossinact:false
+  great:    true,   // MoM growth > 5%
+  ok:       true,   // MoM growth 0-5%
+  risk:     true,   // MoM drop 0-5%
+  critical: true    // MoM drop > 5%
 };
 
 // สี Loss/Inactive + Zone growth (R-new logic)
@@ -6755,20 +6753,21 @@ var _mapStatusFilter = {
 //   🟧 ส้ม    — ยอดลดลง แต่ไม่เกิน 200 บาท (กลุ่มเสี่ยง)
 //   🟩 เขียว  — ยอดคงที่หรือเติบโต (diff >= 0)
 //   🟢 เขียวเข้ม — เติบโตมากกว่า 200 บาท (ก้าวกระโดด)
+function getMoMPctFromTotals(cur, prev){
+  cur = Number(cur || 0);
+  prev = Number(prev || 0);
+  if (!prev) return cur > 0 ? 100 : null;
+  return (cur - prev) / Math.abs(prev) * 100;
+}
+
 function getLossColor(d){
   if(!d || d.total===0) return 'rgba(148,163,184,0.35)';
-  if(d.loss > 0 && d.inactive > 0) return '#ec4899';
-  if(d.loss > 0){
-    var mp = getMP();
-    if(!mp) return '#ef4444';
-    var diff = d.total > 0 ? (d.avgCur - d.avgPrev) / d.total : 0;
-    return diff < -200 ? '#ef4444' : '#eab308';
-  }
-  if(d.inactive > 0) return '#a855f7';
-  var mp2 = getMP();
-  if(!mp2) return '#22c55e';
-  var diff2 = d.total > 0 ? (d.avgCur - d.avgPrev) / d.total : 0;
-  if(diff2 > 200) return '#06b6d4';
+  if(!getMP()) return '#22c55e';
+  var pct = getMoMPctFromTotals(d.avgCur, d.avgPrev);
+  if(pct === null) return 'rgba(148,163,184,0.35)';
+  if(pct <= -5) return '#ef4444';
+  if(pct < 0) return '#eab308';
+  if(pct > 5) return '#06b6d4';
   return '#22c55e';
 }
 
@@ -6777,9 +6776,7 @@ function _colorToStatusKey(color){
   if(color==='#06b6d4') return 'great';
   if(color==='#22c55e') return 'ok';
   if(color==='#eab308') return 'risk';
-  if(color==='#ef4444') return 'loss';
-  if(color==='#a855f7') return 'inactive';
-  if(color==='#ec4899') return 'lossinact';
+  if(color==='#ef4444') return 'critical';
   return null;
 }
 
@@ -6847,6 +6844,7 @@ function initMap(){
     maxBounds: THAILAND_BOUNDS,
     maxBoundsViscosity: 0.9
   });
+  enableClickDragMap(_mapInstance);
 
   // Tile layer: CartoDB Dark Matter — dark mode ไม่ต้อง API Key
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -6914,6 +6912,22 @@ function initMap(){
       });
     } // end else (no cache)
   }
+}
+
+function enableClickDragMap(map){
+  if(!map || map._clickDragEnabled) return;
+  map._clickDragEnabled = true;
+  try { map.dragging.disable(); } catch(e) {}
+  var c = map.getContainer && map.getContainer();
+  if(!c) return;
+  c.style.cursor = 'grab';
+  var down = function(){ try { map.dragging.enable(); c.style.cursor = 'grabbing'; } catch(e) {} };
+  var up = function(){ try { map.dragging.disable(); c.style.cursor = 'grab'; } catch(e) {} };
+  c.addEventListener('mousedown', down);
+  c.addEventListener('touchstart', down, {passive:true});
+  document.addEventListener('mouseup', up);
+  document.addEventListener('touchend', up);
+  c.addEventListener('mouseleave', up);
 }
 
 var _mapLayerGroup = null;
@@ -7049,9 +7063,9 @@ function renderMapLayers(){
              + '<br>💰 Revenue: <b>'+fmtS(Math.round(d.rev))+'</b>'
              + '<br><span style="color:#16a34a">✅ Active: <b>'+d.total+'</b></span>';
         if(d.total > 0 && getMP()){
-          var diffPB = Math.round((d.avgCur - d.avgPrev) / d.total);
-          var diffColor = diffPB > 200 ? '#14532d' : diffPB >= 0 ? '#16a34a' : diffPB >= -200 ? '#ea580c' : '#dc2626';
-          tip += '<br><span style="color:'+diffColor+';font-size:10px">📐 Avg Rev diff: <b>'+(diffPB>=0?'+':'')+fmtS(diffPB)+'</b> บ/สาขา</span>';
+          var momPctPB = getMoMPctFromTotals(d.avgCur, d.avgPrev);
+          var diffColor = momPctPB === null ? '#64748b' : momPctPB > 5 ? '#14532d' : momPctPB >= 0 ? '#16a34a' : momPctPB > -5 ? '#ea580c' : '#dc2626';
+          tip += '<br><span style="color:'+diffColor+';font-size:10px">MoM Rev: <b>'+(momPctPB===null?'--':((momPctPB>=0?'+':'')+momPctPB.toFixed(1)+'%'))+'</b></span>';
         }
         if(d.total>0){
         }
@@ -7520,10 +7534,10 @@ function buildMapLegend(pvData){
       // ── body (collapsible) ──
       '<div id="map-legend-body" style="display:flex;flex-direction:column;gap:3px;'+bodyStyle+'">'+
       '<div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:2px;letter-spacing:.3px">คลิกเพื่อแสดง/ซ่อน</div>'+
-        _mkLegItem('great',    '#06b6d4', 'เติบโตก้าวกระโดด', '&gt;+200 บ')+
-        _mkLegItem('ok',       '#22c55e', 'ปกติ / Active',     null)+
-        _mkLegItem('risk',     '#eab308', 'กลุ่มเสี่ยง',       '≤200 บ')+
-        // T03: loss/inactive/lossinact legend items removed
+        _mkLegItem('great',    '#06b6d4', 'MoM Rev > +5%', null)+
+        _mkLegItem('ok',       '#22c55e', 'MoM Rev 0% ถึง +5%', null)+
+        _mkLegItem('risk',     '#eab308', 'MoM Rev ลดไม่เกิน 5%', null)+
+        _mkLegItem('critical', '#ef4444', 'MoM Rev ลดมากกว่า 5%', null)+
         '<div style="display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(255,255,255,.35);padding:2px 4px">'+
           '<div style="width:10px;height:10px;border-radius:50%;background:rgba(148,163,184,0.35);flex-shrink:0"></div>'+
           '<span>ไม่มีข้อมูล</span>'+
@@ -9940,9 +9954,17 @@ function _renderHomeBD(m, mp) {
   var uname = _currentUser ? (_currentUser.displayName || _currentUser.username || 'BD') : 'BD';
 
   // ── BD: Smart Banner — Redesigned ──
-  var bdNeedAmt = prevRev > 0 ? Math.max(0, Math.round(prevRev * 1.05 - totRev)) : 0;
-  var bdTargetPct = prevRev > 0 ? Math.min(Math.round(totRev / (prevRev * 1.05) * 100), 100) : 0;
-  var bdTarget = prevRev > 0 ? Math.round(prevRev * 1.05) : 0;
+  var bdUserKey = String((_currentUser && (_currentUser.username || _currentUser.displayName)) || '').toLowerCase();
+  var bdTargetCfg = (_bdMonthlyTargets[m.key] && (_bdMonthlyTargets[m.key][bdUserKey] || _bdMonthlyTargets[m.key][String(uname).toLowerCase()])) || null;
+  var bdTarget = (function(){
+    if (bdTargetCfg) {
+      if (bdTargetCfg.type === 'pct') return prevRev > 0 ? Math.round(prevRev * bdTargetCfg.value / 100) : 0;
+      return Math.round(Number(bdTargetCfg.value || 0));
+    }
+    return prevRev > 0 ? Math.round(prevRev * 1.05) : 0;
+  })();
+  var bdNeedAmt = bdTarget > 0 ? Math.max(0, Math.round(bdTarget - totRev)) : 0;
+  var bdTargetPct = bdTarget > 0 ? Math.min(Math.round(totRev / bdTarget * 100), 100) : 0;
 
   // Days left countdown
   var daysInMonth = 30;
@@ -9956,7 +9978,7 @@ function _renderHomeBD(m, mp) {
     bdBannerIcon = '📊'; bdBannerMsg = 'ยินดีต้อนรับ <strong>'+uname+'</strong>! เลือก 2 เดือนเพื่อดูเป้าหมายของคุณ';
   } else if (bdTargetPct >= 100) {
     bdBannerIcon = '🎉';
-    bdBannerMsg = '<strong>'+uname+'</strong> ทำได้เกินเป้าแล้ว! ยอด <strong style="color:#86efac">'+fmtS(Math.round(totRev))+'</strong> เกินเป้า +'+Math.round(totRev/(prevRev*1.05)*100-100)+'% — ดูแลพอร์ตต่อได้เลยครับ 💪';
+    bdBannerMsg = '<strong>'+uname+'</strong> ทำได้เกินเป้าแล้ว! ยอด <strong style="color:#86efac">'+fmtS(Math.round(totRev))+'</strong> เกินเป้า +'+Math.round(totRev/Math.max(bdTarget,1)*100-100)+'% — ดูแลพอร์ตต่อได้เลยครับ 💪';
   } else if (bdTargetPct >= 80) {
     bdBannerIcon = '🔥';
     bdBannerMsg = '<strong>'+uname+'</strong> ใกล้ถึงเป้าแล้ว! ขาดอีก <strong style="color:#fde68a">'+fmtS(bdNeedAmt)+'</strong> — เหลือ <strong>'+daysLeft+' วัน</strong> เร่งให้ถึง 100% ได้เลย!';
@@ -9996,7 +10018,7 @@ function _renderHomeBD(m, mp) {
     + (prevRev > 0
       ? '<div class="hero-progress-wrap">'
         + '<div class="hero-progress-labels">'
-        +   '<span>🎯 เป้าเดือนนี้ (vs เดือนก่อน +5%)  &nbsp; <span style="font-size:10px;opacity:.65">'+fmtS(Math.round(totRev))+' / '+fmtS(bdTarget)+'</span></span>'
+        +   '<span>🎯 เป้าเดือนนี้ '+(bdTargetCfg?'(BD target)':'(vs เดือนก่อน +5%)')+'  &nbsp; <span style="font-size:10px;opacity:.65">'+fmtS(Math.round(totRev))+' / '+fmtS(bdTarget)+'</span></span>'
         +   '<span class="hero-progress-pct">'+bdTargetPct+'%</span>'
         + '</div>'
         + '<div class="hero-progress-track">'
@@ -10068,19 +10090,16 @@ function _renderHomeBD(m, mp) {
     'ณ วันที่ '+(TODAY_DATE-1)+' / 30'
   );
 
-  // Card 3: Avg Rev/Vol (ราคาต่อชิ้น) + Avg Rev/Agent (dual)
-  var avgRevAgent  = totLeads > 0 ? Math.round(totRev / totLeads) : 0;
-  var prevAvgRevAg = prevTotRev > 0 && totLeads > 0 ? Math.round(prevTotRev / totLeads) : null;
-  var momAvgRevAg  = prevAvgRevAg ? _homeMoM(avgRevAgent, prevAvgRevAg) : null;
+  // Card 3: Avg Rev/Vol only. T05 removes Avg Rev/Agent from BD first page.
   html += _homeKpiDual(
-    'Avg '+(mp?'('+mp.th+' → '+m.th+')':''), '📦', 'var(--c-avg)',
+    'Avg Rev/Vol '+(mp?'('+mp.th+' → '+m.th+')':''), '📦', 'var(--c-avg)',
     '฿'+curAvgRevVol+'/ชิ้น',
     prevAvgRevVol ? '฿'+prevAvgRevVol+'/ชิ้น' : null,
     momAvgRevVol,
-    '฿'+fmtS(avgRevAgent)+'/ร้าน',
-    prevAvgRevAg ? '฿'+fmtS(prevAvgRevAg) : null,
-    momAvgRevAg,
-    'Rev/Vol (ราคา/ชิ้น) · Rev/Agent'
+    fmtInt(volRunRate)+' ชิ้น/วัน',
+    prevVolRunRate ? fmtInt(prevVolRunRate)+' ชิ้น/วัน' : null,
+    momVolRunRate,
+    'Rev/Vol (ราคา/ชิ้น)'
   );
 
   // Card 4: Active + Conv Rate (ตัวชี้วัดสุขภาพ)
@@ -10119,7 +10138,7 @@ function _renderHomeBD(m, mp) {
     'var(--pr)', '👤', 'Active '+totActive+' / '+totLeads);
 
   // Card 8: % บรรลุเป้า
-  var targetPctBD = prevRev > 0 ? Math.min(Math.round(totRev / (prevRev * 1.05) * 100), 100) : 0;
+  var targetPctBD = bdTarget > 0 ? Math.min(Math.round(totRev / bdTarget * 100), 100) : 0;
   var tClr = targetPctBD >= 100 ? '#16a34a' : targetPctBD >= 70 ? '#f59e0b' : '#dc2626';
   html += '<div class="home-kcard" style="--kc:'+tClr+'">'
     + '<div class="home-kcard-ico">🎯</div>'
@@ -10135,8 +10154,8 @@ function _renderHomeBD(m, mp) {
     +   '</div>'
     +   '<div>'
     +     '<div style="font-size:13px;font-weight:800;color:var(--pr)">'+fmtS(Math.round(totRev))+'</div>'
-    +     '<div style="font-size:10px;color:var(--t2)">เป้า '+fmtS(Math.round(prevRev*1.05))+'</div>'
-    +     (prevRev > 0 ? '<div style="font-size:10px;color:'+tClr+';font-weight:700">'+(totRev>=prevRev*1.05?'🎉 ถึงเป้า!':'ขาด '+fmtS(Math.round(prevRev*1.05-totRev)))+'</div>' : '')
+    +     '<div style="font-size:10px;color:var(--t2)">เป้า '+fmtS(Math.round(bdTarget))+'</div>'
+    +     (bdTarget > 0 ? '<div style="font-size:10px;color:'+tClr+';font-weight:700">'+(totRev>=bdTarget?'🎉 ถึงเป้า!':'ขาด '+fmtS(Math.round(bdTarget-totRev)))+'</div>' : '')
     +   '</div>'
     + '</div>'
     + '</div>';
@@ -10800,6 +10819,7 @@ var _rmBdBorderStyles = [
 function _rmInitBdMap() {
   if (_rmMaps.bd) return;
   _rmMaps.bd = L.map('rm-map-bd', { scrollWheelZoom:false }).setView([13.82, 100.45], 10);
+  enableClickDragMap(_rmMaps.bd);
   L.tileLayer(_rmTile, _rmTileOpt).addTo(_rmMaps.bd);
 
   _rmBdZones.forEach(function(zone, idx) {
@@ -10875,6 +10895,7 @@ function _rmInitBdMap() {
 function _rmInitAmMap() {
   if (_rmMaps.am) return;
   _rmMaps.am = L.map('rm-map-am', { scrollWheelZoom:false }).setView([15.5, 101.0], 6);
+  enableClickDragMap(_rmMaps.am);
   L.tileLayer(_rmTile, _rmTileOpt).addTo(_rmMaps.am);
 
   _rmAmZones.forEach(function(z) {
@@ -10914,6 +10935,7 @@ function _rmInitAmMap() {
 function _rmInitDirMap() {
   if (_rmMaps.dir) return;
   _rmMaps.dir = L.map('rm-map-dir', { scrollWheelZoom:false }).setView([13.5, 101.5], 5);
+  enableClickDragMap(_rmMaps.dir);
   L.tileLayer(_rmTile, _rmTileOpt).addTo(_rmMaps.dir);
 
   _rmDirZones.forEach(function(z) {
@@ -11040,6 +11062,17 @@ function loadMonthlyTargets() {
       }
     })
     .getAllMonthlyTargets(tok);
+  if (google.script.run.getAllBdMonthlyTargets) {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res && res.ok) {
+          _bdMonthlyTargets = res.targets || {};
+          var homeEl = document.getElementById('mainHome');
+          if (homeEl && homeEl.style.display !== 'none') renderHome();
+        }
+      })
+      .getAllBdMonthlyTargets(tok);
+  }
 }
 
 function openMtModal(monthKey) {

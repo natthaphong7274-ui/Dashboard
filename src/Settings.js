@@ -80,6 +80,7 @@ function setGrowthThreshold(token, value) {
 // ============================================================
 
 var MONTHLY_TARGET_PREFIX = 'MONTHLY_TARGET_';
+var BD_MONTHLY_TARGET_PREFIX = 'BD_MONTHLY_TARGET_';
 
 // getMonthlyTarget(token, monthKey) — ดึงเป้าของเดือนนั้น (ทุก role)
 function getMonthlyTarget(token, monthKey) {
@@ -137,6 +138,72 @@ function clearMonthlyTarget(token, monthKey) {
   PropertiesService.getScriptProperties().deleteProperty(key);
   logActivity(session.username, session.role, 'CLEAR_MONTHLY_TARGET', 'ลบเป้าหมายเดือน ' + monthKey);
   return { ok: true };
+}
+
+function _bdTargetKey(monthKey, bdUsername) {
+  return BD_MONTHLY_TARGET_PREFIX + DATA_YEAR + '_' + String(monthKey || '').toLowerCase() + '_' + String(bdUsername || '').toLowerCase();
+}
+
+function getBdMonthlyTarget(token, monthKey, bdUsername) {
+  var session = getSession(token || '');
+  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var userKey = String(bdUsername || session.username || '').toLowerCase();
+  if (session.role !== 'Director' && userKey !== String(session.username || '').toLowerCase()) {
+    return { ok: false, error: 'Permission denied' };
+  }
+  var raw = PropertiesService.getScriptProperties().getProperty(_bdTargetKey(monthKey, userKey));
+  if (!raw) return { ok: true, target: null };
+  try { return { ok: true, target: JSON.parse(raw) }; }
+  catch(e) { return { ok: true, target: null }; }
+}
+
+function setBdMonthlyTarget(token, monthKey, bdUsername, type, value, note) {
+  var session = getSession(token || '');
+  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: Director only' };
+  if (!monthKey || !bdUsername) return { ok: false, error: 'monthKey and bdUsername are required' };
+  if (type !== 'pct' && type !== 'fixed') return { ok: false, error: 'type must be pct or fixed' };
+  var v = parseFloat(value);
+  if (isNaN(v) || v <= 0) return { ok: false, error: 'Invalid target value' };
+  if (type === 'pct' && v > 1000) return { ok: false, error: '% should not exceed 1000' };
+  var userKey = String(bdUsername).toLowerCase();
+  var target = { type: type, value: v, note: note || '', bdUsername: userKey, setBy: session.username, setAt: _bkkTimestamp() };
+  PropertiesService.getScriptProperties().setProperty(_bdTargetKey(monthKey, userKey), JSON.stringify(target));
+  logActivity(session.username, session.role, 'SET_BD_MONTHLY_TARGET', monthKey + ' / ' + userKey + ' = ' + (type === 'pct' ? v + '%' : 'fixed ' + v));
+  return { ok: true, target: target };
+}
+
+function clearBdMonthlyTarget(token, monthKey, bdUsername) {
+  var session = getSession(token || '');
+  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: Director only' };
+  if (!monthKey || !bdUsername) return { ok: false, error: 'monthKey and bdUsername are required' };
+  PropertiesService.getScriptProperties().deleteProperty(_bdTargetKey(monthKey, bdUsername));
+  logActivity(session.username, session.role, 'CLEAR_BD_MONTHLY_TARGET', monthKey + ' / ' + String(bdUsername).toLowerCase());
+  return { ok: true };
+}
+
+function getAllBdMonthlyTargets(token) {
+  var session = getSession(token || '');
+  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var props = PropertiesService.getScriptProperties();
+  var all = props.getProperties();
+  var result = {};
+  var prefix = BD_MONTHLY_TARGET_PREFIX + DATA_YEAR + '_';
+  Object.keys(all).forEach(function(k) {
+    if (k.indexOf(prefix) !== 0) return;
+    var rest = k.slice(prefix.length);
+    var sep = rest.indexOf('_');
+    if (sep < 0) return;
+    var monthKey = rest.slice(0, sep);
+    var bdUser = rest.slice(sep + 1);
+    if (session.role !== 'Director' && bdUser !== String(session.username || '').toLowerCase()) return;
+    try {
+      if (!result[monthKey]) result[monthKey] = {};
+      result[monthKey][bdUser] = JSON.parse(all[k]);
+    } catch(e) {}
+  });
+  return { ok: true, targets: result };
 }
 
 // ============================================================

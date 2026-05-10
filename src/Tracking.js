@@ -13,6 +13,47 @@
 // ============================================================
 
 var TRACKING_SHEET = 'Tracking';
+var TRACKING_CUTOFF_LOG_SHEET = 'TrackingCutoffLog';
+
+function _trackingCutoffPeriodKey() {
+  var now = new Date();
+  var tz = 'Asia/Bangkok';
+  var y = Utilities.formatDate(now, tz, 'yyyy');
+  var m = Utilities.formatDate(now, tz, 'MM');
+  var d = parseInt(Utilities.formatDate(now, tz, 'd'), 10);
+  var slot = d < 8 ? '01' : (d < 22 ? '08' : '22');
+  return y + '-' + m + '-' + slot;
+}
+
+function _ensureTrackingCutoffColumn(sheet, headerColor) {
+  var hRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var hStr = hRow.map(function(h){ return String(h).trim(); });
+  if (hStr.indexOf('cutoffPeriod') < 0) {
+    var nextCol = sheet.getLastColumn() + 1;
+    sheet.getRange(1, nextCol).setValue('cutoffPeriod')
+      .setBackground(headerColor || '#003F5C').setFontColor('white').setFontWeight('bold');
+    sheet.setColumnWidth(nextCol, 120);
+  }
+}
+
+function _logTrackingCutoff(kind) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(TRACKING_CUTOFF_LOG_SHEET);
+    if (!sheet) {
+      sheet = ss.insertSheet(TRACKING_CUTOFF_LOG_SHEET);
+      sheet.appendRow(['kind','cutoffPeriod','loggedAt']);
+      sheet.getRange(1,1,1,3).setBackground('#1f2937').setFontColor('white').setFontWeight('bold');
+      sheet.setFrozenRows(1);
+    }
+    var period = _trackingCutoffPeriodKey();
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === kind && String(data[i][1]) === period) return;
+    }
+    sheet.appendRow([kind, period, _bkkTimestamp()]);
+  } catch(e) {}
+}
 
 // สร้างหรือดึง Sheet 'Tracking' พร้อม headers
 // ── Status / Reason options (ตรงกับ Dashboard dropdown) ──
@@ -78,7 +119,7 @@ function _getOrCreateTrackingSheet() {
   if (!sheet) {
     sheet = ss.insertSheet(TRACKING_SHEET);
     var headers = ['agentCode','agentName','21.00','package','city','province','zoneName',
-                   'key','status','reason','note','updatedBy','updatedAt'];
+                   'key','status','reason','note','updatedBy','updatedAt','cutoffPeriod'];
     sheet.appendRow(headers);
     // จัดรูปแบบ header
     var hRange = sheet.getRange(1, 1, 1, headers.length);
@@ -99,6 +140,7 @@ function _getOrCreateTrackingSheet() {
     sheet.setColumnWidth(11, 260); // note
     sheet.setColumnWidth(12, 110); // updatedBy
     sheet.setColumnWidth(13, 160); // updatedAt
+    sheet.setColumnWidth(14, 120); // cutoffPeriod
     // ── ใส่ dropdown ──
     _setDropdown(sheet, 9,  STATUS_OPTIONS);
     _setDropdown(sheet, 10, REASON_OPTIONS);
@@ -106,7 +148,7 @@ function _getOrCreateTrackingSheet() {
     // ตรวจว่า sheet เก่ายังไม่มี columns ใหม่ → เพิ่มให้อัตโนมัติ
     var hRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     var hStr = hRow.map(function(h){ return String(h).trim(); });
-    var newCols = ['21.00','agentCode','package','agentName','city','province','zoneName'];
+    var newCols = ['21.00','agentCode','package','agentName','city','province','zoneName','cutoffPeriod'];
     newCols.forEach(function(col) {
       if (hStr.indexOf(col) < 0) {
         var nextCol = sheet.getLastColumn() + 1;
@@ -122,6 +164,8 @@ function _getOrCreateTrackingSheet() {
     if (sIdx >= 0) _setDropdown(sheet, sIdx + 1, STATUS_OPTIONS);
     if (rIdx >= 0) _setDropdown(sheet, rIdx + 1, REASON_OPTIONS);
   }
+  _ensureTrackingCutoffColumn(sheet, '#003F5C');
+  _logTrackingCutoff('risk');
   return sheet;
 }
 
@@ -258,12 +302,16 @@ function getTrackingData(token) {
     var ctIdx  = headers.indexOf('city');
     var pvIdx  = headers.indexOf('province');
     var znIdx  = headers.indexOf('zoneName');
+    var cpIdx  = headers.indexOf('cutoffPeriod');
+    var curCutoff = _trackingCutoffPeriodKey();
 
     var rows = [];
     for (var i = 1; i < data.length; i++) {
       var r = data[i];
       var key = String(r[kIdx] || '').trim();
       if (!key) continue;
+      var cutoffPeriod = cpIdx >= 0 ? String(r[cpIdx] || '').trim() : '';
+      if (cutoffPeriod !== curCutoff) continue;
       rows.push({
         key:       key,
         status:    sIdx  >= 0 ? _normalizeStatus(String(r[sIdx]  || '')) : '',
@@ -277,7 +325,8 @@ function getTrackingData(token) {
         agentName: anIdx  >= 0 ? String(r[anIdx]  || '') : '',
         city:      ctIdx  >= 0 ? String(r[ctIdx]  || '') : '',
         province:  pvIdx  >= 0 ? String(r[pvIdx]  || '') : '',
-        zoneName:  znIdx  >= 0 ? String(r[znIdx]  || '') : ''
+        zoneName:  znIdx  >= 0 ? String(r[znIdx]  || '') : '',
+        cutoffPeriod: cutoffPeriod
       });
     }
     return { ok: true, data: rows };
@@ -434,11 +483,14 @@ function saveTrackingRow(token, payload) {
     var data    = sheet.getDataRange().getValues();
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx    = headers.indexOf('key');
+    var cpIdx   = headers.indexOf('cutoffPeriod');
+    var cutoffPeriod = _trackingCutoffPeriodKey();
 
     // หาแถวที่มี key ตรงกัน (upsert)
     var targetRow = -1;
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][kIdx] || '').trim() === String(payload.key).trim()) {
+      if (String(data[i][kIdx] || '').trim() === String(payload.key).trim()
+          && (cpIdx < 0 || String(data[i][cpIdx] || '').trim() === cutoffPeriod)) {
         targetRow = i + 1; // sheet row index (1-based)
         break;
       }
@@ -457,7 +509,8 @@ function saveTrackingRow(token, payload) {
       _reasonLabel(payload.reason || ''),  // เก็บ label ไทย ตรงกับ dropdown ใน Sheet
       payload.note      || '',
       session.username,             // บันทึกจาก session จริง (ไม่เชื่อ client)
-      _bkkTimestamp()
+      _bkkTimestamp(),
+      cutoffPeriod
     ];
 
     if (targetRow > 0) {
@@ -488,6 +541,8 @@ function saveTrackingBatch(token, batch) {
     var data    = sheet.getDataRange().getValues();
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx    = headers.indexOf('key');
+    var cpIdx   = headers.indexOf('cutoffPeriod');
+    var cutoffPeriod = _trackingCutoffPeriodKey();
     var now     = _bkkTimestamp();
     var updater = session.username;
 
@@ -495,7 +550,8 @@ function saveTrackingBatch(token, batch) {
     var existingMap = {};
     for (var i = 1; i < data.length; i++) {
       var k = String(data[i][kIdx] || '').trim();
-      if (k) existingMap[k] = i + 1;
+      var cp = cpIdx >= 0 ? String(data[i][cpIdx] || '').trim() : '';
+      if (k && cp === cutoffPeriod) existingMap[k] = i + 1;
     }
 
     var toAppend  = [];
@@ -516,7 +572,8 @@ function saveTrackingBatch(token, batch) {
         _reasonLabel(payload.reason || ''),  // เก็บ label ไทย ตรงกับ dropdown ใน Sheet
         payload.note    || '',
         updater,
-        now
+        now,
+        cutoffPeriod
       ];
 
       if (existingMap[payload.key]) {
@@ -563,7 +620,7 @@ function _getOrCreateGrowthTrackingSheet() {
   if (!sheet) {
     sheet = ss.insertSheet(TRACKING_GROWTH_SHEET);
     var headers = ['agentCode','agentName','21.00','package','city','province','zoneName',
-                   'key','status','key_success','note','updatedBy','updatedAt'];
+                   'key','status','key_success','note','updatedBy','updatedAt','cutoffPeriod'];
     sheet.appendRow(headers);
     var hRange = sheet.getRange(1, 1, 1, headers.length);
     hRange.setBackground('#085041');   // สีเขียวเข้ม — แยกจาก Tracking (navy)
@@ -588,7 +645,7 @@ function _getOrCreateGrowthTrackingSheet() {
   } else {
     var hRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     var hStr = hRow.map(function(h){ return String(h).trim(); });
-    var newCols = ['21.00','agentCode','package','agentName','city','province','zoneName'];
+    var newCols = ['21.00','agentCode','package','agentName','city','province','zoneName','cutoffPeriod'];
     newCols.forEach(function(col) {
       if (hStr.indexOf(col) < 0) {
         var nextCol = sheet.getLastColumn() + 1;
@@ -609,6 +666,8 @@ function _getOrCreateGrowthTrackingSheet() {
     if (sIdx  >= 0) _setDropdown(sheet, sIdx  + 1, GROWTH_STATUS_OPTIONS);
     if (ksIdx >= 0) _setDropdown(sheet, ksIdx + 1, GROWTH_REASON_OPTIONS);
   }
+  _ensureTrackingCutoffColumn(sheet, '#085041');
+  _logTrackingCutoff('growth');
   return sheet;
 }
 
@@ -636,12 +695,16 @@ function getGrowthTrackingData(token) {
     var ctIdx  = headers.indexOf('city');
     var pvIdx  = headers.indexOf('province');
     var znIdx  = headers.indexOf('zoneName');
+    var cpIdx  = headers.indexOf('cutoffPeriod');
+    var curCutoff = _trackingCutoffPeriodKey();
 
     var rows = [];
     for (var i = 1; i < data.length; i++) {
       var r = data[i];
       var key = String(r[kIdx] || '').trim();
       if (!key) continue;
+      var cutoffPeriod = cpIdx >= 0 ? String(r[cpIdx] || '').trim() : '';
+      if (cutoffPeriod !== curCutoff) continue;
       rows.push({
         key:         key,
         status:      sIdx  >= 0 ? _normalizeGrowthStatus(String(r[sIdx]  || '')) : '',
@@ -655,7 +718,8 @@ function getGrowthTrackingData(token) {
         agentName:   anIdx  >= 0 ? String(r[anIdx]  || '') : '',
         city:        ctIdx  >= 0 ? String(r[ctIdx]  || '') : '',
         province:    pvIdx  >= 0 ? String(r[pvIdx]  || '') : '',
-        zoneName:    znIdx  >= 0 ? String(r[znIdx]  || '') : ''
+        zoneName:    znIdx  >= 0 ? String(r[znIdx]  || '') : '',
+        cutoffPeriod: cutoffPeriod
       });
     }
     return { ok: true, data: rows };
@@ -675,10 +739,13 @@ function saveGrowthTrackingRow(token, payload) {
     var data    = sheet.getDataRange().getValues();
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx    = headers.indexOf('key');
+    var cpIdx   = headers.indexOf('cutoffPeriod');
+    var cutoffPeriod = _trackingCutoffPeriodKey();
 
     var targetRow = -1;
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][kIdx] || '').trim() === String(payload.key).trim()) {
+      if (String(data[i][kIdx] || '').trim() === String(payload.key).trim()
+          && (cpIdx < 0 || String(data[i][cpIdx] || '').trim() === cutoffPeriod)) {
         targetRow = i + 1;
         break;
       }
@@ -697,7 +764,8 @@ function saveGrowthTrackingRow(token, payload) {
       _growthReasonLabel(payload.key_success || payload.reason || ''),
       payload.note       || '',
       session.username,
-      _bkkTimestamp()
+      _bkkTimestamp(),
+      cutoffPeriod
     ];
 
     if (targetRow > 0) {
@@ -725,13 +793,16 @@ function saveGrowthTrackingBatch(token, batch) {
     var data    = sheet.getDataRange().getValues();
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx    = headers.indexOf('key');
+    var cpIdx   = headers.indexOf('cutoffPeriod');
+    var cutoffPeriod = _trackingCutoffPeriodKey();
     var now     = _bkkTimestamp();
     var updater = session.username;
 
     var existingMap = {};
     for (var i = 1; i < data.length; i++) {
       var k = String(data[i][kIdx] || '').trim();
-      if (k) existingMap[k] = i + 1;
+      var cp = cpIdx >= 0 ? String(data[i][cpIdx] || '').trim() : '';
+      if (k && cp === cutoffPeriod) existingMap[k] = i + 1;
     }
 
     var toAppend  = [];
@@ -752,7 +823,8 @@ function saveGrowthTrackingBatch(token, batch) {
         _growthReasonLabel(payload.key_success || payload.reason || ''),
         payload.note    || '',
         updater,
-        now
+        now,
+        cutoffPeriod
       ];
 
       if (existingMap[payload.key]) {
