@@ -285,6 +285,11 @@ tr:hover td{background:#f8faff;}
   overflow:hidden;
   transition:all .25s ease;
 }
+.map-legend-compact{min-width:168px;max-width:210px;padding:8px 10px 9px;bottom:16px;left:16px;}
+.map-legend-compact .map-legend-header{margin-bottom:4px;}
+.map-legend-compact .map-legend-title{font-size:8.5px;letter-spacing:.9px;}
+.map-legend-compact .map-legend-item{font-size:10px;gap:6px;}
+.map-legend-note{font-size:9px;color:rgba(255,255,255,.46);line-height:1.35;padding:2px 4px 0;}
 .map-legend-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;gap:8px;margin-bottom:6px;flex-shrink:0;}
 .map-legend-title{font-size:9px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:rgba(255,255,255,.45);}
 .map-legend-toggle{width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:10px;line-height:1;transition:all .2s;flex-shrink:0;}
@@ -300,6 +305,25 @@ tr:hover td{background:#f8faff;}
 .map-legend-zone-row{display:flex;align-items:center;gap:7px;margin-bottom:3px;}
 .map-legend-zone-line{height:3px;width:22px;border-radius:2px;flex-shrink:0;}
 .map-legend-zone-label{font-size:10px;color:rgba(255,255,255,.65);}
+.map-zone-list{display:grid;grid-template-columns:1fr 1fr;gap:4px 6px;margin-top:5px;max-height:92px;overflow:auto;scrollbar-width:none;}
+.map-zone-list::-webkit-scrollbar{display:none;}
+.map-zone-chip{display:flex;align-items:center;gap:5px;padding:4px 5px;border-radius:7px;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);transition:background .15s,border-color .15s,transform .15s;}
+.map-zone-chip:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.22);transform:translateY(-1px);}
+.map-zone-line-swatch{width:22px;height:8px;flex-shrink:0;filter:drop-shadow(0 1px 1px rgba(0,0,0,.65));}
+.map-zone-chip-name{font-size:10px;font-weight:800;color:rgba(255,255,255,.9);line-height:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.map-zone-chip-count{margin-left:auto;font-size:9px;font-weight:800;color:rgba(255,255,255,.48);}
+.map-zone-label{display:flex;align-items:center;gap:6px;padding:4px 7px;border-radius:8px;background:rgba(5,8,18,.9);border:1.5px solid var(--zc);box-shadow:0 7px 18px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08);pointer-events:none;white-space:nowrap;}
+.map-zone-label-callout{min-width:96px;justify-content:flex-start;background:rgba(5,8,18,.94);}
+.map-zone-label-left{flex-direction:row;}
+.map-zone-label-right{flex-direction:row-reverse;}
+.map-zone-label-code{font-size:11px;font-weight:900;line-height:1;color:#fff;background:var(--zc);padding:3px 6px;border-radius:5px;text-shadow:0 1px 2px rgba(0,0,0,.35);}
+.map-zone-label-meta{font-size:9px;font-weight:800;line-height:1;color:rgba(255,255,255,.78);}
+.map-tip-title{display:flex;align-items:center;gap:7px;margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.12);}
+.map-tip-province{font-size:13px;font-weight:900;color:#fff;}
+.map-tip-zone{font-size:10px;font-weight:900;padding:2px 7px;border-radius:999px;color:#fff;background:var(--zc);}
+.map-tip-grid{display:grid;grid-template-columns:auto auto;gap:4px 14px;align-items:baseline;}
+.map-tip-key{font-size:10px;color:rgba(255,255,255,.52);}
+.map-tip-val{font-size:11px;font-weight:850;color:rgba(255,255,255,.94);text-align:right;}
 /* legacy classes kept for compatibility */
 .map-legend-summary{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px;}
 .map-legend-stat{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;}
@@ -1116,12 +1140,13 @@ tr:hover td { background: #f8f9ff; }
 .map-info-panel { 
   background: rgba(6,9,20,0.95) !important; 
   color: white !important; 
-  border: 1px solid rgba(255,255,255,0.14) !important;
-  border-radius: 10px !important;
-  padding: 8px 12px !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
   backdrop-filter: blur(10px);
   font-size: 12px !important;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.5) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,.04) !important;
+  min-width: 210px;
 }
 .map-info-panel::before { display:none !important; }
 

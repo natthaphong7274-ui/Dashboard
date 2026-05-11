@@ -11,6 +11,7 @@ var carrierLoaded=false;
 var filterState={},cmpMode='two',cmpViewMode='bar';
 var _monthlyTargets = {};  // { [monthKey]: { type, value, note, setBy, setAt } }
 var _bdMonthlyTargets = {}; // { [monthKey]: { [bdUsername]: { type, value, note, setBy, setAt } } }
+var _targetPollStarted = false;
 var filterCarrierSet=new Set(); // ★ carrier filter
 var FILTER_COLS=['21.00','Package','City','Province','Zone Name','AREA'];
 
@@ -6739,6 +6740,15 @@ function getZoneColor(zone){
   return _zoneColorCache[zone];
 }
 
+function _mapEsc(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
 // ─── Status filter: ค่าเริ่มต้น เติบโต, ปกติ, เสี่ยง, loss ───────────────────
 var _mapStatusFilter = {
   great:    true,   // MoM growth > 5%
@@ -7079,26 +7089,27 @@ function renderMapLayers(){
         }
       }
 
-      var zoneColor2 = (d && d.zone) ? getZoneColor(d.zone) : '#94a3b8';
-
-      // Tooltip
-      var tip = '<b style="font-size:12px">'+pvTH+'</b>';
       if(d){
-        if(!isBDMap) tip += '<br><span style="color:#64748b;font-size:10px">Zone: <b>'+(d.zone||'-')+'</b></span>';
-        tip += '<br>👥 ลูกค้า: <b>'+d.total+'</b> ราย'
-             + '<br>💰 Revenue: <b>'+fmtS(Math.round(d.rev))+'</b>'
-             + '<br><span style="color:#16a34a">✅ Active: <b>'+d.total+'</b></span>';
+        var zoneColor2 = d.zone ? getZoneColor(d.zone) : '#94a3b8';
+        var zoneNameTip = d.zone || '-';
+        var tip = '<div class="map-tip" style="--zc:'+zoneColor2+'">'
+          + '<div class="map-tip-title">'
+          + '<span class="map-tip-province">'+_mapEsc(pvTH)+'</span>'
+          + '<span class="map-tip-zone">'+_mapEsc(zoneNameTip)+'</span>'
+          + '</div>';
+        tip += '<div class="map-tip-grid">'
+             + '<span class="map-tip-key">ตำแหน่ง</span><span class="map-tip-val">'+_mapEsc(pvTH)+'</span>'
+             + '<span class="map-tip-key">Zone</span><span class="map-tip-val" style="color:'+zoneColor2+'">'+_mapEsc(zoneNameTip)+'</span>'
+             + '<span class="map-tip-key">Agents</span><span class="map-tip-val">'+fmtInt(d.total)+' ราย</span>'
+             + '<span class="map-tip-key">Revenue</span><span class="map-tip-val">฿'+fmtS(Math.round(d.rev))+'</span>';
         if(d.total > 0 && getMP()){
           var momPctPB = getMoMPctFromTotals(d.avgCur, d.avgPrev);
           var diffColor = momPctPB === null ? '#64748b' : momPctPB > 5 ? '#14532d' : momPctPB >= 0 ? '#16a34a' : momPctPB > -5 ? '#ea580c' : '#dc2626';
-          tip += '<br><span style="color:'+diffColor+';font-size:10px">MoM Rev: <b>'+(momPctPB===null?'--':((momPctPB>=0?'+':'')+momPctPB.toFixed(1)+'%'))+'</b></span>';
+          tip += '<span class="map-tip-key">MoM Rev</span><span class="map-tip-val" style="color:'+diffColor+'">'+(momPctPB===null?'--':((momPctPB>=0?'+':'')+momPctPB.toFixed(1)+'%'))+'</span>';
         }
-        if(d.total>0){
-        }
-      } else {
-        tip += '<br><span style="color:#94a3b8">ไม่มีข้อมูลใน Zone นี้</span>';
+        tip += '</div></div>';
+        layer.bindTooltip(tip, {sticky:true, direction:'top', offset:[0,-8], className:'map-info-panel'});
       }
-      layer.bindTooltip(tip, {sticky:true, className:'map-info-panel'});
 
       layer.on({
         mouseover: function(e){
@@ -7149,7 +7160,24 @@ function renderMapLayers(){
 
   // ── วาดเส้นขอบ Zone (หนา) แยกระหว่าง zone ──
   // สร้าง zone boundary โดย render polygon แต่ละ zone ซ้อนทับด้วยเส้นหนาไม่มี fill
+  var zoneRawStats = {};
+  var mForZoneStats = getMC();
+  FR.forEach(function(r){
+    var rawZone = String(r[COL.zoneName] || '').trim();
+    if(!rawZone) return;
+    if((userRoleMap === 'AM' || userRoleMap === 'BD') && userZonesMap[0] !== 'All' && userZonesMap.indexOf(rawZone) < 0) return;
+    if(_mapZoneFilter && rawZone !== _mapZoneFilter) return;
+    var pvTHRaw = normProv(r[COL.province]);
+    var pvENRaw = pvTHRaw ? sheetNameToGeo(pvTHRaw) : '';
+    var rawKey = (_mapGeoData && pvENRaw && pvENRaw !== pvTHRaw) ? pvENRaw : pvTHRaw;
+    if(!zoneRawStats[rawZone]) zoneRawStats[rawZone] = {agents:0, rev:0, provinces:{}, color:getZoneColor(rawZone)};
+    zoneRawStats[rawZone].agents++;
+    zoneRawStats[rawZone].rev += parseFloat(r[mForZoneStats.colRev]) || 0;
+    if(rawKey) zoneRawStats[rawZone].provinces[rawKey] = true;
+  });
+
   var zoneFeatures = {};
+  var zoneStats = {};
   (_mapGeoData.features||[]).forEach(function(f){
     var pvNameF = f.properties.name || f.properties.NAME || f.properties.CHA_NE || '';
     var dF = pvData[pvNameF];
@@ -7164,7 +7192,13 @@ function renderMapLayers(){
     if(!zone) return;
     if(!zoneFeatures[zone]) zoneFeatures[zone] = [];
     zoneFeatures[zone].push(f);
+    if(!zoneStats[zone]) zoneStats[zone] = {agents:0, rev:0, provinces:0};
+    zoneStats[zone].agents = zoneRawStats[zone] ? zoneRawStats[zone].agents : (zoneStats[zone].agents + (dF.total || 0));
+    zoneStats[zone].rev = zoneRawStats[zone] ? zoneRawStats[zone].rev : (zoneStats[zone].rev + (dF.rev || 0));
+    zoneStats[zone].provinces += 1;
   });
+
+  var zoneLabelData = [];
 
   Object.keys(zoneFeatures).forEach(function(zone){
     var zc = getZoneColor(zone);
@@ -7174,7 +7208,22 @@ function renderMapLayers(){
     // Glow layer (soft, wide)
     L.geoJSON(geoGroup, {
       style: function(){
-        return { color: zc, weight: 12, opacity: 0.18, fill: false };
+        return { color: zc, weight: 10, opacity: 0.18, fill: false, lineCap: 'round', lineJoin: 'round' };
+      },
+      interactive: false
+    }).addTo(_mapLayerGroup);
+
+    // Zone border casing: makes boundaries readable over province colors and dark tiles
+    L.geoJSON(geoGroup, {
+      style: function(){
+        return { color: 'rgba(3,7,18,.96)', weight: 6.2, opacity: 0.95, fill: false, lineCap: 'round', lineJoin: 'round' };
+      },
+      interactive: false
+    }).addTo(_mapLayerGroup);
+
+    L.geoJSON(geoGroup, {
+      style: function(){
+        return { color: 'rgba(255,255,255,.88)', weight: 4.2, opacity: 0.9, fill: false, lineCap: 'round', lineJoin: 'round' };
       },
       interactive: false
     }).addTo(_mapLayerGroup);
@@ -7182,37 +7231,159 @@ function renderMapLayers(){
     // Zone border (sharp, thick) — เส้นขอบ Zone เท่านั้น ไม่มี fill
     L.geoJSON(geoGroup, {
       style: function(){
-        return { color: zc, weight: 3.5, opacity: 1, fill: false };
+        return { color: zc, weight: 2.4, opacity: 1, fill: false, lineCap: 'round', lineJoin: 'round' };
       },
       interactive: false
     }).addTo(_mapLayerGroup);
 
-    // Zone name label at centroid of first feature
-    var f0 = features[Math.floor(features.length/2)] || features[0];
-    if(f0 && f0.geometry){
-      var coords = f0.geometry.type === 'Polygon'
-        ? f0.geometry.coordinates[0]
-        : (f0.geometry.coordinates[0] ? f0.geometry.coordinates[0][0] : null);
-      if(coords && coords.length){
-        var sumLat=0, sumLng=0;
-        coords.forEach(function(c){ sumLng+=c[0]; sumLat+=c[1]; });
-        var cLng3 = sumLng/coords.length;
-        var cLat3 = sumLat/coords.length;
-        L.marker([cLat3, cLng3], {
-          icon: L.divIcon({
-            className: '',
-            html: '<div style="font-size:10px;font-weight:800;color:'+zc+';'
-                + 'background:rgba(8,12,22,.82);padding:2px 7px;border-radius:4px;'
-                + 'border:1.5px solid '+zc+';white-space:nowrap;'
-                + 'box-shadow:0 2px 6px rgba(0,0,0,.6);pointer-events:none">'+zone+'</div>',
-            iconAnchor: [30, 10]
-          }),
-          interactive: false,
-          zIndexOffset: 500
-        }).addTo(_mapLayerGroup);
+    // Store zone label anchor for external callouts.
+    try{
+      var labelBounds = L.geoJSON(geoGroup).getBounds();
+      if(labelBounds && labelBounds.isValid()){
+        var labelCenter = labelBounds.getCenter();
+        var zs = zoneRawStats[zone] || zoneStats[zone] || {agents:0};
+        zoneLabelData.push({
+          zone: zone,
+          color: zc,
+          agents: zs.agents || 0,
+          center: labelCenter,
+          side: labelCenter.lng < 101.2 ? 'left' : 'right'
+        });
       }
-    }
+    }catch(e){}
   });
+
+  var calloutBounds = null;
+  zoneLabelData.forEach(function(item){
+    calloutBounds = calloutBounds ? calloutBounds.extend(item.center) : L.latLngBounds(item.center, item.center);
+  });
+
+  // Ensure role/filter zones still get a visible callout even when a zone has no
+  // matched GeoJSON feature in the current map data.
+  var expectedZonesForLabels = [];
+  if(_mapZoneFilter){
+    expectedZonesForLabels = [_mapZoneFilter];
+  } else if((userRoleMap === 'AM' || userRoleMap === 'BD') && userZonesMap[0] !== 'All'){
+    expectedZonesForLabels = userZonesMap.slice();
+  } else {
+    expectedZonesForLabels = Object.keys(zoneRawStats);
+  }
+  expectedZonesForLabels.forEach(function(zoneName, missIdx){
+    zoneName = String(zoneName || '').trim();
+    if(!zoneName) return;
+    var exists = zoneLabelData.some(function(item){ return item.zone === zoneName; });
+    if(exists) return;
+    var rawStats = zoneRawStats[zoneName] || {agents:0, provinces:{}};
+    var fallbackAgents = rawStats.agents || 0;
+    var fallbackBounds = null;
+    (_mapGeoData.features||[]).forEach(function(f){
+      var geoName = f.properties.name || f.properties.NAME || f.properties.CHA_NE || '';
+      if(!rawStats.provinces || !rawStats.provinces[geoName]) return;
+      try{
+        var fb = L.geoJSON({type:'FeatureCollection', features:[f]}).getBounds();
+        if(fb && fb.isValid()) fallbackBounds = fallbackBounds ? fallbackBounds.extend(fb) : fb;
+      }catch(e){}
+    });
+    var fallbackCenter = calloutBounds && calloutBounds.isValid()
+      ? calloutBounds.getCenter()
+      : L.latLng(13.0, 101.5);
+    if(fallbackBounds && fallbackBounds.isValid()) fallbackCenter = fallbackBounds.getCenter();
+    var offset = (missIdx % 3 - 1) * 0.18;
+    var fallbackPoint = L.latLng(fallbackCenter.lat + offset, fallbackCenter.lng + offset);
+    var fallbackItem = {
+      zone: zoneName,
+      color: getZoneColor(zoneName),
+      agents: fallbackAgents,
+      center: fallbackPoint,
+      side: fallbackPoint.lng < 101.2 ? 'left' : 'right'
+    };
+    zoneLabelData.push(fallbackItem);
+    calloutBounds = calloutBounds ? calloutBounds.extend(fallbackPoint) : L.latLngBounds(fallbackPoint, fallbackPoint);
+  });
+
+  function addZoneCallouts(items, side){
+    if(!items.length) return;
+    items.sort(function(a,b){ return b.center.lat - a.center.lat; });
+    var isFocusedMap = isBDMap || _mapZoneFilter || (userRoleMap === 'AM' && userZonesMap[0] !== 'All');
+    var boundsSouth = calloutBounds && calloutBounds.isValid() ? calloutBounds.getSouth() : 6.4;
+    var boundsNorth = calloutBounds && calloutBounds.isValid() ? calloutBounds.getNorth() : 19.2;
+    var boundsWest  = calloutBounds && calloutBounds.isValid() ? calloutBounds.getWest()  : 98.0;
+    var boundsEast  = calloutBounds && calloutBounds.isValid() ? calloutBounds.getEast()  : 104.0;
+    var latPad = isFocusedMap ? 0.5 : 1.1;
+    var lngPad = isFocusedMap ? 0.95 : 1.8;
+    var minLat = Math.max(5.7, boundsSouth - latPad);
+    var maxLat = Math.min(20.0, boundsNorth + latPad);
+    if(maxLat - minLat < 1.6){
+      var midLat = (maxLat + minLat) / 2;
+      minLat = Math.max(5.7, midLat - 0.8);
+      maxLat = Math.min(20.0, midLat + 0.8);
+    }
+    var step = items.length > 1 ? (maxLat - minLat) / (items.length - 1) : 0;
+    var labelLng = side === 'left'
+      ? Math.max(96.2, boundsWest - lngPad)
+      : Math.min(106.2, boundsEast + lngPad);
+    var bendLng = side === 'left'
+      ? labelLng + Math.min(1.0, lngPad * 0.7)
+      : labelLng - Math.min(1.0, lngPad * 0.7);
+    var anchorX = side === 'left'
+      ? 112
+      : -8;
+    items.forEach(function(item, idx){
+      var labelLat = items.length > 1 ? maxLat - (step * idx) : item.center.lat;
+      labelLat = Math.max(minLat, Math.min(maxLat, labelLat));
+      var labelPoint = L.latLng(labelLat, labelLng);
+      var elbowPoint = L.latLng(labelLat, bendLng);
+      L.polyline([item.center, elbowPoint, labelPoint], {
+        color: 'rgba(3,7,18,.92)',
+        weight: 5,
+        opacity: 0.9,
+        interactive: false,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(_mapLayerGroup);
+      L.polyline([item.center, elbowPoint, labelPoint], {
+        color: 'rgba(255,255,255,.86)',
+        weight: 3.2,
+        opacity: 0.9,
+        interactive: false,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(_mapLayerGroup);
+      L.polyline([item.center, elbowPoint, labelPoint], {
+        color: item.color,
+        weight: 1.7,
+        opacity: 1,
+        dashArray: '5 5',
+        interactive: false,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(_mapLayerGroup);
+      L.circleMarker(item.center, {
+        radius: 3.5,
+        color: 'rgba(255,255,255,.95)',
+        weight: 1.5,
+        fillColor: item.color,
+        fillOpacity: 1,
+        interactive: false
+      }).addTo(_mapLayerGroup);
+      L.marker(labelPoint, {
+        icon: L.divIcon({
+          className: '',
+          html: '<div class="map-zone-label map-zone-label-callout map-zone-label-'+side+'" style="--zc:'+item.color+'">'
+              + '<span class="map-zone-label-code">'+_mapEsc(item.zone)+'</span>'
+              + '<span class="map-zone-label-meta">'+fmtInt(item.agents)+' agents</span>'
+              + '</div>',
+          iconSize: null,
+          iconAnchor: [anchorX, 16]
+        }),
+        interactive: false,
+        zIndexOffset: 650
+      }).addTo(_mapLayerGroup);
+    });
+  }
+
+  addZoneCallouts(zoneLabelData.filter(function(item){ return item.side === 'left'; }), 'left');
+  addZoneCallouts(zoneLabelData.filter(function(item){ return item.side === 'right'; }), 'right');
 
   // ★ BD → auto-zoom เข้าพื้นที่ zone ของตัวเอง
   // ★ Director/AM + zone filter → auto-zoom เข้า zone ที่เลือก
@@ -7485,7 +7656,7 @@ function _zoomToBDZone(pvData){
     var combined = bdBounds[0];
     for(var i=1;i<bdBounds.length;i++) combined = combined.extend(bdBounds[i]);
     setTimeout(function(){
-      _mapInstance.fitBounds(combined, {padding:[50,50], animate:true, duration:1.0});
+      _mapInstance.fitBounds(combined, {padding:[170,70], animate:true, duration:1.0});
     }, 200);
   } else {
     // fallback: ประเทศไทยทั้งหมด
@@ -7519,6 +7690,10 @@ function buildMapLegend(pvData){
   var userRoleLg  = _currentUser ? _currentUser.role  : 'Director';
   var userZonesLg = _currentUser && _currentUser.zones ? _currentUser.zones : ['All'];
   var isBDLg = (userRoleLg==='BD');
+  var isCompactLegend = (userRoleLg === 'AM' || userRoleLg === 'BD');
+  if(el.classList){
+    el.classList.toggle('map-legend-compact', isCompactLegend);
+  }
 
   if(false){ // Zone color mode removed — always use loss legend
     // Director/AM mode zone — legend คลิกได้ เพื่อ zoom เข้า zone นั้น
@@ -7546,7 +7721,9 @@ function buildMapLegend(pvData){
 
   } else {
     // ── กล่อง 1: สถานะ Agent (ซ้าย-ล่าง) ──
-    var wasCollapsed = (typeof _mapLegendCollapsed !== 'undefined') ? _mapLegendCollapsed : false;
+    var wasCollapsed = (typeof _mapLegendCollapsed !== 'undefined' && _mapLegendCollapsed !== null)
+      ? _mapLegendCollapsed
+      : isCompactLegend;
     var arrowChar = wasCollapsed ? '▲' : '▼';
     var bodyStyle = wasCollapsed ? 'max-height:0;opacity:0;pointer-events:none;' : '';
 
@@ -7556,7 +7733,6 @@ function buildMapLegend(pvData){
       totals.total += d.total; totals.rev += d.rev;
     });
     var active = totals.total; // T03: no loss/inactive
-
     el.innerHTML =
       // ── header ──
       '<div class="map-legend-header" onclick="toggleMapLegend(this)">'+
@@ -7580,6 +7756,8 @@ function buildMapLegend(pvData){
           '<div style="width:10px;height:10px;border-radius:50%;background:rgba(148,163,184,0.35);flex-shrink:0"></div>'+
           '<span>ไม่มีข้อมูล</span>'+
         '</div>'+
+        '<div class="map-legend-divider"></div>'+
+        '<div class="map-legend-note">Zone ใช้ filter ด้านบน ป้ายรอบแผนที่คือชื่อ Zone และจำนวน agents</div>'+
       '</div>';
 
     // ── ไม่แสดง Zone legend แยก — label บนแผนที่เพียงพอแล้ว ──
@@ -7587,7 +7765,7 @@ function buildMapLegend(pvData){
 }
 
 // ─── Toggle map legend open/collapsed ───────────────────────────────────────
-var _mapLegendCollapsed = false;
+var _mapLegendCollapsed = null;
 
 function toggleMapStatus(key) {
   _mapStatusFilter[key] = !_mapStatusFilter[key];
@@ -7626,7 +7804,7 @@ function zoomToZone(zoneName){
   if(bounds.length){
     var combined = bounds[0];
     for(var i=1;i<bounds.length;i++) combined = combined.extend(bounds[i]);
-    _mapInstance.fitBounds(combined, {padding:[60,60], animate:true, duration:0.8});
+    _mapInstance.fitBounds(combined, {padding:[170,70], animate:true, duration:0.8});
   }
 }
 
@@ -8142,8 +8320,7 @@ function _renderHomeDirector(m, mp) {
     +     (dirGrowthRows.length > 0 ? '<button class="hero-sc-btn hero-sc-growth" onclick="swMain(\'growth\')">🟢 Upsell ('+dirGrowthRows.length+')</button>' : '<button class="hero-sc-btn hero-sc-growth" onclick="swMain(\'growth\')">🟢 กลุ่มเติบโต</button>')
     +     '<button class="hero-sc-btn hero-sc-track" onclick="openTrkSummary()">📊 Tracking</button>'
     +     '<button class="hero-sc-btn hero-sc-track" onclick="swMain(\'usermgmt\')">👥 จัดการผู้ใช้</button>'
-    +     '<button class="hero-sc-btn" style="background:linear-gradient(135deg,var(--ac),#007a7a);color:white;border:none;font-weight:700" onclick="openMtModal(\''+m.key+'\')">🎯 ตั้งเป้าภาพรวม</button>'
-    +     '<button class="hero-sc-btn" style="background:linear-gradient(135deg,#5c3d8f,#7c3aed);color:white;border:none;font-weight:700" onclick="openBdMtModal()">👤 ตั้งเป้า BD</button>'
+    +     '<button class="hero-sc-btn" style="background:linear-gradient(135deg,var(--ac),#7c3aed);color:white;border:none;font-weight:700" onclick="openTargetModal(\''+m.key+'\')">🎯 ตั้งเป้า</button>'
     +   '</div>'
     + '</div>'
     + '</div>';
@@ -9214,7 +9391,9 @@ function _renderHomeAM(m, mp) {
   var churnMatrix = []; // T03: churn matrix removed
 
   // ── Zone overall target ──
-  var zoneTarget    = prevRev > 0 ? Math.round(prevRev * 1.05) : 0;
+  var zoneTargetMeta = _targetFromConfig(m.key, prevRev, _targetTotalPrevRev(m.key), null);
+  var zoneTarget    = zoneTargetMeta.value;
+  var zoneTargetDelta = _targetDeltaLabel(zoneTarget, prevRev);
   var zonePct       = zoneTarget > 0 ? Math.min(Math.round(totRev / zoneTarget * 100), 100) : 0;
   var zonePctColor  = zonePct >= 100 ? '#86efac' : zonePct >= 80 ? '#fde68a' : zonePct >= 50 ? '#fdba74' : '#fca5a5';
   var zoneGlow      = zonePct >= 100 ? 'rgba(134,239,172,.5)' : zonePct >= 80 ? 'rgba(253,230,138,.4)' : 'rgba(252,165,165,.35)';
@@ -9267,7 +9446,7 @@ function _renderHomeAM(m, mp) {
     + (zoneTarget > 0
       ? '<div class="hero-progress-wrap">'
         + '<div class="hero-progress-labels">'
-        +   '<span>🎯 เป้า Zone (vs เดือนก่อน +5%)&nbsp;<span style="font-size:10px;opacity:.65">'+fmtS(Math.round(totRev))+' / '+fmtS(zoneTarget)+'</span></span>'
+        +   '<span>🎯 เป้า Zone ('+zoneTargetMeta.label+(zoneTargetDelta ? ' · '+zoneTargetDelta : '')+')&nbsp;<span style="font-size:10px;opacity:.65">'+fmtS(Math.round(totRev))+' / '+fmtS(zoneTarget)+'</span></span>'
         +   '<span class="hero-progress-pct">'+zonePct+'%</span>'
         + '</div>'
         + '<div class="hero-progress-track">'
@@ -10014,6 +10193,81 @@ function _renderHomeAM(m, mp) {
 }
 
 // ── BD HOME ──────────────────────────────────────────────────────
+function _targetMonthPrev(monthKey) {
+  var mObj = (typeof MONTHS !== 'undefined') ? MONTHS.find(function(m){ return m.key === monthKey; }) : null;
+  var idx = mObj ? MONTHS.indexOf(mObj) : -1;
+  return idx > 0 ? MONTHS[idx - 1] : null;
+}
+
+function _targetTotalPrevRev(monthKey) {
+  var pm = _targetMonthPrev(monthKey);
+  var total = 0;
+  if (pm) FR.forEach(function(r){ total += N(r[pm.colRev]); });
+  return total;
+}
+
+function _targetZonesForUser(username) {
+  var key = String(username || '').toLowerCase();
+  var u = (_bdMtUsers || []).find(function(x) {
+    return String(x.username || x.displayName || '').toLowerCase() === key;
+  });
+  if (!u && _currentUser && String(_currentUser.username || _currentUser.displayName || '').toLowerCase() === key) {
+    u = _currentUser;
+  }
+  var raw = [];
+  if (u) {
+    if (Array.isArray(u.zones)) raw = raw.concat(u.zones);
+    if (u.zone) raw = raw.concat(String(u.zone).split(/[,\n|/]+/));
+  }
+  return raw.map(function(z){ return String(z || '').trim(); }).filter(Boolean);
+}
+
+function _targetPrevRevForZones(monthKey, zones) {
+  var pm = _targetMonthPrev(monthKey);
+  var total = 0;
+  if (!pm) return 0;
+  var zoneList = (zones || []).map(function(z){ return String(z || ''); });
+  var allZones = !zoneList.length || zoneList.indexOf('All') >= 0;
+  FR.forEach(function(r) {
+    var zn = String(r[COL.zoneName] || '');
+    if (allZones || zoneList.indexOf(zn) >= 0) total += N(r[pm.colRev]);
+  });
+  return total;
+}
+
+function _targetFromConfig(monthKey, prevRev, totalPrevRev, explicitCfg) {
+  var cfg = explicitCfg || _monthlyTargets[monthKey] || null;
+  if (!cfg) {
+    return {
+      value: prevRev > 0 ? Math.round(prevRev * 1.05) : 0,
+      source: 'default',
+      label: 'vs เดือนก่อน +5%'
+    };
+  }
+  if (cfg.type === 'pct') {
+    return {
+      value: prevRev > 0 ? Math.round(prevRev * Number(cfg.value || 0) / 100) : 0,
+      source: explicitCfg ? 'bd' : 'overall',
+      label: (explicitCfg ? 'เป้า BD ' : 'ตามเป้ารวม ') + Number(cfg.value || 0).toFixed(1) + '%'
+    };
+  }
+  var fixed = Math.round(Number(cfg.value || 0));
+  if (explicitCfg) {
+    return { value: fixed, source: 'bd', label: 'เป้า BD รายคน' };
+  }
+  return {
+    value: totalPrevRev > 0 ? Math.round(fixed * prevRev / totalPrevRev) : 0,
+    source: 'overall',
+    label: 'กระจายจากเป้ารวม'
+  };
+}
+
+function _targetDeltaLabel(targetValue, prevRev) {
+  if (!prevRev || prevRev <= 0 || !targetValue) return '';
+  var pct = ((targetValue - prevRev) / prevRev * 100);
+  return (pct >= 0 ? '+' : '') + pct.toFixed(1) + '% จากเดือนก่อน';
+}
+
 function _renderHomeBD(m, mp) {
   try {
   var userZones = _currentUser && _currentUser.zones ? _currentUser.zones : [];
@@ -10040,13 +10294,10 @@ function _renderHomeBD(m, mp) {
   // ── BD: Smart Banner — Redesigned ──
   var bdUserKey = String((_currentUser && (_currentUser.username || _currentUser.displayName)) || '').toLowerCase();
   var bdTargetCfg = (_bdMonthlyTargets[m.key] && (_bdMonthlyTargets[m.key][bdUserKey] || _bdMonthlyTargets[m.key][String(uname).toLowerCase()])) || null;
-  var bdTarget = (function(){
-    if (bdTargetCfg) {
-      if (bdTargetCfg.type === 'pct') return prevRev > 0 ? Math.round(prevRev * bdTargetCfg.value / 100) : 0;
-      return Math.round(Number(bdTargetCfg.value || 0));
-    }
-    return prevRev > 0 ? Math.round(prevRev * 1.05) : 0;
-  })();
+  var bdTargetMeta = _targetFromConfig(m.key, prevRev, _targetTotalPrevRev(m.key), bdTargetCfg);
+  var bdTarget = bdTargetMeta.value;
+  var bdTargetDelta = _targetDeltaLabel(bdTarget, prevRev);
+  var bdTargetInfo = bdTargetMeta.label + (bdTargetDelta ? ' · ' + bdTargetDelta : '') + ' · เป้า ฿' + fmtS(Math.round(bdTarget));
   var bdNeedAmt = bdTarget > 0 ? Math.max(0, Math.round(bdTarget - totRev)) : 0;
   var bdTargetPct = bdTarget > 0 ? Math.min(Math.round(totRev / bdTarget * 100), 100) : 0;
 
@@ -10102,7 +10353,7 @@ function _renderHomeBD(m, mp) {
     + (prevRev > 0
       ? '<div class="hero-progress-wrap">'
         + '<div class="hero-progress-labels">'
-        +   '<span>🎯 เป้าเดือนนี้ '+(bdTargetCfg?'(BD target)':'(vs เดือนก่อน +5%)')+'  &nbsp; <span style="font-size:10px;opacity:.65">'+fmtS(Math.round(totRev))+' / '+fmtS(bdTarget)+'</span></span>'
+        +   '<span>🎯 เป้าเดือนนี้ ('+bdTargetInfo+') &nbsp; <span style="font-size:10px;opacity:.65">'+fmtS(Math.round(totRev))+' / '+fmtS(bdTarget)+'</span></span>'
         +   '<span class="hero-progress-pct">'+bdTargetPct+'%</span>'
         + '</div>'
         + '<div class="hero-progress-track">'
@@ -10895,9 +11146,9 @@ function _rmPopupZone(z) {
 
 // ── BD Zone visual styles — solid thick borders + distinct fills ─
 var _rmBdBorderStyles = [
-  { dashArray: null,    weight: 4, glowWeight: 14, fillOpacity: 0.13 },  // เหนือ — solid
-  { dashArray: '12 6', weight: 4, glowWeight: 14, fillOpacity: 0.13 },  // กลาง  — long dash
-  { dashArray: '4 5',  weight: 4, glowWeight: 14, fillOpacity: 0.13 },  // ใต้   — dot-dash
+  { dashArray: null,    weight: 2.6, casingWeight: 5.6, glowWeight: 10, fillOpacity: 0.07, lineColor: '#f8fafc' },  // เหนือ — solid
+  { dashArray: '14 8', weight: 2.6, casingWeight: 5.6, glowWeight: 10, fillOpacity: 0.07, lineColor: '#f8fafc' },  // กลาง  — long dash
+  { dashArray: '2 8',  weight: 2.6, casingWeight: 5.6, glowWeight: 10, fillOpacity: 0.07, lineColor: '#f8fafc' },  // ใต้   — dotted
 ];
 
 // ── BD map ─────────────────────────────────────────────────────
@@ -10913,7 +11164,7 @@ function _rmInitBdMap() {
     // ── 1. Wide soft glow (no fill) ──
     L.polygon(zone.polygon, {
       color: zone.ownerColor, weight: bs.glowWeight,
-      opacity: 0.22, fill: false,
+      opacity: 0.09, fill: false,
     }).addTo(_rmMaps.bd);
 
     // ── 2. Solid fill layer ──
@@ -10922,22 +11173,29 @@ function _rmInitBdMap() {
       fillColor: zone.ownerColor, fillOpacity: bs.fillOpacity,
     }).addTo(_rmMaps.bd);
 
-    // ── 3. Sharp border line (dashed per zone) ──
+    // ── 3. Contrast casing: thin neutral boundaries stay separate from status colors ──
     L.polygon(zone.polygon, {
-      color: zone.ownerColor, weight: bs.weight, opacity: 1,
+      color: 'rgba(3,7,18,.92)', weight: bs.casingWeight, opacity: 0.94,
       fill: false, dashArray: bs.dashArray,
-      lineCap: 'square', lineJoin: 'miter',
+      lineCap: 'round', lineJoin: 'round',
     }).addTo(_rmMaps.bd);
 
-    // ── 4. Zone label at centre ──
+    // ── 4. Sharp border line (dashed per zone) ──
+    L.polygon(zone.polygon, {
+      color: bs.lineColor, weight: bs.weight, opacity: 0.96,
+      fill: false, dashArray: bs.dashArray,
+      lineCap: 'round', lineJoin: 'round',
+    }).addTo(_rmMaps.bd);
+
+    // ── 5. Zone label at centre ──
     var lats = zone.polygon.map(function(p){return p[0];});
     var lngs = zone.polygon.map(function(p){return p[1];});
     var cLat = (Math.max.apply(null,lats) + Math.min.apply(null,lats)) / 2;
     var cLng = (Math.max.apply(null,lngs) + Math.min.apply(null,lngs)) / 2;
 
     var dashSvg = bs.dashArray
-      ? '<svg width="24" height="5" style="flex-shrink:0"><line x1="0" y1="2.5" x2="24" y2="2.5" stroke="' + zone.ownerColor + '" stroke-width="2.5" stroke-dasharray="' + bs.dashArray + '" stroke-linecap="square"/></svg>'
-      : '<svg width="24" height="5" style="flex-shrink:0"><line x1="0" y1="2.5" x2="24" y2="2.5" stroke="' + zone.ownerColor + '" stroke-width="3"/></svg>';
+      ? '<svg width="32" height="8" style="flex-shrink:0"><line x1="1" y1="4" x2="31" y2="4" stroke="rgba(3,7,18,.9)" stroke-width="5.6" stroke-dasharray="' + bs.dashArray + '" stroke-linecap="round"/><line x1="1" y1="4" x2="31" y2="4" stroke="' + bs.lineColor + '" stroke-width="2.6" stroke-dasharray="' + bs.dashArray + '" stroke-linecap="round"/></svg>'
+      : '<svg width="32" height="8" style="flex-shrink:0"><line x1="1" y1="4" x2="31" y2="4" stroke="rgba(3,7,18,.9)" stroke-width="5.6" stroke-linecap="round"/><line x1="1" y1="4" x2="31" y2="4" stroke="' + bs.lineColor + '" stroke-width="2.6" stroke-linecap="round"/></svg>';
 
     L.marker([cLat, cLng], {
       icon: L.divIcon({
@@ -10955,7 +11213,7 @@ function _rmInitBdMap() {
       interactive: false
     }).addTo(_rmMaps.bd);
 
-    // ── 5. Agent dots ──
+    // ── 6. Agent dots ──
     zone.agents.forEach(function(a) {
       var s = _rmStatus(a.chg, 0), m = _rmStatusMeta[s];
       var r = (s==='critical'||s==='top') ? 10 : (s==='watch'||s==='grow') ? 8 : 7;
@@ -11072,14 +11330,25 @@ function rmSwitchRole(role, btn) {
 
 <!-- ═══ MONTHLY TARGET MODAL ═══ -->
 <style>
-.mt-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:9000;display:none;align-items:center;justify-content:center;padding:16px;}
+.mt-overlay{position:fixed;inset:0;background:rgba(6,12,24,.62);backdrop-filter:blur(8px);z-index:9000;display:none;align-items:center;justify-content:center;padding:16px;}
 .mt-overlay.open{display:flex;}
-.mt-modal{background:#fff;border-radius:18px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;}
-.mt-hdr{background:linear-gradient(135deg,var(--pr),var(--pl));padding:18px 20px;color:white;display:flex;justify-content:space-between;align-items:center;}
-.mt-hdr-title{font-size:15px;font-weight:800;}
-.mt-hdr-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.mt-modal{background:#fff;border-radius:18px;width:100%;max-width:760px;box-shadow:0 24px 70px rgba(0,0,0,.35);overflow:hidden;border:1px solid rgba(255,255,255,.4);}
+.mt-hdr{background:linear-gradient(135deg,#0f172a,#003F5C 52%,#00788c);padding:18px 20px;color:white;display:flex;justify-content:space-between;align-items:center;}
+.mt-hdr-title{font-size:17px;font-weight:900;letter-spacing:-.01em;}
+.mt-hdr-sub{font-size:12px;opacity:.76;margin-top:3px;}
 .mt-close{background:rgba(255,255,255,.2);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
-.mt-body{padding:20px;}
+.mt-body{padding:18px;background:linear-gradient(180deg,#f8fafc,#fff);}
+.mt-mode-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.mt-mode-btn{border:1.5px solid #dce9ff;background:#fff;border-radius:12px;padding:12px 13px;text-align:left;cursor:pointer;transition:.16s;display:flex;align-items:center;gap:10px;}
+.mt-mode-btn:hover{border-color:var(--ac);transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.08);}
+.mt-mode-btn.active{background:linear-gradient(135deg,#ecfeff,#f5f3ff);border-color:var(--ac);box-shadow:0 8px 22px rgba(0,155,155,.16);}
+.mt-mode-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#e0f2fe;font-size:16px;flex-shrink:0;}
+.mt-mode-title{font-size:13px;font-weight:900;color:#0f172a;}
+.mt-mode-sub{font-size:10px;color:#64748b;margin-top:2px;}
+.mt-panel{display:none;}
+.mt-panel.active{display:block;}
+.mt-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.mt-form-full{grid-column:1 / -1;}
 .mt-type-row{display:flex;gap:8px;margin-bottom:16px;}
 .mt-type-btn{flex:1;padding:10px 8px;border:2px solid var(--bd);border-radius:10px;background:#f8fafc;cursor:pointer;font-size:12px;font-weight:700;color:var(--t2);text-align:center;transition:.2s;}
 .mt-type-btn.active{border-color:var(--ac);background:#f0fdff;color:var(--pr);}
@@ -11095,78 +11364,97 @@ function rmSwitchRole(role, btn) {
 .mt-save:hover{opacity:.88;}
 .mt-del{padding:10px 14px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:10px;cursor:pointer;font-size:12px;font-weight:700;}
 .mt-del:hover{background:#fecaca;}
+.mt-confirm-layer{position:fixed;inset:0;z-index:9300;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.42);backdrop-filter:blur(4px);}
+.mt-confirm-layer.open{display:flex;}
+.mt-confirm-box{width:min(420px,100%);background:#fff;border-radius:18px;border:1px solid rgba(226,232,240,.95);box-shadow:0 24px 80px rgba(15,23,42,.32);overflow:hidden;}
+.mt-confirm-head{padding:16px 18px;background:linear-gradient(135deg,#fff7ed,#fff1f2);display:flex;align-items:center;gap:10px;border-bottom:1px solid #fee2e2;}
+.mt-confirm-ico{width:36px;height:36px;border-radius:12px;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.mt-confirm-title{font-size:15px;font-weight:900;color:#111827;}
+.mt-confirm-msg{padding:16px 18px 4px;color:#475569;font-size:13px;line-height:1.55;}
+.mt-confirm-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 18px 18px;}
+.mt-confirm-cancel,.mt-confirm-ok{border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;}
+.mt-confirm-cancel{background:#f1f5f9;color:#475569;border:1px solid #dbe4ee;}
+.mt-confirm-ok{background:linear-gradient(135deg,#ef4444,#fb7185);color:#fff;box-shadow:0 10px 22px rgba(239,68,68,.22);}
+@media(max-width:760px){.mt-mode-row,.mt-form-grid{grid-template-columns:1fr}.mt-modal{max-height:92vh;overflow:auto}}
 </style>
 
-<div class="mt-overlay" id="mtOverlay" onclick="if(event.target===this)closeMt()">
+<div class="mt-overlay" id="mtOverlay" onclick="if(event.target===this)closeTargetModal()">
   <div class="mt-modal">
     <div class="mt-hdr">
       <div>
         <div class="mt-hdr-title">🎯 ตั้งเป้าหมาย Revenue</div>
-        <div class="mt-hdr-sub" id="mt_sub">เดือนนี้</div>
+        <div class="mt-hdr-sub" id="mt_sub">จัดการเป้าภาพรวมและเป้า BD ในที่เดียว</div>
       </div>
-      <button class="mt-close" onclick="closeMt()">✕</button>
+      <button class="mt-close" onclick="closeTargetModal()">✕</button>
     </div>
     <div class="mt-body">
-      <div class="mt-prev" id="mt_prev">⏳ กำลังโหลด...</div>
-      <div class="mt-lbl">ประเภทเป้าหมาย</div>
-      <div class="mt-type-row">
-        <div class="mt-type-btn active" id="mt_btn_pct" onclick="mtType('pct')">
-          📊 % ของเดือนก่อน<br><span style="font-size:10px;font-weight:400;color:var(--t2)">เช่น 105 = +5%</span>
-        </div>
-        <div class="mt-type-btn" id="mt_btn_fix" onclick="mtType('fixed')">
-          💰 ตัวเลขตรง (฿)<br><span style="font-size:10px;font-weight:400;color:var(--t2)">กรอกยอด Revenue</span>
-        </div>
+      <div class="mt-mode-row">
+        <button class="mt-mode-btn active" id="mt_mode_overall" onclick="targetMode('overall')" type="button">
+          <span class="mt-mode-ico">🌐</span>
+          <span><div class="mt-mode-title">ภาพรวมประเทศ</div><div class="mt-mode-sub">ตั้งเป้า Revenue รวมของเดือน</div></span>
+        </button>
+        <button class="mt-mode-btn" id="mt_mode_bd" onclick="targetMode('bd')" type="button">
+          <span class="mt-mode-ico" style="background:#ede9fe">👤</span>
+          <span><div class="mt-mode-title">BD รายบุคคล</div><div class="mt-mode-sub">ตั้งเป้าให้ BD แต่ละคน</div></span>
+        </button>
       </div>
-      <div class="mt-lbl" id="mt_inp_lbl">% เป้า (เทียบเดือนก่อน)</div>
-      <input class="mt-inp" type="number" id="mt_val" placeholder="เช่น 105" min="0" step="0.1" oninput="mtHint()">
-      <div class="mt-hint" id="mt_hint">กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม</div>
-      <div class="mt-lbl" style="margin-top:12px">หมายเหตุ (optional)</div>
-      <textarea class="mt-note" id="mt_note" rows="2" placeholder="เช่น เดือนนี้มีโปรพิเศษ..."></textarea>
-      <div class="mt-actions">
-        <button class="mt-save" id="mt_save_btn" onclick="saveMt()">💾 บันทึกเป้าหมาย</button>
-        <button class="mt-del" id="mt_del_btn" onclick="delMt()" style="display:none">🗑 ลบ</button>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- ★ T02: BD Individual Target Modal -->
-<div class="mt-overlay" id="bdMtOverlay" onclick="if(event.target===this)closeBdMt()">
-  <div class="mt-modal" style="max-width:500px">
-    <div class="mt-hdr" style="background:linear-gradient(135deg,#1a4a6e,#00788c)">
-      <div>
-        <div class="mt-hdr-title">🎯 ตั้งเป้าหมาย BD รายบุคคล</div>
-        <div class="mt-hdr-sub" id="bdmt_sub">Director ตั้งเป้ารายบุคคล</div>
-      </div>
-      <button class="mt-close" onclick="closeBdMt()">✕</button>
-    </div>
-    <div class="mt-body">
-      <div class="mt-lbl">เลือก BD</div>
-      <select class="mt-inp" id="bdmt_user" onchange="bdMtUserChange()" style="font-size:13px;font-weight:600;cursor:pointer">
-        <option value="">-- เลือก BD --</option>
-      </select>
-      <div class="mt-lbl" style="margin-top:12px">เลือกเดือน</div>
-      <select class="mt-inp" id="bdmt_month" onchange="bdMtMonthChange()" style="font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px">
-        <option value="">-- เลือกเดือน --</option>
-      </select>
-      <div class="mt-prev" id="bdmt_prev" style="display:none"></div>
-      <div class="mt-lbl">ประเภทเป้าหมาย</div>
-      <div class="mt-type-row">
-        <div class="mt-type-btn active" id="bdmt_btn_pct" onclick="bdMtType('pct')">
-          📊 % ของเดือนก่อน<br><span style="font-size:10px;font-weight:400;color:var(--t2)">เช่น 105 = +5%</span>
+      <div class="mt-panel active" id="mt_panel_overall">
+        <div class="mt-prev" id="mt_prev">⏳ กำลังโหลด...</div>
+        <div class="mt-lbl">ประเภทเป้าหมาย</div>
+        <div class="mt-type-row">
+          <div class="mt-type-btn active" id="mt_btn_pct" onclick="mtType('pct')">
+            📊 % ของเดือนก่อน<br><span style="font-size:10px;font-weight:400;color:var(--t2)">เช่น 105 = +5%</span>
+          </div>
+          <div class="mt-type-btn" id="mt_btn_fix" onclick="mtType('fixed')">
+            💰 ตัวเลขตรง (฿)<br><span style="font-size:10px;font-weight:400;color:var(--t2)">กรอกยอด Revenue</span>
+          </div>
         </div>
-        <div class="mt-type-btn" id="bdmt_btn_fix" onclick="bdMtType('fixed')">
-          💰 ตัวเลขตรง (฿)<br><span style="font-size:10px;font-weight:400;color:var(--t2)">กรอกยอด Revenue</span>
+        <div class="mt-lbl" id="mt_inp_lbl">% เป้า (เทียบเดือนก่อน)</div>
+        <input class="mt-inp" type="number" id="mt_val" placeholder="เช่น 105" min="0" step="0.1" oninput="mtHint()">
+        <div class="mt-hint" id="mt_hint">กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม</div>
+        <div class="mt-lbl" style="margin-top:12px">หมายเหตุ (optional)</div>
+        <textarea class="mt-note" id="mt_note" rows="2" placeholder="เช่น เดือนนี้มีโปรพิเศษ..."></textarea>
+        <div class="mt-actions">
+          <button class="mt-save" id="mt_save_btn" onclick="saveMt()">💾 บันทึกเป้าภาพรวม</button>
+          <button class="mt-del" id="mt_del_btn" onclick="delMt()" style="display:none">🗑 ลบ</button>
         </div>
       </div>
-      <div class="mt-lbl" id="bdmt_inp_lbl">% เป้า (เทียบเดือนก่อน)</div>
-      <input class="mt-inp" type="number" id="bdmt_val" placeholder="เช่น 105" min="0" step="0.1" oninput="bdMtHint()">
-      <div class="mt-hint" id="bdmt_hint">กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม</div>
-      <div class="mt-lbl" style="margin-top:12px">หมายเหตุ (optional)</div>
-      <textarea class="mt-note" id="bdmt_note" rows="2" placeholder="เช่น เดือนนี้มีโปรพิเศษ..."></textarea>
-      <div class="mt-actions">
-        <button class="mt-save" id="bdmt_save_btn" onclick="saveBdMt()">💾 บันทึกเป้าหมาย BD</button>
-        <button class="mt-del" id="bdmt_del_btn" onclick="delBdMt()" style="display:none">🗑 ลบ</button>
+
+      <div class="mt-panel" id="mt_panel_bd">
+        <div class="mt-form-grid">
+          <div>
+            <div class="mt-lbl">เลือก BD</div>
+            <select class="mt-inp" id="bdmt_user" onchange="bdMtUserChange()" style="font-size:13px;font-weight:600;cursor:pointer">
+              <option value="">-- เลือก BD --</option>
+            </select>
+          </div>
+          <div>
+            <div class="mt-lbl">เลือกเดือน</div>
+            <select class="mt-inp" id="bdmt_month" onchange="bdMtMonthChange()" style="font-size:13px;font-weight:600;cursor:pointer">
+              <option value="">-- เลือกเดือน --</option>
+            </select>
+          </div>
+          <div class="mt-form-full"><div class="mt-prev" id="bdmt_prev" style="display:none"></div></div>
+        </div>
+        <div class="mt-lbl">ประเภทเป้าหมาย</div>
+        <div class="mt-type-row">
+          <div class="mt-type-btn active" id="bdmt_btn_pct" onclick="bdMtType('pct')">
+            📊 % ของเดือนก่อน<br><span style="font-size:10px;font-weight:400;color:var(--t2)">เช่น 105 = +5%</span>
+          </div>
+          <div class="mt-type-btn" id="bdmt_btn_fix" onclick="bdMtType('fixed')">
+            💰 ตัวเลขตรง (฿)<br><span style="font-size:10px;font-weight:400;color:var(--t2)">กรอกยอด Revenue</span>
+          </div>
+        </div>
+        <div class="mt-lbl" id="bdmt_inp_lbl">% เป้า (เทียบเดือนก่อน)</div>
+        <input class="mt-inp" type="number" id="bdmt_val" placeholder="เช่น 105" min="0" step="0.1" oninput="bdMtHint()">
+        <div class="mt-hint" id="bdmt_hint">กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม</div>
+        <div class="mt-lbl" style="margin-top:12px">หมายเหตุ (optional)</div>
+        <textarea class="mt-note" id="bdmt_note" rows="2" placeholder="เช่น เดือนนี้มีโปรพิเศษ..."></textarea>
+        <div class="mt-actions">
+          <button class="mt-save" id="bdmt_save_btn" onclick="saveBdMt()">💾 บันทึกเป้า BD</button>
+          <button class="mt-del" id="bdmt_del_btn" onclick="delBdMt()" style="display:none">🗑 ลบ</button>
+        </div>
       </div>
     </div>
   </div>
@@ -11176,10 +11464,43 @@ function rmSwitchRole(role, btn) {
 // ── Monthly Target ──
 var _mtMonth = null;
 var _mtCurType = 'pct';
+var _targetMode = 'overall';
+
+function targetMode(mode) {
+  _targetMode = mode || 'overall';
+  var isBd = _targetMode === 'bd';
+  var mo = document.getElementById('mt_mode_overall');
+  var mb = document.getElementById('mt_mode_bd');
+  var po = document.getElementById('mt_panel_overall');
+  var pb = document.getElementById('mt_panel_bd');
+  if(mo) mo.classList.toggle('active', !isBd);
+  if(mb) mb.classList.toggle('active', isBd);
+  if(po) po.classList.toggle('active', !isBd);
+  if(pb) pb.classList.toggle('active', isBd);
+  var sub = document.getElementById('mt_sub');
+  if(sub) {
+    var mObj = _mtMonth && typeof MONTHS !== 'undefined'
+      ? MONTHS.find(function(m){ return m.key === _mtMonth; })
+      : null;
+    sub.textContent = isBd
+      ? 'ตั้งเป้ารายบุคคลให้ BD'
+      : 'ตั้งเป้าภาพรวมประเทศ' + (mObj ? ' — ' + mObj.th : '');
+  }
+}
+
+function openTargetModal(monthKey) {
+  if (!_currentUser || _currentUser.role !== 'Director') return;
+  openMtModal(monthKey);
+  _initBdTargetForm();
+  targetMode('overall');
+}
+
+function closeTargetModal() { closeMt(); }
 
 function loadMonthlyTargets() {
   var tok = sessionStorage.getItem('DASH_TOKEN') || '';
   if (!tok) return;
+  startTargetPolling();
   google.script.run
     .withSuccessHandler(function(res) {
       if (res && res.ok) {
@@ -11200,6 +11521,17 @@ function loadMonthlyTargets() {
       })
       .getAllBdMonthlyTargets(tok);
   }
+}
+
+function startTargetPolling() {
+  if (_targetPollStarted) return;
+  _targetPollStarted = true;
+  setInterval(function() {
+    var tok = sessionStorage.getItem('DASH_TOKEN') || '';
+    if (!tok) return;
+    if (document.visibilityState && document.visibilityState === 'hidden') return;
+    loadMonthlyTargets();
+  }, 30000);
 }
 
 function openMtModal(monthKey) {
@@ -11300,17 +11632,23 @@ function saveMt() {
 }
 
 function delMt() {
-  if (!confirm('ต้องการลบเป้าหมายเดือน ' + _mtMonth + ' ใช่ไหม?')) return;
-  var tok = sessionStorage.getItem('DASH_TOKEN') || '';
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res && res.ok) {
-        delete _monthlyTargets[_mtMonth];
-        closeMt(); renderHome();
-        _mtToast('🗑 ลบเป้าหมายแล้ว');
-      }
-    })
-    .clearMonthlyTarget(tok, _mtMonth);
+  _targetConfirm({
+    title: 'ลบเป้าภาพรวม',
+    message: 'ต้องการลบเป้าภาพรวมเดือน <b>'+_mtMonth+'</b> ใช่ไหม?<br><span style="color:#94a3b8">BD ที่ไม่มีเป้ารายคนจะกลับไปใช้ค่าเริ่มต้น +5%</span>',
+    okText: 'ลบเป้าภาพรวม',
+    onOk: function() {
+      var tok = sessionStorage.getItem('DASH_TOKEN') || '';
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.ok) {
+            delete _monthlyTargets[_mtMonth];
+            closeMt(); renderHome();
+            _mtToast('🗑 ลบเป้าหมายแล้ว');
+          }
+        })
+        .clearMonthlyTarget(tok, _mtMonth);
+    }
+  });
 }
 
 function _mtToast(msg) {
@@ -11321,15 +11659,43 @@ function _mtToast(msg) {
   setTimeout(function(){ el.remove(); }, 2800);
 }
 
+function _targetConfirm(opts) {
+  opts = opts || {};
+  var old = document.getElementById('mtConfirmLayer');
+  if (old) old.remove();
+  var layer = document.createElement('div');
+  layer.id = 'mtConfirmLayer';
+  layer.className = 'mt-confirm-layer open';
+  layer.innerHTML =
+    '<div class="mt-confirm-box" role="dialog" aria-modal="true">'
+    + '<div class="mt-confirm-head">'
+    +   '<div class="mt-confirm-ico">'+(opts.icon || '🗑')+'</div>'
+    +   '<div class="mt-confirm-title">'+(opts.title || 'ยืนยันการลบ')+'</div>'
+    + '</div>'
+    + '<div class="mt-confirm-msg">'+(opts.message || 'ต้องการดำเนินการต่อใช่ไหม?')+'</div>'
+    + '<div class="mt-confirm-actions">'
+    +   '<button class="mt-confirm-cancel" type="button" id="mtConfirmCancel">'+(opts.cancelText || 'ยกเลิก')+'</button>'
+    +   '<button class="mt-confirm-ok" type="button" id="mtConfirmOk">'+(opts.okText || 'ลบ')+'</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(layer);
+  function close(){ layer.remove(); }
+  layer.addEventListener('click', function(e){ if(e.target === layer) close(); });
+  document.getElementById('mtConfirmCancel').onclick = close;
+  document.getElementById('mtConfirmOk').onclick = function(){
+    close();
+    if (typeof opts.onOk === 'function') opts.onOk();
+  };
+}
+
 // ── T02: BD Individual Target ──
 var _bdMtCurType = 'pct';
 var _bdMtUsers = []; // [{username, displayName, zone}]
 
-function openBdMtModal() {
-  if (!_currentUser || _currentUser.role !== 'Director') return;
-  // โหลดรายชื่อ BD จาก server
+function _initBdTargetForm() {
   var tok = sessionStorage.getItem('DASH_TOKEN') || '';
   var selUser = document.getElementById('bdmt_user');
+  if(!selUser) return;
   selUser.innerHTML = '<option value="">⏳ กำลังโหลด...</option>';
   document.getElementById('bdmt_prev').style.display = 'none';
   document.getElementById('bdmt_del_btn').style.display = 'none';
@@ -11354,9 +11720,6 @@ function openBdMtModal() {
     }
   }
 
-  document.getElementById('bdmt_sub').textContent = 'Director ตั้งเป้ารายบุคคล';
-  document.getElementById('bdMtOverlay').classList.add('open');
-
   google.script.run
     .withSuccessHandler(function(res) {
       selUser.innerHTML = '<option value="">-- เลือก BD --</option>';
@@ -11379,8 +11742,15 @@ function openBdMtModal() {
     .getUserStatus(tok);
 }
 
+function openBdMtModal() {
+  if (!_currentUser || _currentUser.role !== 'Director') return;
+  openMtModal(typeof getMC === 'function' ? getMC().key : null);
+  _initBdTargetForm();
+  targetMode('bd');
+}
+
 function closeBdMt() {
-  document.getElementById('bdMtOverlay').classList.remove('open');
+  closeMt();
 }
 
 function bdMtUserChange() {
@@ -11396,15 +11766,14 @@ function _bdMtLoadExisting() {
   var prevEl = document.getElementById('bdmt_prev');
   if (!uKey || !mKey) { prevEl.style.display = 'none'; return; }
 
-  // แสดง prev month revenue ของ BD คนนี้
   var mObj = (typeof MONTHS !== 'undefined') ? MONTHS.find(function(m){ return m.key === mKey; }) : null;
   var idx = mObj ? MONTHS.indexOf(mObj) : -1;
   var pm = idx > 0 ? MONTHS[idx - 1] : null;
-  // ข้อมูล FR เป็น zone-level ไม่ใช่ BD-level → แสดง zone prev ก็พอ
-  var pRev = 0;
-  if (pm) FR.forEach(function(r){ pRev += N(r[pm.colRev]); });
+  var bdZones = _targetZonesForUser(uKey);
+  var pRev = _targetPrevRevForZones(mKey, bdZones);
   if (pm && pRev > 0) {
-    prevEl.innerHTML = '📅 ยอดรวมเดือนก่อน (<b>'+pm.th+'</b>): <b style="color:#0369a1">฿'+fmtS(Math.round(pRev))+'</b> <span style="font-size:10px;color:#64748b">(ข้อมูลรวมทุก BD ใน filter ปัจจุบัน)</span>';
+    prevEl.innerHTML = '📅 เดือนก่อนของ BD นี้ (<b>'+pm.th+'</b>): <b style="color:#0369a1">฿'+fmtS(Math.round(pRev))+'</b>'
+      + (bdZones.length ? ' <span style="font-size:10px;color:#64748b">('+bdZones.join(', ')+')</span>' : '');
     prevEl.style.display = '';
   } else {
     prevEl.style.display = 'none';
@@ -11439,15 +11808,22 @@ function bdMtType(t) {
 function bdMtHint() {
   var v = parseFloat(document.getElementById('bdmt_val').value);
   var el = document.getElementById('bdmt_hint');
+  var uKey = (document.getElementById('bdmt_user').value || '').toLowerCase();
+  var mKey = document.getElementById('bdmt_month').value;
+  var pRev = uKey && mKey ? _targetPrevRevForZones(mKey, _targetZonesForUser(uKey)) : 0;
   if (isNaN(v)) {
     el.textContent = _bdMtCurType === 'pct' ? 'กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม' : 'กรอกยอด Revenue ที่ต้องการ';
     return;
   }
   if (_bdMtCurType === 'pct') {
     var chg = v - 100;
-    el.innerHTML = (chg >= 0 ? '▲ เพิ่ม ' : '▼ ลด ') + Math.abs(chg).toFixed(1) + '% จากเดือนก่อน';
+    var abs = pRev > 0 ? Math.round(pRev * v / 100) : null;
+    el.innerHTML = (chg >= 0 ? '▲ เพิ่ม ' : '▼ ลด ') + Math.abs(chg).toFixed(1) + '% จากเดือนก่อน'
+      + (abs ? ' = <b style="color:var(--pr)">฿' + fmtS(abs) + '</b>' : '');
   } else {
-    el.innerHTML = 'เป้าหมาย: <b style="color:var(--pr)">฿' + fmtS(Math.round(v)) + '</b>';
+    var delta = _targetDeltaLabel(v, pRev);
+    el.innerHTML = 'เป้าหมาย: <b style="color:var(--pr)">฿' + fmtS(Math.round(v)) + '</b>'
+      + (delta ? ' <span style="color:#64748b">(' + delta + ')</span>' : '');
   }
 }
 
@@ -11483,17 +11859,23 @@ function delBdMt() {
   var uKey = (document.getElementById('bdmt_user').value || '').trim();
   var mKey = document.getElementById('bdmt_month').value;
   if (!uKey || !mKey) return;
-  if (!confirm('ต้องการลบเป้าหมายของ ' + uKey + ' เดือน ' + mKey + ' ใช่ไหม?')) return;
-  var tok = sessionStorage.getItem('DASH_TOKEN') || '';
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res && res.ok) {
-        if (_bdMonthlyTargets[mKey]) delete _bdMonthlyTargets[mKey][uKey.toLowerCase()];
-        closeBdMt(); renderHome();
-        _mtToast('🗑 ลบเป้าหมาย BD: ' + uKey + ' แล้ว');
-      }
-    })
-    .clearBdMonthlyTarget(tok, uKey, mKey);
+  _targetConfirm({
+    title: 'ลบเป้า BD รายคน',
+    message: 'ต้องการลบเป้าหมายของ <b>'+uKey+'</b> เดือน <b>'+mKey+'</b> ใช่ไหม?<br><span style="color:#94a3b8">หลังลบแล้ว BD คนนี้จะกลับไปใช้เป้าที่กระจายจากภาพรวม</span>',
+    okText: 'ลบเป้า BD',
+    onOk: function() {
+      var tok = sessionStorage.getItem('DASH_TOKEN') || '';
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.ok) {
+            if (_bdMonthlyTargets[mKey]) delete _bdMonthlyTargets[mKey][uKey.toLowerCase()];
+            closeBdMt(); renderHome();
+            _mtToast('🗑 ลบเป้าหมาย BD: ' + uKey + ' แล้ว');
+          }
+        })
+        .clearBdMonthlyTarget(tok, uKey, mKey);
+    }
+  });
 }
 </script>
 
