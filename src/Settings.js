@@ -157,7 +157,9 @@ function getBdMonthlyTarget(token, monthKey, bdUsername) {
   catch(e) { return { ok: true, target: null }; }
 }
 
-function setBdMonthlyTarget(token, monthKey, bdUsername, type, value, note) {
+// ★ parameter order: (token, bdUsername, monthKey, type, value, note)
+//   ตรงกับ frontend: .setBdMonthlyTarget(tok, uKey, mKey, type, v, note)
+function setBdMonthlyTarget(token, bdUsername, monthKey, type, value, note) {
   var session = getSession(token || '');
   if (!session.ok) return { ok: false, error: 'Unauthorized' };
   if (session.role !== 'Director') return { ok: false, error: 'Permission denied: Director only' };
@@ -173,13 +175,16 @@ function setBdMonthlyTarget(token, monthKey, bdUsername, type, value, note) {
   return { ok: true, target: target };
 }
 
-function clearBdMonthlyTarget(token, monthKey, bdUsername) {
+// ★ parameter order: (token, bdUsername, monthKey)
+//   ตรงกับ frontend: .clearBdMonthlyTarget(tok, uKey, mKey)
+function clearBdMonthlyTarget(token, bdUsername, monthKey) {
   var session = getSession(token || '');
   if (!session.ok) return { ok: false, error: 'Unauthorized' };
   if (session.role !== 'Director') return { ok: false, error: 'Permission denied: Director only' };
   if (!monthKey || !bdUsername) return { ok: false, error: 'monthKey and bdUsername are required' };
-  PropertiesService.getScriptProperties().deleteProperty(_bdTargetKey(monthKey, bdUsername));
-  logActivity(session.username, session.role, 'CLEAR_BD_MONTHLY_TARGET', monthKey + ' / ' + String(bdUsername).toLowerCase());
+  var userKey = String(bdUsername).toLowerCase();
+  PropertiesService.getScriptProperties().deleteProperty(_bdTargetKey(monthKey, userKey));
+  logActivity(session.username, session.role, 'CLEAR_BD_MONTHLY_TARGET', monthKey + ' / ' + userKey);
   return { ok: true };
 }
 
