@@ -494,6 +494,7 @@ function swMain(v){
     t.classList.toggle('active', onclick.indexOf("'"+v+"'")>=0||onclick.indexOf('"'+v+'"')>=0);
   });
   if(v==='home') renderHome();
+  if(v==='ov'){ renderKPI(); renderAllCharts(); } // ★ render charts เมื่อเปิด tab ภาพรวม
   if(v==='ls') renderTable();
   if(v==='cr') loadAndRenderCarrier();
   if(v==='risk') loadRiskThreshold(function(){ renderRisk(); });
@@ -6815,7 +6816,15 @@ var _mapZoneFilter = '';  // '' = ทุก Zone
 
 function setMapZoneFilter(zone) {
   _mapZoneFilter = zone || '';
-  if (_mapInstance) renderMapLayers();
+  var zoneSel = document.getElementById('mapZoneFilter');
+  if(zoneSel && zoneSel.value !== _mapZoneFilter) zoneSel.value = _mapZoneFilter;
+  if (_mapInstance) {
+    renderMapLayers();
+    setTimeout(function(){
+      if(_mapZoneFilter) zoomToZone(_mapZoneFilter);
+      else _fitMapToVisibleDataBounds();
+    }, 220);
+  }
 }
 
 function initMap(){
@@ -6839,7 +6848,9 @@ function initMap(){
     zoom: 6,
     minZoom: 5,
     maxZoom: 13,
-    zoomControl: true,
+    scrollWheelZoom: false,
+    doubleClickZoom: true,
+    zoomControl: false,
     attributionControl: false,
     maxBounds: THAILAND_BOUNDS,
     maxBoundsViscosity: 0.9
@@ -6917,17 +6928,25 @@ function initMap(){
 function enableClickDragMap(map){
   if(!map || map._clickDragEnabled) return;
   map._clickDragEnabled = true;
-  try { map.dragging.disable(); } catch(e) {}
+  // ★ เปิด dragging ตลอดเวลา — คลิกค้างแล้วลากซ้าย/ขวา/บน/ล่างได้ทันที
+  try { map.dragging.enable(); } catch(e) {}
+  try { map.scrollWheelZoom.disable(); } catch(e) {}
   var c = map.getContainer && map.getContainer();
   if(!c) return;
   c.style.cursor = 'grab';
-  var down = function(){ try { map.dragging.enable(); c.style.cursor = 'grabbing'; } catch(e) {} };
-  var up = function(){ try { map.dragging.disable(); c.style.cursor = 'grab'; } catch(e) {} };
-  c.addEventListener('mousedown', down);
-  c.addEventListener('touchstart', down, {passive:true});
-  document.addEventListener('mouseup', up);
-  document.addEventListener('touchend', up);
-  c.addEventListener('mouseleave', up);
+  c.addEventListener('mousedown', function(){ c.style.cursor = 'grabbing'; });
+  document.addEventListener('mouseup', function(){ c.style.cursor = 'grab'; });
+  // ★ ปุ่ม + / − zoom (zoomControl:false + scroll wheel ปิด)
+  if(!c.querySelector('._mapZoomBtns')){
+    var zDiv = document.createElement('div');
+    zDiv.className = '_mapZoomBtns';
+    zDiv.style.cssText = 'position:absolute;bottom:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:4px';
+    zDiv.innerHTML =
+      '<button onclick="try{_mapInstance.zoomIn();}catch(e){}" style="width:32px;height:32px;border:none;border-radius:6px;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;line-height:1;cursor:pointer;backdrop-filter:blur(4px);font-weight:700" title="ซูมเข้า">+</button>'
+    + '<button onclick="try{_mapInstance.zoomOut();}catch(e){}" style="width:32px;height:32px;border:none;border-radius:6px;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;line-height:1;cursor:pointer;backdrop-filter:blur(4px);font-weight:700" title="ซูมออก">−</button>';
+    c.style.position = 'relative';
+    c.appendChild(zDiv);
+  }
 }
 
 var _mapLayerGroup = null;
@@ -6986,12 +7005,19 @@ function renderMapLayers(){
     var zoneSel = document.getElementById('mapZoneFilter');
     if (zoneSel) {
       var allZones = [];
-      FR.forEach(function(r) {
-        var z = String(r[COL.zoneName]||'').trim();
-        if (z && allZones.indexOf(z) < 0) allZones.push(z);
-      });
+      if(userRoleMap === 'AM' && userZonesMap[0] !== 'All'){
+        userZonesMap.forEach(function(z) {
+          z = String(z||'').trim();
+          if (z && allZones.indexOf(z) < 0) allZones.push(z);
+        });
+      } else {
+        FR.forEach(function(r) {
+          var z = String(r[COL.zoneName]||'').trim();
+          if (z && allZones.indexOf(z) < 0) allZones.push(z);
+        });
+      }
       allZones.sort();
-      var curVal = zoneSel.value;
+      var curVal = _mapZoneFilter || zoneSel.value;
       zoneSel.innerHTML = '<option value="">ทุก Zone</option>'
         + allZones.map(function(z){ return '<option value="'+z+'"'+(z===curVal?' selected':'')+'>'+z+'</option>'; }).join('');
     }
@@ -7087,7 +7113,19 @@ function renderMapLayers(){
           e.target.setStyle({weight:0.7, color:'rgba(255,255,255,0.35)', fillColor: fc2, fillOpacity: hidden2 ? 0.1 : (d && d.total > 0 ? 0.52 : 0.15)});
         },
         click: function(){
-          showMapDrill(pvTH, pvEN, d);
+          if(layer._mapClickTimer) clearTimeout(layer._mapClickTimer);
+          layer._mapClickTimer = setTimeout(function(){
+            showMapDrill(pvTH, pvEN, d);
+            layer._mapClickTimer = null;
+          }, 360);
+        },
+        dblclick: function(e){
+          if(e && e.originalEvent) L.DomEvent.stop(e.originalEvent);
+          if(layer._mapClickTimer){ clearTimeout(layer._mapClickTimer); layer._mapClickTimer = null; }
+          try{
+            var b = layer.getBounds();
+            if(b && b.isValid()) _mapInstance.fitBounds(b, {padding:[46,46], animate:true, duration:0.8});
+          }catch(err){}
         }
       });
 
@@ -7593,16 +7631,52 @@ function zoomToZone(zoneName){
 }
 
 // ★ reset zoom กลับดูไทยทั้งประเทศ
-function resetMapView(){
+function _fitMapToVisibleDataBounds(pvData){
   if(!_mapInstance) return;
   if(!_mapGeoLayer){ _mapInstance.setView([13.0,101.5],6); return; }
+  pvData = pvData || buildProvinceData();
+  var bounds = [];
+  _mapGeoLayer.eachLayer(function(layer){
+    if(!layer.feature) return;
+    var pvEN = layer.feature.properties.name || layer.feature.properties.NAME || layer.feature.properties.CHA_NE || '';
+    var d = pvData[pvEN];
+    if(!d){ var th = PROV_EN2TH[pvEN]; if(th) d = pvData[th]; }
+    if(!d){
+      var keys = Object.keys(pvData);
+      for(var i=0;i<keys.length;i++){
+        if(pvData[keys[i]].pvEN === pvEN){ d = pvData[keys[i]]; break; }
+      }
+    }
+    if(d && d.total > 0){
+      try{ var b = layer.getBounds(); if(b && b.isValid()) bounds.push(b); }catch(e){}
+    }
+  });
   try{
+    if(bounds.length){
+      var combined = bounds[0];
+      for(var j=1;j<bounds.length;j++) combined = combined.extend(bounds[j]);
+      _mapInstance.fitBounds(combined, {padding:[38,38], animate:true, duration:0.8});
+      return;
+    }
     var allBounds = _mapGeoLayer.getBounds();
-    if(allBounds && allBounds.isValid())
+    if(allBounds && allBounds.isValid()){
       _mapInstance.fitBounds(allBounds, {padding:[20,20], animate:true, duration:0.8});
-    else
-      _mapInstance.setView([13.0,101.5],6);
-  }catch(e){ _mapInstance.setView([13.0,101.5],6); }
+      return;
+    }
+  }catch(e){}
+  _mapInstance.setView([13.0,101.5],6);
+}
+
+function resetMapView(){
+  if(!_mapInstance) return;
+  _mapZoneFilter = '';
+  var zoneSel = document.getElementById('mapZoneFilter');
+  if(zoneSel) zoneSel.value = '';
+  if(_mapGeoLayer) renderMapLayers();
+  setTimeout(function(){
+    _fitMapToVisibleDataBounds();
+    if(_mapInstance) _mapInstance.invalidateSize();
+  }, 240);
 }
 
 function showMapDrill(pvTH, pvEN, d){
@@ -8068,7 +8142,8 @@ function _renderHomeDirector(m, mp) {
     +     (dirGrowthRows.length > 0 ? '<button class="hero-sc-btn hero-sc-growth" onclick="swMain(\'growth\')">🟢 Upsell ('+dirGrowthRows.length+')</button>' : '<button class="hero-sc-btn hero-sc-growth" onclick="swMain(\'growth\')">🟢 กลุ่มเติบโต</button>')
     +     '<button class="hero-sc-btn hero-sc-track" onclick="openTrkSummary()">📊 Tracking</button>'
     +     '<button class="hero-sc-btn hero-sc-track" onclick="swMain(\'usermgmt\')">👥 จัดการผู้ใช้</button>'
-    +     '<button class="hero-sc-btn" style="background:linear-gradient(135deg,var(--ac),#007a7a);color:white;border:none;font-weight:700" onclick="openMtModal(\''+m.key+'\')">🎯 ตั้งเป้า</button>'
+    +     '<button class="hero-sc-btn" style="background:linear-gradient(135deg,var(--ac),#007a7a);color:white;border:none;font-weight:700" onclick="openMtModal(\''+m.key+'\')">🎯 ตั้งเป้าภาพรวม</button>'
+    +     '<button class="hero-sc-btn" style="background:linear-gradient(135deg,#5c3d8f,#7c3aed);color:white;border:none;font-weight:700" onclick="openBdMtModal()">👤 ตั้งเป้า BD</button>'
     +   '</div>'
     + '</div>'
     + '</div>';
@@ -9314,7 +9389,16 @@ function _renderHomeAM(m, mp) {
   html += '<div class="ccard" style="padding:0;overflow:hidden;margin-bottom:12px">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px 10px;flex-wrap:wrap;gap:6px">'
     + '<span style="font-size:13px;font-weight:700;color:var(--pr)">&#128507; '+amMapTitle+'</span>'
-    + '<span style="font-size:10px;color:var(--t2);background:#f1f5f9;padding:3px 10px;border-radius:20px;border:1px solid var(--bd)">อัปเดต: วันที่ '+(TODAY_DATE-1)+' · เดือนผ่านไป '+dayPct+'%</span>'
+    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto;justify-content:flex-end;order:2">'
+    + '<div id="mapZoneFilterWrap" style="display:flex;align-items:center;gap:4px">'
+    + '<select id="mapZoneFilter" onchange="setMapZoneFilter(this.value)"'
+    + ' style="appearance:none;padding:5px 26px 5px 10px;border:1.5px solid var(--bd);border-radius:8px;background:white;font-size:11px;font-weight:700;color:var(--pr);outline:none;cursor:pointer;min-width:110px">'
+    + '<option value="">ทุก Zone</option></select>'
+    + '<span style="position:relative;pointer-events:none;margin-left:-22px;font-size:10px;color:var(--t2)">&#9660;</span>'
+    + '</div>'
+    + '<button onclick="resetMapView()" style="padding:4px 10px;background:#f1f5f9;border:1.5px solid var(--bd);border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;color:var(--t2)">&#128507; รีเซ็ต</button>'
+    + '</div>'
+    + '<span style="order:1;font-size:10px;color:var(--t2);background:#f1f5f9;padding:3px 10px;border-radius:20px;border:1px solid var(--bd)">อัปเดต: วันที่ '+(TODAY_DATE-1)+' · เดือนผ่านไป '+dayPct+'%</span>'
     + '</div>'
     + '<div id="map_container" style="height:340px;background:#1a1f2e;position:relative"><div class="map-legend" id="map_legend"></div></div>'
     + '</div>';
@@ -10340,6 +10424,7 @@ function _renderHomeBD(m, mp) {
   html += '<div class="ccard" style="padding:0;overflow:hidden;margin-bottom:12px">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px 10px;flex-wrap:wrap;gap:6px">'
     + '<span style="font-size:13px;font-weight:700;color:var(--pr)">&#128507; '+bdMapTitle+'</span>'
+    + '<button onclick="resetMapView()" style="padding:4px 10px;background:#f1f5f9;border:1.5px solid var(--bd);border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;color:var(--t2)">&#128507; รีเซ็ต</button>'
     + '</div>'
     + '<div id="map_container" style="height:480px;background:#1a1f2e;position:relative"><div class="map-legend" id="map_legend"></div></div>'
     + '</div>';
@@ -11045,6 +11130,48 @@ function rmSwitchRole(role, btn) {
   </div>
 </div>
 
+<!-- ★ T02: BD Individual Target Modal -->
+<div class="mt-overlay" id="bdMtOverlay" onclick="if(event.target===this)closeBdMt()">
+  <div class="mt-modal" style="max-width:500px">
+    <div class="mt-hdr" style="background:linear-gradient(135deg,#1a4a6e,#00788c)">
+      <div>
+        <div class="mt-hdr-title">🎯 ตั้งเป้าหมาย BD รายบุคคล</div>
+        <div class="mt-hdr-sub" id="bdmt_sub">Director ตั้งเป้ารายบุคคล</div>
+      </div>
+      <button class="mt-close" onclick="closeBdMt()">✕</button>
+    </div>
+    <div class="mt-body">
+      <div class="mt-lbl">เลือก BD</div>
+      <select class="mt-inp" id="bdmt_user" onchange="bdMtUserChange()" style="font-size:13px;font-weight:600;cursor:pointer">
+        <option value="">-- เลือก BD --</option>
+      </select>
+      <div class="mt-lbl" style="margin-top:12px">เลือกเดือน</div>
+      <select class="mt-inp" id="bdmt_month" onchange="bdMtMonthChange()" style="font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px">
+        <option value="">-- เลือกเดือน --</option>
+      </select>
+      <div class="mt-prev" id="bdmt_prev" style="display:none"></div>
+      <div class="mt-lbl">ประเภทเป้าหมาย</div>
+      <div class="mt-type-row">
+        <div class="mt-type-btn active" id="bdmt_btn_pct" onclick="bdMtType('pct')">
+          📊 % ของเดือนก่อน<br><span style="font-size:10px;font-weight:400;color:var(--t2)">เช่น 105 = +5%</span>
+        </div>
+        <div class="mt-type-btn" id="bdmt_btn_fix" onclick="bdMtType('fixed')">
+          💰 ตัวเลขตรง (฿)<br><span style="font-size:10px;font-weight:400;color:var(--t2)">กรอกยอด Revenue</span>
+        </div>
+      </div>
+      <div class="mt-lbl" id="bdmt_inp_lbl">% เป้า (เทียบเดือนก่อน)</div>
+      <input class="mt-inp" type="number" id="bdmt_val" placeholder="เช่น 105" min="0" step="0.1" oninput="bdMtHint()">
+      <div class="mt-hint" id="bdmt_hint">กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม</div>
+      <div class="mt-lbl" style="margin-top:12px">หมายเหตุ (optional)</div>
+      <textarea class="mt-note" id="bdmt_note" rows="2" placeholder="เช่น เดือนนี้มีโปรพิเศษ..."></textarea>
+      <div class="mt-actions">
+        <button class="mt-save" id="bdmt_save_btn" onclick="saveBdMt()">💾 บันทึกเป้าหมาย BD</button>
+        <button class="mt-del" id="bdmt_del_btn" onclick="delBdMt()" style="display:none">🗑 ลบ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Monthly Target ──
 var _mtMonth = null;
@@ -11192,6 +11319,181 @@ function _mtToast(msg) {
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(function(){ el.remove(); }, 2800);
+}
+
+// ── T02: BD Individual Target ──
+var _bdMtCurType = 'pct';
+var _bdMtUsers = []; // [{username, displayName, zone}]
+
+function openBdMtModal() {
+  if (!_currentUser || _currentUser.role !== 'Director') return;
+  // โหลดรายชื่อ BD จาก server
+  var tok = sessionStorage.getItem('DASH_TOKEN') || '';
+  var selUser = document.getElementById('bdmt_user');
+  selUser.innerHTML = '<option value="">⏳ กำลังโหลด...</option>';
+  document.getElementById('bdmt_prev').style.display = 'none';
+  document.getElementById('bdmt_del_btn').style.display = 'none';
+  document.getElementById('bdmt_val').value = '';
+  document.getElementById('bdmt_note').value = '';
+  bdMtType('pct');
+
+  // โหลด months dropdown
+  var selMonth = document.getElementById('bdmt_month');
+  selMonth.innerHTML = '<option value="">-- เลือกเดือน --</option>';
+  if (typeof MONTHS !== 'undefined' && MONTHS.length) {
+    MONTHS.forEach(function(mo) {
+      var opt = document.createElement('option');
+      opt.value = mo.key;
+      opt.textContent = mo.th + ' ' + (DATA_YEAR || '');
+      selMonth.appendChild(opt);
+    });
+    // default เดือนปัจจุบัน
+    if (typeof getMC === 'function') {
+      var curKey = getMC().key;
+      selMonth.value = curKey;
+    }
+  }
+
+  document.getElementById('bdmt_sub').textContent = 'Director ตั้งเป้ารายบุคคล';
+  document.getElementById('bdMtOverlay').classList.add('open');
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      selUser.innerHTML = '<option value="">-- เลือก BD --</option>';
+      if (res && res.ok && res.users) {
+        _bdMtUsers = res.users.filter(function(u){ return u.role === 'BD'; });
+        _bdMtUsers.forEach(function(u) {
+          var opt = document.createElement('option');
+          opt.value = u.username;
+          opt.textContent = u.username + (u.zone ? ' [' + u.zone + ']' : '');
+          selUser.appendChild(opt);
+        });
+        if (!_bdMtUsers.length) selUser.innerHTML = '<option value="">ไม่พบ BD</option>';
+      } else {
+        selUser.innerHTML = '<option value="">โหลดไม่สำเร็จ</option>';
+      }
+    })
+    .withFailureHandler(function() {
+      selUser.innerHTML = '<option value="">โหลดไม่สำเร็จ</option>';
+    })
+    .getUserStatus(tok);
+}
+
+function closeBdMt() {
+  document.getElementById('bdMtOverlay').classList.remove('open');
+}
+
+function bdMtUserChange() {
+  _bdMtLoadExisting();
+}
+function bdMtMonthChange() {
+  _bdMtLoadExisting();
+}
+
+function _bdMtLoadExisting() {
+  var uKey = (document.getElementById('bdmt_user').value || '').toLowerCase();
+  var mKey = document.getElementById('bdmt_month').value;
+  var prevEl = document.getElementById('bdmt_prev');
+  if (!uKey || !mKey) { prevEl.style.display = 'none'; return; }
+
+  // แสดง prev month revenue ของ BD คนนี้
+  var mObj = (typeof MONTHS !== 'undefined') ? MONTHS.find(function(m){ return m.key === mKey; }) : null;
+  var idx = mObj ? MONTHS.indexOf(mObj) : -1;
+  var pm = idx > 0 ? MONTHS[idx - 1] : null;
+  // ข้อมูล FR เป็น zone-level ไม่ใช่ BD-level → แสดง zone prev ก็พอ
+  var pRev = 0;
+  if (pm) FR.forEach(function(r){ pRev += N(r[pm.colRev]); });
+  if (pm && pRev > 0) {
+    prevEl.innerHTML = '📅 ยอดรวมเดือนก่อน (<b>'+pm.th+'</b>): <b style="color:#0369a1">฿'+fmtS(Math.round(pRev))+'</b> <span style="font-size:10px;color:#64748b">(ข้อมูลรวมทุก BD ใน filter ปัจจุบัน)</span>';
+    prevEl.style.display = '';
+  } else {
+    prevEl.style.display = 'none';
+  }
+
+  // โหลดค่าที่เคยตั้งไว้
+  var ex = (_bdMonthlyTargets[mKey] && (_bdMonthlyTargets[mKey][uKey])) || null;
+  if (ex) {
+    bdMtType(ex.type);
+    document.getElementById('bdmt_val').value = ex.value;
+    document.getElementById('bdmt_note').value = ex.note || '';
+    document.getElementById('bdmt_del_btn').style.display = '';
+  } else {
+    bdMtType('pct');
+    document.getElementById('bdmt_val').value = '';
+    document.getElementById('bdmt_note').value = '';
+    document.getElementById('bdmt_del_btn').style.display = 'none';
+  }
+  bdMtHint();
+}
+
+function bdMtType(t) {
+  _bdMtCurType = t;
+  document.getElementById('bdmt_btn_pct').classList.toggle('active', t === 'pct');
+  document.getElementById('bdmt_btn_fix').classList.toggle('active', t === 'fixed');
+  document.getElementById('bdmt_inp_lbl').textContent = t === 'pct' ? '% เป้า (เทียบเดือนก่อน)' : 'ยอด Revenue เป้า (บาท)';
+  document.getElementById('bdmt_val').placeholder = t === 'pct' ? 'เช่น 105' : 'เช่น 5000000';
+  document.getElementById('bdmt_val').step = t === 'pct' ? '0.1' : '1000';
+  bdMtHint();
+}
+
+function bdMtHint() {
+  var v = parseFloat(document.getElementById('bdmt_val').value);
+  var el = document.getElementById('bdmt_hint');
+  if (isNaN(v)) {
+    el.textContent = _bdMtCurType === 'pct' ? 'กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม' : 'กรอกยอด Revenue ที่ต้องการ';
+    return;
+  }
+  if (_bdMtCurType === 'pct') {
+    var chg = v - 100;
+    el.innerHTML = (chg >= 0 ? '▲ เพิ่ม ' : '▼ ลด ') + Math.abs(chg).toFixed(1) + '% จากเดือนก่อน';
+  } else {
+    el.innerHTML = 'เป้าหมาย: <b style="color:var(--pr)">฿' + fmtS(Math.round(v)) + '</b>';
+  }
+}
+
+function saveBdMt() {
+  var uKey = (document.getElementById('bdmt_user').value || '').trim();
+  var mKey = document.getElementById('bdmt_month').value;
+  if (!uKey) { alert('กรุณาเลือก BD'); return; }
+  if (!mKey) { alert('กรุณาเลือกเดือน'); return; }
+  var v = parseFloat(document.getElementById('bdmt_val').value);
+  if (isNaN(v) || v <= 0) { alert('กรุณากรอกค่าเป้าหมายให้ถูกต้อง'); return; }
+  var note = document.getElementById('bdmt_note').value.trim();
+  var tok = sessionStorage.getItem('DASH_TOKEN') || '';
+  var btn = document.getElementById('bdmt_save_btn');
+  btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.textContent = '💾 บันทึกเป้าหมาย BD';
+      if (res && res.ok) {
+        if (!_bdMonthlyTargets[mKey]) _bdMonthlyTargets[mKey] = {};
+        _bdMonthlyTargets[mKey][uKey.toLowerCase()] = res.target;
+        closeBdMt(); renderHome();
+        _mtToast('✅ บันทึกเป้าหมาย BD: ' + uKey + ' สำเร็จ');
+      } else { alert('เกิดข้อผิดพลาด: ' + (res ? res.error : 'unknown')); }
+    })
+    .withFailureHandler(function(e) {
+      btn.disabled = false; btn.textContent = '💾 บันทึกเป้าหมาย BD';
+      alert('เกิดข้อผิดพลาด: ' + (e && e.message ? e.message : 'unknown'));
+    })
+    .setBdMonthlyTarget(tok, uKey, mKey, _bdMtCurType, v, note);
+}
+
+function delBdMt() {
+  var uKey = (document.getElementById('bdmt_user').value || '').trim();
+  var mKey = document.getElementById('bdmt_month').value;
+  if (!uKey || !mKey) return;
+  if (!confirm('ต้องการลบเป้าหมายของ ' + uKey + ' เดือน ' + mKey + ' ใช่ไหม?')) return;
+  var tok = sessionStorage.getItem('DASH_TOKEN') || '';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        if (_bdMonthlyTargets[mKey]) delete _bdMonthlyTargets[mKey][uKey.toLowerCase()];
+        closeBdMt(); renderHome();
+        _mtToast('🗑 ลบเป้าหมาย BD: ' + uKey + ' แล้ว');
+      }
+    })
+    .clearBdMonthlyTarget(tok, uKey, mKey);
 }
 </script>
 
@@ -11353,6 +11655,9 @@ function _mtToast(msg) {
       userRotY += (e.touches[0].clientX - prevMouse.x) * 0.008;
       prevMouse = {x:e.touches[0].clientX, y:e.touches[0].clientY};
     }, {passive:true});
+
+    // ★ ปิด scroll-wheel zoom บน canvas (ป้องกัน browser zoom หน้าเว็บ)
+    canvas.addEventListener('wheel', function(e){ e.preventDefault(); }, {passive:false});
 
     window.addEventListener('resize', onResize);
     animate();
