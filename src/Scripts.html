@@ -633,6 +633,38 @@ function diffRT(r){var mc=getMC(),mp=getMP();return N(r[mc.colAvg])-(mp?N(r[mp.c
 function updT(id,txt){var el=document.getElementById(id);if(el)el.textContent=txt;}
 function dc(id){if(CH[id]){try{CH[id].destroy();}catch(e){}delete CH[id];}}
 function closeDrill(panelId){var p=document.getElementById(panelId);if(p)p.style.display='none';}
+function sortChartSeriesDesc(labels,datasets){
+  var ds = datasets || [];
+  var rows = (labels || []).map(function(label, i){
+    var primary = ds.length ? N(ds[ds.length - 1].data[i]) : 0;
+    return { label: label, idx: i, primary: primary };
+  }).sort(function(a,b){ return b.primary - a.primary; });
+  return {
+    labels: rows.map(function(r){ return r.label; }),
+    datasets: ds.map(function(d){
+      var copy = Object.assign({}, d);
+      copy.data = rows.map(function(r){ return d.data[r.idx]; });
+      if (Array.isArray(d.backgroundColor)) copy.backgroundColor = rows.map(function(r){ return d.backgroundColor[r.idx]; });
+      if (Array.isArray(d.borderColor)) copy.borderColor = rows.map(function(r){ return d.borderColor[r.idx]; });
+      return copy;
+    })
+  };
+}
+function sortSingleSeriesDesc(labels,data,colors){
+  var bg = Array.isArray(colors) ? colors : null;
+  var rows = (labels || []).map(function(label,i){
+    return { label: label, value: N(data[i]), raw: data[i], color: bg ? bg[i] : null };
+  }).sort(function(a,b){ return b.value - a.value; });
+  return {
+    labels: rows.map(function(r){ return r.label; }),
+    data: rows.map(function(r){ return r.raw; }),
+    colors: bg ? rows.map(function(r){ return r.color; }) : colors
+  };
+}
+function _isActiveAgent(r, m){
+  if (!r || !m) return false;
+  return N(r[m.colRev]) > 0 || N(r[m.colVol]) > 0;
+}
 
 // ===== KPI =====
 
@@ -705,6 +737,8 @@ function mkBar(id,labels,datasets,horiz,compact){
   var extra={};
   if(compact){extra.maxBarThickness=22;extra.barPercentage=0.9;extra.categoryPercentage=0.8;}
   datasets=datasets.map(function(ds){return Object.assign({borderRadius:4,borderSkipped:false,maxBarThickness:compact?22:40},extra,ds);});
+  var sorted = sortChartSeriesDesc(labels, datasets);
+  labels = sorted.labels; datasets = sorted.datasets;
   CH[id]=new Chart(el.getContext('2d'),{type:'bar',data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,indexAxis:horiz?'y':'x',
       plugins:{legend:{display:datasets.length>1,position:'top',labels:{font:{size:10},boxWidth:10}}},
@@ -713,6 +747,8 @@ function mkBar(id,labels,datasets,horiz,compact){
 }
 function mkHBar(id,labels,data,colors,compact,drillCfg){
   dc(id);var el=document.getElementById(id);if(!el)return;
+  var sorted = sortSingleSeriesDesc(labels, data, colors);
+  labels = sorted.labels; data = sorted.data; colors = sorted.colors;
   var bg=Array.isArray(colors)?colors:labels.map(function(){return colors;});
   var clickHandler=drillCfg?function(evt,els){
     if(!els.length)return;
@@ -735,7 +771,10 @@ function mkHBar(id,labels,data,colors,compact,drillCfg){
 }
 function mkDonut(id,labels,data){
   dc(id);var el=document.getElementById(id);if(!el)return;
-  CH[id]=new Chart(el.getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:PAL.slice(0,data.length),borderWidth:2,borderColor:'#fff'}]},
+  var sorted = sortSingleSeriesDesc(labels, data, PAL.slice(0, data.length));
+  labels = sorted.labels; data = sorted.data;
+  var bg = sorted.colors || PAL.slice(0, data.length);
+  CH[id]=new Chart(el.getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:bg,borderWidth:2,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:10}}}}});
 }
 // RANK_SORT: { elId: {dir:'desc'} }
@@ -2989,6 +3028,11 @@ function renderCarrierComparison(){
 
     var allCars=[].concat(mA.stats.map(function(c){return c.name;}));
     mB.stats.forEach(function(c){if(allCars.indexOf(c.name)<0)allCars.push(c.name);});
+    allCars.sort(function(a,b){
+      var aCur=mB.stats.find(function(c){return c.name===a;})||{v:0,r:0};
+      var bCur=mB.stats.find(function(c){return c.name===b;})||{v:0,r:0};
+      return (bCur.v||0)-(aCur.v||0) || (bCur.r||0)-(aCur.r||0);
+    });
     var tHtml='<div style="overflow-x:auto"><table class="mt"><thead>'
       +'<tr style="font-size:11px"><th>ขนส่ง</th>'
       +'<th class="tdr" style="color:'+cA+'">Vol '+keyA.toUpperCase()+'</th><th>%</th>'
@@ -3079,6 +3123,12 @@ function renderCarrierComparison(){
     setTimeout(function(){
       var allCars=[].concat.apply([],mData.map(function(m){return m.stats.map(function(c){return c.name;});}));
       allCars=allCars.filter(function(v,i,a){return a.indexOf(v)===i;});
+      var lastStats = mData.length ? mData[mData.length-1].stats : [];
+      allCars.sort(function(a,b){
+        var av=lastStats.find(function(c){return c.name===a;})||{v:0,r:0};
+        var bv=lastStats.find(function(c){return c.name===b;})||{v:0,r:0};
+        return (bv.v||0)-(av.v||0) || (bv.r||0)-(av.r||0);
+      });
 
       // ── helper สร้าง overlay chart — รองรับ carMultiViewMode + สลับแกนเมื่อ filter ──
       var hasCarFilter=filterCarrierSet.size>0;
@@ -3731,6 +3781,30 @@ function hideLoginOverlay(){
   if(el){el.style.display='none';}
 }
 
+function showSessionNotice(message, isIdle){
+  showLoginOverlay();
+  var bar = document.getElementById('login_status_bar');
+  var errEl = document.getElementById('login_err');
+  var passEl = document.getElementById('login_pass');
+  if (errEl) errEl.textContent = '';
+  if (bar) {
+    bar.style.display = 'block';
+    bar.style.background = isIdle ? '#fffbeb' : '#fff7ed';
+    bar.style.border = '1.5px solid ' + (isIdle ? '#fcd34d' : '#fdba74');
+    bar.style.color = isIdle ? '#92400e' : '#9a3412';
+    bar.style.textAlign = 'left';
+    bar.style.boxShadow = '0 10px 28px rgba(15,23,42,.10)';
+    bar.innerHTML =
+      '<div style="display:flex;gap:10px;align-items:flex-start">'
+      + '<div style="width:30px;height:30px;border-radius:10px;background:#fff;border:1px solid rgba(251,146,60,.35);display:flex;align-items:center;justify-content:center;flex-shrink:0">⏱</div>'
+      + '<div style="flex:1">'
+      + '<div style="font-size:13px;font-weight:900;margin-bottom:3px">' + (isIdle ? 'ออกจากระบบอัตโนมัติ' : 'Session หมดอายุ') + '</div>'
+      + '<div style="font-size:12px;line-height:1.55">' + _esc(message).replace(/\n/g, '<br>') + '</div>'
+      + '</div></div>';
+  }
+  if (passEl) setTimeout(function(){ passEl.focus(); }, 80);
+}
+
 function doLogin(){
   var u=(document.getElementById('login_user').value||'').trim();
   var p=(document.getElementById('login_pass').value||'').trim();
@@ -4307,7 +4381,7 @@ function renderRisk(){
       var daysLeft=fullDays-totalDays;
       if(daysLeft<0)daysLeft=0;
       daysBar.style.display='flex';
-      daysRemLabel.textContent='📆 เหลืออีก '+daysLeft+' วัน จาก '+fullDays+' วัน ในเดือน '+m.en+' (ข้อมูล ณ วันที่ '+totalDays+')';
+      daysRemLabel.textContent=_trkCutoffStatusText() || ('📆 เหลืออีก '+daysLeft+' วัน จาก '+fullDays+' วัน ในเดือน '+m.en+' (ข้อมูล ณ วันที่ '+totalDays+')');
       // Projection: if current pace continues
       var curRevLost=rows.reduce(function(s,r){return s+Math.abs(N(r[mp.colRev])-N(r[m.colRev]));},0);
       if(totalDays>0){
@@ -4599,8 +4673,66 @@ function renderRisk(){
 //  TRACKING SYSTEM — ระบบบันทึกสถานะการติดตามลูกค้า
 // ============================================================
 var _trkData = {};   // { trkKey: {status, reason, note, updatedBy, updatedAt} }
+var _trkCutoffMeta = null;
 var _trkPollInterval = null;
 var TRK_POLL_MS = 30 * 1000; // poll ทุก 30 วินาที
+
+function _trkSetCutoffMeta(meta) {
+  if (!meta) return;
+  _trkCutoffMeta = meta;
+  _trkRenderCutoffStatus();
+}
+
+function _trkCutoffStatusText() {
+  var meta = _trkCutoffMeta || _trkBuildLocalCutoffMeta();
+  if (!meta) return '';
+  var nextDate = meta.nextResetDate || '-';
+  var days = Number(meta.daysUntilReset || 0);
+  if (meta.isResetToday || days === 0) {
+    return 'รีเซ็ตสถานะวันนี้ (' + nextDate + ')';
+  }
+  return 'เหลืออีก ' + days + ' วัน ถึงรอบรีเซ็ตสถานะ (' + nextDate + ')';
+}
+
+function _trkPad2(n) {
+  return ('0' + n).slice(-2);
+}
+
+function _trkDateKey(date) {
+  return date.getFullYear() + '-' + _trkPad2(date.getMonth() + 1) + '-' + _trkPad2(date.getDate());
+}
+
+function _trkBuildLocalCutoffMeta() {
+  var today = new Date();
+  var reset = new Date(today.getFullYear(), today.getMonth(), 8);
+  if (today.getDate() === 8 || today.getDate() === 22) {
+    reset = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  } else if (today.getDate() > 8 && today.getDate() < 22) {
+    reset = new Date(today.getFullYear(), today.getMonth(), 22);
+  } else if (today.getDate() > 22) {
+    reset = new Date(today.getFullYear(), today.getMonth() + 1, 8);
+  }
+  var todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  var days = Math.max(0, Math.round((reset - todayMidnight) / 86400000));
+  return {
+    nextResetDate: _trkDateKey(reset),
+    daysUntilReset: days,
+    isResetToday: days === 0
+  };
+}
+
+function _trkRenderCutoffStatus() {
+  var text = _trkCutoffStatusText();
+  if (!text) return;
+  ['risk', 'growth'].forEach(function(kind) {
+    var el = document.getElementById(kind + '_days_remaining_label');
+    if (el) el.textContent = text;
+    var bar = document.getElementById(kind + '_days_bar');
+    if (bar) bar.style.display = 'flex';
+  });
+  var badge = document.getElementById('trk_poll_badge');
+  if (badge) badge.title = 'อัปเดตสถานะจาก Sheet ทุก 30 วินาที | ' + text;
+}
 
 function _startTrkPoll() {
   _stopTrkPoll();
@@ -5025,7 +5157,7 @@ function renderGrowth(){
       var fullDays=daysInMonth(parseInt(m.key.slice(0,4)||new Date().getFullYear()),parseInt(m.key.slice(4,6)||new Date().getMonth()+1));
       var daysLeft=fullDays-totalDays; if(daysLeft<0)daysLeft=0;
       daysBar.style.display='flex';
-      daysRemLabel.textContent='📆 เหลืออีก '+daysLeft+' วัน จาก '+fullDays+' วัน ในเดือน '+m.en+' (ข้อมูล ณ วันที่ '+totalDays+')';
+      daysRemLabel.textContent=_trkCutoffStatusText() || ('📆 เหลืออีก '+daysLeft+' วัน จาก '+fullDays+' วัน ในเดือน '+m.en+' (ข้อมูล ณ วันที่ '+totalDays+')');
       var curRevGain=rows.reduce(function(s,r){return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev]));},0);
       if(totalDays>0){
         var projTotal=Math.round(curRevGain/totalDays*fullDays);
@@ -5175,6 +5307,7 @@ function loadTrackingData(){
   google.script.run
     .withSuccessHandler(function(res){
       if(res&&res.ok&&res.data){
+        _trkSetCutoffMeta(res.cutoff);
         res.data.forEach(function(row){
           if(row.key)_trkData[row.key]={
             status:row.status||'',reason:row.reason||'',
@@ -5198,6 +5331,7 @@ function loadGrowthTrackingData(){
   google.script.run
     .withSuccessHandler(function(res){
       if(res&&res.ok&&res.data){
+        _trkSetCutoffMeta(res.cutoff);
         res.data.forEach(function(row){
           if(row.key)_trkData[row.key]={
             status:row.status||'',key_success:row.key_success||'',
@@ -5539,8 +5673,7 @@ function _startHeartbeat() {
             var msg = res.idle
               ? 'ไม่มีการใช้งาน 30 นาที\nระบบ Logout อัตโนมัติแล้ว\nกรุณา Login ใหม่'
               : 'Session หมดอายุ กรุณา Login ใหม่';
-            showLoginOverlay();
-            setTimeout(function(){ alert(msg); }, 300);
+            showSessionNotice(msg, !!res.idle);
           }
         })
         .withFailureHandler(function() {})
@@ -5609,6 +5742,13 @@ function _renderUserTable(users) {
     wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--t2)">ไม่พบข้อมูลผู้ใช้</div>';
     return;
   }
+  users = users.slice().sort(function(a,b){
+    var lockDiff = (b.locked ? 1 : 0) - (a.locked ? 1 : 0);
+    if (lockDiff) return lockDiff;
+    var failDiff = (N(b.failCount) || 0) - (N(a.failCount) || 0);
+    if (failDiff) return failDiff;
+    return String(a.username || '').localeCompare(String(b.username || ''), 'th');
+  });
   var html = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
     + '<thead><tr style="background:#f0f4ff">'
     + '<th style="padding:9px 14px;text-align:left;font-weight:700;color:var(--pr);border-bottom:2px solid var(--bd)">Username</th>'
@@ -5804,7 +5944,7 @@ function renderTsmModal(){
 
   // ── Director/AM: Stacked Bar + Zone table ──
   if(!isBD){
-    var zones = Object.keys(zoneMap).sort();
+    var zones = Object.keys(zoneMap).sort(function(a,b){return zoneMap[b].total-zoneMap[a].total;});
     var STATUS_CFG = [
       { key:'none',    label:'ยังไม่ติดต่อ', color:'rgba(148,163,184,.8)' },
       { key:'contact', label:'กำลังติดต่อ',  color:'rgba(59,130,246,.8)'  },
@@ -6690,7 +6830,7 @@ window.debugProvMatch = function(){
 };
 
 function buildProvinceData(){
-  var m = getMC();
+  var m = getMC(), mp = getMP();
   var pvMap = {};
 
   // ★ BD role: กรองเฉพาะข้อมูลใน zone ของตัวเอง
@@ -6716,8 +6856,9 @@ function buildProvinceData(){
     var pvEN = sheetNameToGeo(pvTH); // แปลงเป็น EN ให้ตรงกับ GeoJSON key
     // ใช้ EN เป็น primary key ถ้า GeoJSON โหลดแล้ว, ไม่งั้นใช้ TH เป็น fallback
     var mapKey = (_mapGeoData && pvEN !== pvTH) ? pvEN : pvTH;
-    if(!pvMap[mapKey]) pvMap[mapKey] = {zone:'', bd:'', total:0, loss:0, inactive:0, rev:0, agents:[], pvTH:pvTH, pvEN:pvEN, avgCur:0, avgPrev:0}; // loss/inactive kept as 0 for compatibility
+    if(!pvMap[mapKey]) pvMap[mapKey] = {zone:'', bd:'', total:0, active:0, loss:0, inactive:0, rev:0, agents:[], pvTH:pvTH, pvEN:pvEN, avgCur:0, avgPrev:0}; // loss/inactive kept as 0 for compatibility
     pvMap[mapKey].total++;
+    if (_isActiveAgent(r, m)) pvMap[mapKey].active++;
     pvMap[mapKey].rev += (parseFloat(r[m.colRev])||0);
     pvMap[mapKey].avgCur += (parseFloat(r[m.colAvg])||0);
     var mp = getMP();
@@ -7413,7 +7554,7 @@ function renderMapLayers(){
 
 // ★ สร้าง city → stats map จาก FR (สำหรับ Director/AM city mode)
 function buildCityData(){
-  var m = getMC();
+  var m = getMC(), mp = getMP();
   var cityMap = {};
   var userRole  = _currentUser ? _currentUser.role  : 'Director';
   var userZones = _currentUser && _currentUser.zones ? _currentUser.zones : ['All'];
@@ -7427,8 +7568,9 @@ function buildCityData(){
       var rowZone = String(r[COL.zoneName]||'').trim();
       if(userZones.indexOf(rowZone) < 0) return;
     }
-    if(!cityMap[city]) cityMap[city] = {city:city, province:pvTH, zone:'', total:0, loss:0, inactive:0, rev:0, agents:[]};
+    if(!cityMap[city]) cityMap[city] = {city:city, province:pvTH, zone:'', total:0, active:0, loss:0, inactive:0, rev:0, agents:[]};
     cityMap[city].total++;
+    if (_isActiveAgent(r, m)) cityMap[city].active++;
     cityMap[city].rev += (parseFloat(r[m.colRev])||0);
     // T03: loss/inactive city counters removed
     if(!cityMap[city].zone && r[COL.zoneName]) cityMap[city].zone = String(r[COL.zoneName]||'').trim();
@@ -7502,7 +7644,7 @@ function getCityColor(d, mode){
 // render City mode — วาด circle marker ต่อ City
 function renderCityMarkers(pvData){
   var cityData = buildCityData();
-  var m = getMC();
+  var m = getMC(), mp = getMP();
 
   // ★ วาด GeoJSON polygon พื้นหลัง (เบา) ยังคงอยู่
   _mapGeoLayer = L.geoJSON(_mapGeoData, {
@@ -7558,7 +7700,7 @@ function renderCityMarkers(pvData){
       + '<br><span style="color:#64748b;font-size:10px">จังหวัด: <b>'+d.province+'</b>'+(d.zone?' | Zone: <b>'+d.zone+'</b>':'')+'</span>'
       + '<br>👥 ลูกค้า: <b>'+d.total+'</b> ราย'
       + '<br>💰 Revenue: <b>'+fmtS(Math.round(d.rev))+'</b>'
-      + '<br><span style="color:#16a34a">✅ Active: <b>'+d.total+'</b></span>'
+      + '<br><span style="color:#16a34a">✅ Active: <b>'+(d.active||0)+'</b></span>'
       + '<br><span style="color:#94a3b8;font-size:10px">อัตราเสี่ยง: '+lossRate+'%</span>';
     marker.bindTooltip(tip, {sticky:true, className:'map-info-panel'});
 
@@ -7573,14 +7715,31 @@ function renderCityMarkers(pvData){
 }
 
 // drill-down popup สำหรับ City mode
+function _mapStatusBadge(r, m){
+  return _isActiveAgent(r, m)
+    ? '<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:10px;font-weight:700">Active</span>'
+    : '<span style="background:#f1f5f9;color:#64748b;padding:1px 6px;border-radius:10px;font-weight:700">No sale</span>';
+}
+function _mapCompareCell(cur, prev, formatter){
+  cur = Number(cur || 0); prev = Number(prev || 0);
+  var diff = cur - prev;
+  var color = diff > 0 ? '#16a34a' : diff < 0 ? '#dc2626' : '#64748b';
+  var arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+  return '<td style="padding:4px 8px;text-align:right">'
+    + '<div style="font-weight:800;color:var(--pr)">'+formatter(cur)+'</div>'
+    + '<div style="font-size:9px;color:#94a3b8">ก่อน '+formatter(prev)+'</div>'
+    + '<div style="font-size:9px;font-weight:700;color:'+color+'">'+arrow+' '+formatter(Math.abs(diff))+'</div>'
+    + '</td>';
+}
+
 function showCityDrill(cityName, d){
   if(!d) return;
-  var m = getMC();
+  var m = getMC(), mp = getMP();
   var agents = FR.filter(function(r){ return String(r[COL.city]||'').trim() === cityName; });
 
   var totRev = agents.reduce(function(s,r){ return s+(parseFloat(r[m.colRev])||0); },0);
   var totLoss = 0, totIna = 0; // T03: always 0
-  var totAct  = agents.length; // T03
+  var totAct  = agents.filter(function(r){return _isActiveAgent(r,m);}).length;
 
   var html =
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:6px">'
@@ -7590,9 +7749,8 @@ function showCityDrill(cityName, d){
     +'<div style="font-size:11px;color:var(--t2)">'+agents.length+' ราย · Rev: <b>'+fmtS(Math.round(totRev))+'</b></div>'
     +'</div>'
     +'<div style="display:flex;gap:6px;font-size:11px;font-weight:700">'
-    +'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px">✅ '+totAct+'</span>'
-    
-    +'<span style="background:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:20px">⚠️ '+totIna+'</span>'
+    +'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px">✅ Active '+totAct+'</span>'
+    +'<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:20px">No sale '+Math.max(0, agents.length-totAct)+'</span>'
     +'</div>'
     +'</div>';
 
@@ -7602,19 +7760,29 @@ function showCityDrill(cityName, d){
     +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Agent</th>'
     +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Code</th>'
     +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Revenue</th>'
-    +'<th style="padding:5px 8px;text-align:center;font-weight:700;color:var(--pr)">Avg Rev</th>'
+    +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Volume</th>'
+    +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Rev</th>'
+    +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Vol/วัน</th>'
     +'<th style="padding:5px 8px;text-align:center;font-weight:700;color:var(--pr)">Status</th>'
     +'</tr></thead><tbody>'
     + agents.slice().sort(function(a,b){ return (parseFloat(b[m.colRev])||0)-(parseFloat(a[m.colRev])||0); })
         .map(function(r){
           var rev = parseFloat(r[m.colRev])||0;
+          var revP = mp ? (parseFloat(r[mp.colRev])||0) : 0;
+          var vol = parseFloat(r[m.colVol])||0;
+          var volP = mp ? (parseFloat(r[mp.colVol])||0) : 0;
           var avg = parseFloat(r[m.colAvg])||0;
-          var st = '<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:10px;font-weight:700">Active</span>'; // T03
+          var avgP = mp ? (parseFloat(r[mp.colAvg])||0) : 0;
+          var days = Math.max(getDAY1ForMonth(m.key)||1,1);
+          var daysP = mp ? Math.max(getDAY1ForMonth(mp.key)||1,1) : 1;
+          var st = _mapStatusBadge(r, m);
           return '<tr style="border-bottom:1px solid #f1f5f9">'
             +'<td style="padding:4px 8px;font-weight:600">'+String(r[COL.agentName]||'-')+'</td>'
             +'<td style="padding:4px 8px;color:var(--t2);font-size:10px">'+String(r[COL.agentCode]||'-')+'</td>'
-            +'<td style="padding:4px 8px;text-align:right;font-weight:700;color:var(--pr)">'+fmtS(Math.round(rev))+'</td>'
-            +'<td style="padding:4px 8px;text-align:center;color:var(--t2)">'+fmtS(Math.round(avg))+'</td>'
+            +_mapCompareCell(rev, revP, function(v){return fmtS(Math.round(v));})
+            +_mapCompareCell(vol, volP, function(v){return fmtInt(Math.round(v));})
+            +_mapCompareCell(avg, avgP, function(v){return fmtS(Math.round(v));})
+            +_mapCompareCell(vol/days, mp ? volP/daysP : 0, function(v){return fmtF(v);})
             +'<td style="padding:4px 8px;text-align:center">'+st+'</td>'
             +'</tr>';
         }).join('')
@@ -7624,7 +7792,7 @@ function showCityDrill(cityName, d){
   overlay.id = 'mapCityDrillOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;';
   var panel = document.createElement('div');
-  panel.style.cssText = 'background:white;border-radius:14px;padding:18px;box-shadow:0 8px 40px rgba(0,0,0,.3);max-width:620px;width:94vw;max-height:80vh;overflow-y:auto;position:relative;z-index:99999;';
+  panel.style.cssText = 'background:white;border-radius:14px;padding:18px;box-shadow:0 8px 40px rgba(0,0,0,.3);max-width:920px;width:96vw;max-height:80vh;overflow:auto;position:relative;z-index:99999;';
   panel.innerHTML = html
     +'<div style="text-align:right;margin-top:12px">'
     +'<button id="mapCityDrillClose" style="padding:6px 18px;background:var(--pr);color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">✕ ปิด</button>'
@@ -7730,9 +7898,9 @@ function buildMapLegend(pvData){
     // คำนวณตัวเลขสรุป
     var totals = {total:0,rev:0};
     Object.values(pvData).forEach(function(d){
-      totals.total += d.total; totals.rev += d.rev;
+      totals.total += d.total; totals.rev += d.rev; totals.active = (totals.active||0) + (d.active||0);
     });
-    var active = totals.total; // T03: no loss/inactive
+    var active = totals.active || 0;
     el.innerHTML =
       // ── header ──
       '<div class="map-legend-header" onclick="toggleMapLegend(this)">'+
@@ -7859,7 +8027,7 @@ function resetMapView(){
 
 function showMapDrill(pvTH, pvEN, d){
   if(!d || !d.total) return;
-  var m = getMC();
+  var m = getMC(), mp = getMP();
 
   // กรอง agents ใน province นี้
   var agents = FR.filter(function(r){
@@ -7886,7 +8054,7 @@ function showMapDrill(pvTH, pvEN, d){
   // คำนวณ summary ทั้ง province
   var totRev  = agents.reduce(function(s,r){ return s+(parseFloat(r[m.colRev])||0); },0);
   var totLoss = 0, totIna = 0; // T03: always 0
-  var totAct  = agents.length; // T03
+  var totAct  = agents.filter(function(r){return _isActiveAgent(r,m);}).length;
 
   // header
   var html =
@@ -7896,9 +8064,8 @@ function showMapDrill(pvTH, pvEN, d){
     +'<div style="font-size:11px;color:var(--t2);margin-top:2px">'+cityArr.length+' อำเภอ · '+agents.length+' ราย · Rev: <b>'+fmtS(Math.round(totRev))+'</b></div>'
     +'</div>'
     +'<div style="display:flex;gap:6px;font-size:11px;font-weight:700">'
-    +'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px">✅ '+totAct+'</span>'
-    
-    +'<span style="background:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:20px">⚠️ '+totIna+'</span>'
+    +'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px">✅ Active '+totAct+'</span>'
+    +'<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:20px">No sale '+Math.max(0, agents.length-totAct)+'</span>'
     +'</div>'
     +'</div>';
 
@@ -7907,7 +8074,7 @@ function showMapDrill(pvTH, pvEN, d){
     var rows   = cityMap[city];
     var cRev   = rows.reduce(function(s,r){ return s+(parseFloat(r[m.colRev])||0); },0);
     var cLoss = 0, cIna = 0; // T03: always 0
-    var cAct = rows.length; // T03
+    var cAct = rows.filter(function(r){return _isActiveAgent(r,m);}).length;
     var lossRate = 0; // T03
     var statusColor = '#16a34a'; // T03
     var uid = 'cityDrill_'+ci;
@@ -7935,19 +8102,29 @@ function showMapDrill(pvTH, pvEN, d){
           +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Agent</th>'
           +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Code</th>'
           +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Revenue</th>'
-          +'<th style="padding:5px 8px;text-align:center;font-weight:700;color:var(--pr)">Avg Rev</th>'
+          +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Volume</th>'
+          +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Rev</th>'
+          +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Vol/วัน</th>'
           +'<th style="padding:5px 8px;text-align:center;font-weight:700;color:var(--pr)">Status</th>'
         +'</tr></thead><tbody>'
         + rows.slice().sort(function(a,b){ return (parseFloat(b[m.colRev])||0)-(parseFloat(a[m.colRev])||0); })
             .map(function(r){
               var rev = parseFloat(r[m.colRev])||0;
+              var revP = mp ? (parseFloat(r[mp.colRev])||0) : 0;
+              var vol = parseFloat(r[m.colVol])||0;
+              var volP = mp ? (parseFloat(r[mp.colVol])||0) : 0;
               var avg = parseFloat(r[m.colAvg])||0;
-              var st = '<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:10px;font-weight:700">Active</span>'; // T03
+              var avgP = mp ? (parseFloat(r[mp.colAvg])||0) : 0;
+              var days = Math.max(getDAY1ForMonth(m.key)||1,1);
+              var daysP = mp ? Math.max(getDAY1ForMonth(mp.key)||1,1) : 1;
+              var st = _mapStatusBadge(r, m);
               return '<tr style="border-bottom:1px solid #f1f5f9">'
                 +'<td style="padding:4px 8px;font-weight:600">'+String(r[COL.agentName]||'-')+'</td>'
                 +'<td style="padding:4px 8px;color:var(--t2);font-size:10px">'+String(r[COL.agentCode]||'-')+'</td>'
-                +'<td style="padding:4px 8px;text-align:right;font-weight:700;color:var(--pr)">'+fmtS(Math.round(rev))+'</td>'
-                +'<td style="padding:4px 8px;text-align:center;color:var(--t2)">'+fmtS(Math.round(avg))+'</td>'
+                +_mapCompareCell(rev, revP, function(v){return fmtS(Math.round(v));})
+                +_mapCompareCell(vol, volP, function(v){return fmtInt(Math.round(v));})
+                +_mapCompareCell(avg, avgP, function(v){return fmtS(Math.round(v));})
+                +_mapCompareCell(vol/days, mp ? volP/daysP : 0, function(v){return fmtF(v);})
                 +'<td style="padding:4px 8px;text-align:center">'+st+'</td>'
                 +'</tr>';
             }).join('')
@@ -7960,7 +8137,7 @@ function showMapDrill(pvTH, pvEN, d){
   overlay.id = 'mapDrillOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;';
   var panel = document.createElement('div');
-  panel.style.cssText = 'background:white;border-radius:14px;padding:18px;box-shadow:0 8px 40px rgba(0,0,0,.3);max-width:620px;width:94vw;max-height:80vh;overflow-y:auto;position:relative;z-index:99999;';
+  panel.style.cssText = 'background:white;border-radius:14px;padding:18px;box-shadow:0 8px 40px rgba(0,0,0,.3);max-width:920px;width:96vw;max-height:80vh;overflow:auto;position:relative;z-index:99999;';
   panel.innerHTML = html
     +'<div style="text-align:right;margin-top:12px">'
     +'<button id="mapDrillClose" style="padding:6px 18px;background:var(--pr);color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">✕ ปิด</button>'
@@ -8162,9 +8339,10 @@ function _renderHomeDirector(m, mp) {
   var totRev = 0, prevRev = 0, totVol = 0, prevVol = 0;
   var totLoss = 0, totInact = 0, totActive = 0;
   FR.forEach(function(r) {
+    var isActive = _isActiveAgent(r, m);
     totRev += N(r[m.colRev]); totVol += N(r[m.colVol]);
     if (mp) { prevRev += N(r[mp.colRev]); prevVol += N(r[mp.colVol]); }
-    totActive++; // T03: no loss/inact
+    if (isActive) totActive++;
   });
   var totLeads = FR.length;
   var convRate = totLeads > 0 ? (totActive / totLeads * 100).toFixed(1) : '0.0';
@@ -8182,7 +8360,7 @@ function _renderHomeDirector(m, mp) {
     zoneMap[z].rev += N(r[m.colRev]); zoneMap[z].vol += N(r[m.colVol]);
     if (mp) { zoneMap[z].prevRev += N(r[mp.colRev]); zoneMap[z].prevVol += N(r[mp.colVol]); }
     zoneMap[z].leads++;
-    zoneMap[z].active++; // T03: no loss/inact
+    if (_isActiveAgent(r, m)) zoneMap[z].active++;
   });
   var zones = Object.keys(zoneMap).map(function(z) {
     var d = zoneMap[z];
@@ -8214,7 +8392,7 @@ function _renderHomeDirector(m, mp) {
     amMap[z].rev += N(r[m.colRev]);
     if (mp) amMap[z].prevRev += N(r[mp.colRev]);
     amMap[z].leads++;
-    amMap[z].active++; // T03: no loss/inact
+    if (_isActiveAgent(r, m)) amMap[z].active++;
   });
   var amUsers = Object.keys(amMap).map(function(z) {
     var d = amMap[z];
@@ -8699,9 +8877,13 @@ function _renderHomeDirector(m, mp) {
       growthByZone[z].prvVol += N(r[mp.colVol]);
     });
     var growthZoneList = Object.keys(growthByZone).map(function(z){ return {zone:z, d:growthByZone[z]}; });
-    growthZoneList.sort(function(a,b){ return b.d.curRev - a.d.curRev; });
+    growthZoneList.sort(function(a,b){
+      var gainA = a.d.curRev - a.d.prvRev;
+      var gainB = b.d.curRev - b.d.prvRev;
+      return gainB - gainA || b.d.curRev - a.d.curRev;
+    });
 
-    html += '<div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:8px">ภาพรวมราย Zone — เรียงตาม Revenue</div>';
+    html += '<div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:8px">ภาพรวมราย Zone — เรียงตาม Rev เพิ่ม</div>';
     html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">'
       + '<thead>'
       + '<tr style="background:#f0fdf4;border-bottom:1.5px solid #86efac">'
@@ -8733,6 +8915,8 @@ function _renderHomeDirector(m, mp) {
       var revColor = revDiff !== null ? (revDiff >= 0 ? '#16a34a' : '#dc2626') : 'var(--t2)';
       var volColor = volDiff !== null ? (volDiff >= 0 ? '#16a34a' : '#dc2626') : 'var(--t2)';
       var gain = d.curRev - d.prvRev;
+      var gainSign = gain >= 0 ? '+฿' : '-฿';
+      var gainColor = gain >= 0 ? '#16a34a' : '#dc2626';
       html += '<tr style="border-bottom:1px solid #f0fdf4;background:' + rowBg + '">'
         + '<td style="padding:7px 8px;font-weight:700;color:var(--pr)">' + item.zone + '</td>'
         + '<td style="padding:7px 8px;text-align:right"><span style="background:#dcfce7;color:#166534;padding:2px 7px;border-radius:12px;font-weight:700;font-size:11px">' + d.count + ' ราย</span></td>'
@@ -8746,7 +8930,7 @@ function _renderHomeDirector(m, mp) {
         +   (volArrow ? '<div style="font-size:9px;color:' + volColor + '">' + volArrow + ' ' + fmtInt(Math.abs(volDiff)) + '</div>' : '')
         + '</td>'
         + '<td style="padding:7px 8px;text-align:right;color:#94a3b8">' + (avgVolPrev !== null ? fmtInt(avgVolPrev) : '—') + '</td>'
-        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:#16a34a">+฿' + fmtS(Math.round(gain)) + '</td>'
+        + '<td style="padding:7px 8px;text-align:right;font-weight:700;color:' + gainColor + '">' + gainSign + fmtS(Math.round(Math.abs(gain))) + '</td>'
         + '</tr>';
     });
     html += '</tbody></table></div>';
@@ -9326,9 +9510,10 @@ function _renderHomeAM(m, mp) {
   var totRev = 0, prevRev = 0, totVol = 0, prevVol = 0;
   var totLoss = 0, totInact = 0, totActive = 0;
   myRows.forEach(function(r) {
+    var isActive = _isActiveAgent(r, m);
     totRev += N(r[m.colRev]); totVol += N(r[m.colVol]);
     if (mp) { prevRev += N(r[mp.colRev]); prevVol += N(r[mp.colVol]); }
-    totActive++; // T03
+    if (isActive) totActive++;
   });
   var totLeads  = myRows.length;
   var convRate  = totLeads > 0 ? (totActive / totLeads * 100).toFixed(1) : '0.0';
@@ -9347,7 +9532,7 @@ function _renderHomeAM(m, mp) {
     bdMap[z].rev += N(r[m.colRev]); bdMap[z].vol += N(r[m.colVol]);
     if (mp) { bdMap[z].prevRev += N(r[mp.colRev]); bdMap[z].prevVol += N(r[mp.colVol]); }
     bdMap[z].leads++;
-    bdMap[z].active++; // T03
+    if (_isActiveAgent(r, m)) bdMap[z].active++;
   });
   var zones = Object.keys(bdMap).map(function(z) {
     var d = bdMap[z];
@@ -9377,7 +9562,7 @@ function _renderHomeAM(m, mp) {
     bdUserMap[bd].rev += N(r[m.colRev]);
     if (mp) bdUserMap[bd].prevRev += N(r[mp.colRev]);
     bdUserMap[bd].leads++;
-    bdUserMap[bd].active++; // T03
+    if (_isActiveAgent(r, m)) bdUserMap[bd].active++;
   });
   var bdUsers = Object.keys(bdUserMap).map(function(bd) {
     var d = bdUserMap[bd];
@@ -10245,10 +10430,11 @@ function _targetFromConfig(monthKey, prevRev, totalPrevRev, explicitCfg) {
     };
   }
   if (cfg.type === 'pct') {
+    var targetPctDelta = Number(cfg.value || 0) - 100;
     return {
       value: prevRev > 0 ? Math.round(prevRev * Number(cfg.value || 0) / 100) : 0,
       source: explicitCfg ? 'bd' : 'overall',
-      label: (explicitCfg ? 'เป้า BD ' : 'ตามเป้ารวม ') + Number(cfg.value || 0).toFixed(1) + '%'
+      label: (explicitCfg ? 'เป้า BD ' : 'ตามเป้ารวม ') + (targetPctDelta >= 0 ? '+' : '') + targetPctDelta.toFixed(1) + '% จากเดือนก่อน'
     };
   }
   var fixed = Math.round(Number(cfg.value || 0));
@@ -10279,7 +10465,7 @@ function _renderHomeBD(m, mp) {
   myRows.forEach(function(r) {
     totRev  += N(r[m.colRev]); totVol += N(r[m.colVol]);
     if (mp) prevRev += N(r[mp.colRev]);
-    totActive++; // T03
+    if (_isActiveAgent(r, m)) totActive++;
   });
   var totLeads = myRows.length;
   var convRate = totLeads > 0 ? (totActive / totLeads * 100).toFixed(1) : '0.0';
@@ -11404,15 +11590,15 @@ function rmSwitchRole(role, btn) {
         <div class="mt-lbl">ประเภทเป้าหมาย</div>
         <div class="mt-type-row">
           <div class="mt-type-btn active" id="mt_btn_pct" onclick="mtType('pct')">
-            📊 % ของเดือนก่อน<br><span style="font-size:10px;font-weight:400;color:var(--t2)">เช่น 105 = +5%</span>
+            📊 % เพิ่ม/ลด<br><span style="font-size:10px;font-weight:400;color:var(--t2)">เช่น 5 = +5%</span>
           </div>
           <div class="mt-type-btn" id="mt_btn_fix" onclick="mtType('fixed')">
             💰 ตัวเลขตรง (฿)<br><span style="font-size:10px;font-weight:400;color:var(--t2)">กรอกยอด Revenue</span>
           </div>
         </div>
         <div class="mt-lbl" id="mt_inp_lbl">% เป้า (เทียบเดือนก่อน)</div>
-        <input class="mt-inp" type="number" id="mt_val" placeholder="เช่น 105" min="0" step="0.1" oninput="mtHint()">
-        <div class="mt-hint" id="mt_hint">กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม</div>
+        <input class="mt-inp" type="number" id="mt_val" placeholder="เช่น 5" min="-99" step="0.1" oninput="mtHint()">
+        <div class="mt-hint" id="mt_hint">กรอก 5 = +5% จากเดือนก่อน, 0 = เท่าเดิม</div>
         <div class="mt-lbl" style="margin-top:12px">หมายเหตุ (optional)</div>
         <textarea class="mt-note" id="mt_note" rows="2" placeholder="เช่น เดือนนี้มีโปรพิเศษ..."></textarea>
         <div class="mt-actions">
@@ -11440,15 +11626,15 @@ function rmSwitchRole(role, btn) {
         <div class="mt-lbl">ประเภทเป้าหมาย</div>
         <div class="mt-type-row">
           <div class="mt-type-btn active" id="bdmt_btn_pct" onclick="bdMtType('pct')">
-            📊 % ของเดือนก่อน<br><span style="font-size:10px;font-weight:400;color:var(--t2)">เช่น 105 = +5%</span>
+            📊 % เพิ่ม/ลด<br><span style="font-size:10px;font-weight:400;color:var(--t2)">เช่น 5 = +5%</span>
           </div>
           <div class="mt-type-btn" id="bdmt_btn_fix" onclick="bdMtType('fixed')">
             💰 ตัวเลขตรง (฿)<br><span style="font-size:10px;font-weight:400;color:var(--t2)">กรอกยอด Revenue</span>
           </div>
         </div>
         <div class="mt-lbl" id="bdmt_inp_lbl">% เป้า (เทียบเดือนก่อน)</div>
-        <input class="mt-inp" type="number" id="bdmt_val" placeholder="เช่น 105" min="0" step="0.1" oninput="bdMtHint()">
-        <div class="mt-hint" id="bdmt_hint">กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม</div>
+        <input class="mt-inp" type="number" id="bdmt_val" placeholder="เช่น 5" min="-99" step="0.1" oninput="bdMtHint()">
+        <div class="mt-hint" id="bdmt_hint">กรอก 5 = +5% จากเดือนก่อน, 0 = เท่าเดิม</div>
         <div class="mt-lbl" style="margin-top:12px">หมายเหตุ (optional)</div>
         <textarea class="mt-note" id="bdmt_note" rows="2" placeholder="เช่น เดือนนี้มีโปรพิเศษ..."></textarea>
         <div class="mt-actions">
@@ -11559,7 +11745,7 @@ function openMtModal(monthKey) {
   var ex = _monthlyTargets[_mtMonth];
   if (ex) {
     mtType(ex.type);
-    document.getElementById('mt_val').value  = ex.value;
+    document.getElementById('mt_val').value  = ex.type === 'pct' ? (Number(ex.value || 100) - 100) : ex.value;
     document.getElementById('mt_note').value = ex.note || '';
     document.getElementById('mt_del_btn').style.display = '';
   } else {
@@ -11580,17 +11766,22 @@ function mtType(t) {
   _mtCurType = t;
   document.getElementById('mt_btn_pct').classList.toggle('active', t === 'pct');
   document.getElementById('mt_btn_fix').classList.toggle('active', t === 'fixed');
-  document.getElementById('mt_inp_lbl').textContent = t === 'pct' ? '% เป้า (เทียบเดือนก่อน)' : 'ยอด Revenue เป้า (บาท)';
-  document.getElementById('mt_val').placeholder = t === 'pct' ? 'เช่น 105' : 'เช่น 5000000';
   document.getElementById('mt_val').step = t === 'pct' ? '0.1' : '1000';
+  document.getElementById('mt_inp_lbl').textContent = t === 'pct' ? '% เพิ่ม/ลดจากเดือนก่อน' : 'ยอด Revenue เป้า (บาท)';
+  document.getElementById('mt_val').placeholder = t === 'pct' ? 'เช่น 5' : 'เช่น 5000000';
+  document.getElementById('mt_val').min = t === 'pct' ? '-99' : '0';
   mtHint();
 }
 
 function mtHint() {
   var v  = parseFloat(document.getElementById('mt_val').value);
   var el = document.getElementById('mt_hint');
+  if (isNaN(v) && _mtCurType === 'pct') {
+    el.textContent = 'กรอก 5 = +5% จากเดือนก่อน, 0 = เท่าเดิม';
+    return;
+  }
   if (isNaN(v)) {
-    el.textContent = _mtCurType === 'pct' ? 'กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม' : 'กรอกยอด Revenue ที่ต้องการ';
+    el.textContent = 'กรอกยอด Revenue ที่ต้องการ';
     return;
   }
   if (_mtCurType === 'pct') {
@@ -11599,8 +11790,9 @@ function mtHint() {
     var pm   = idx > 0 ? MONTHS[idx - 1] : null;
     var pRev = 0;
     if (pm) FR.forEach(function(r){ pRev += N(r[pm.colRev]); });
-    var chg = v - 100;
-    var abs = pRev > 0 ? Math.round(pRev * v / 100) : null;
+    var chg = v;
+    var storedPct = 100 + v;
+    var abs = pRev > 0 ? Math.round(pRev * storedPct / 100) : null;
     el.innerHTML = (chg >= 0 ? '▲ เพิ่ม ' : '▼ ลด ') + Math.abs(chg).toFixed(1) + '% '
       + (abs ? '= <b style="color:var(--pr)">฿' + fmtS(abs) + '</b>' : '');
   } else {
@@ -11611,6 +11803,7 @@ function mtHint() {
 function saveMt() {
   var tok = sessionStorage.getItem('DASH_TOKEN') || '';
   var v   = parseFloat(document.getElementById('mt_val').value);
+  if (_mtCurType === 'pct' && !isNaN(v)) v = 100 + v;
   if (isNaN(v) || v <= 0) { alert('กรุณากรอกค่าเป้าหมายให้ถูกต้อง'); return; }
   var note = document.getElementById('mt_note').value.trim();
   var btn  = document.getElementById('mt_save_btn');
@@ -11783,7 +11976,7 @@ function _bdMtLoadExisting() {
   var ex = (_bdMonthlyTargets[mKey] && (_bdMonthlyTargets[mKey][uKey])) || null;
   if (ex) {
     bdMtType(ex.type);
-    document.getElementById('bdmt_val').value = ex.value;
+    document.getElementById('bdmt_val').value = ex.type === 'pct' ? (Number(ex.value || 100) - 100) : ex.value;
     document.getElementById('bdmt_note').value = ex.note || '';
     document.getElementById('bdmt_del_btn').style.display = '';
   } else {
@@ -11799,9 +11992,10 @@ function bdMtType(t) {
   _bdMtCurType = t;
   document.getElementById('bdmt_btn_pct').classList.toggle('active', t === 'pct');
   document.getElementById('bdmt_btn_fix').classList.toggle('active', t === 'fixed');
-  document.getElementById('bdmt_inp_lbl').textContent = t === 'pct' ? '% เป้า (เทียบเดือนก่อน)' : 'ยอด Revenue เป้า (บาท)';
-  document.getElementById('bdmt_val').placeholder = t === 'pct' ? 'เช่น 105' : 'เช่น 5000000';
   document.getElementById('bdmt_val').step = t === 'pct' ? '0.1' : '1000';
+  document.getElementById('bdmt_inp_lbl').textContent = t === 'pct' ? '% เพิ่ม/ลดจากเดือนก่อน' : 'ยอด Revenue เป้า (บาท)';
+  document.getElementById('bdmt_val').placeholder = t === 'pct' ? 'เช่น 5' : 'เช่น 5000000';
+  document.getElementById('bdmt_val').min = t === 'pct' ? '-99' : '0';
   bdMtHint();
 }
 
@@ -11811,13 +12005,18 @@ function bdMtHint() {
   var uKey = (document.getElementById('bdmt_user').value || '').toLowerCase();
   var mKey = document.getElementById('bdmt_month').value;
   var pRev = uKey && mKey ? _targetPrevRevForZones(mKey, _targetZonesForUser(uKey)) : 0;
+  if (isNaN(v) && _bdMtCurType === 'pct') {
+    el.textContent = 'กรอก 5 = +5% จากเดือนก่อน, 0 = เท่าเดิม';
+    return;
+  }
   if (isNaN(v)) {
-    el.textContent = _bdMtCurType === 'pct' ? 'กรอก 105 = +5% จากเดือนก่อน, 100 = เท่าเดิม' : 'กรอกยอด Revenue ที่ต้องการ';
+    el.textContent = 'กรอกยอด Revenue ที่ต้องการ';
     return;
   }
   if (_bdMtCurType === 'pct') {
-    var chg = v - 100;
-    var abs = pRev > 0 ? Math.round(pRev * v / 100) : null;
+    var chg = v;
+    var storedPct = 100 + v;
+    var abs = pRev > 0 ? Math.round(pRev * storedPct / 100) : null;
     el.innerHTML = (chg >= 0 ? '▲ เพิ่ม ' : '▼ ลด ') + Math.abs(chg).toFixed(1) + '% จากเดือนก่อน'
       + (abs ? ' = <b style="color:var(--pr)">฿' + fmtS(abs) + '</b>' : '');
   } else {
@@ -11833,6 +12032,7 @@ function saveBdMt() {
   if (!uKey) { alert('กรุณาเลือก BD'); return; }
   if (!mKey) { alert('กรุณาเลือกเดือน'); return; }
   var v = parseFloat(document.getElementById('bdmt_val').value);
+  if (_bdMtCurType === 'pct' && !isNaN(v)) v = 100 + v;
   if (isNaN(v) || v <= 0) { alert('กรุณากรอกค่าเป้าหมายให้ถูกต้อง'); return; }
   var note = document.getElementById('bdmt_note').value.trim();
   var tok = sessionStorage.getItem('DASH_TOKEN') || '';

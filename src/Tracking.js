@@ -15,14 +15,88 @@
 var TRACKING_SHEET = 'Tracking';
 var TRACKING_CUTOFF_LOG_SHEET = 'TrackingCutoffLog';
 
-function _trackingCutoffPeriodKey() {
-  var now = new Date();
+function _trackingPad2(n) {
+  return ('0' + n).slice(-2);
+}
+
+function _trackingCutoffPeriodKey(dateOpt) {
+  var now = dateOpt || new Date();
   var tz = 'Asia/Bangkok';
   var y = Utilities.formatDate(now, tz, 'yyyy');
   var m = Utilities.formatDate(now, tz, 'MM');
   var d = parseInt(Utilities.formatDate(now, tz, 'd'), 10);
-  var slot = d < 8 ? '01' : (d < 22 ? '08' : '22');
-  return y + '-' + m + '-' + slot;
+  if (d < 8) {
+    var prevY = parseInt(y, 10);
+    var prevM = parseInt(m, 10) - 1;
+    if (prevM < 1) {
+      prevM = 12;
+      prevY--;
+    }
+    return prevY + '-' + _trackingPad2(prevM) + '-22';
+  }
+  return y + '-' + m + '-' + (d < 22 ? '08' : '22');
+}
+
+function _trackingPreviousCutoffPeriodKey(dateOpt) {
+  var current = _trackingCutoffPeriodKey(dateOpt);
+  var parts = current.split('-');
+  var y = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10);
+  var slot = parts[2];
+  if (slot === '22') return y + '-' + _trackingPad2(m) + '-08';
+  m--;
+  if (m < 1) {
+    m = 12;
+    y--;
+  }
+  return y + '-' + _trackingPad2(m) + '-22';
+}
+
+function _isTrackingCutoffDate(dateOpt) {
+  var d = parseInt(Utilities.formatDate(dateOpt || new Date(), 'Asia/Bangkok', 'd'), 10);
+  return d === 8 || d === 22;
+}
+
+function _trackingDateKey(y, m, d) {
+  return y + '-' + _trackingPad2(m) + '-' + _trackingPad2(d);
+}
+
+function _trackingDateFromKey(key) {
+  var p = String(key || '').split('-');
+  return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+}
+
+function _trackingCutoffMeta(dateOpt) {
+  var now = dateOpt || new Date();
+  var tz = 'Asia/Bangkok';
+  var y = parseInt(Utilities.formatDate(now, tz, 'yyyy'), 10);
+  var m = parseInt(Utilities.formatDate(now, tz, 'MM'), 10);
+  var d = parseInt(Utilities.formatDate(now, tz, 'd'), 10);
+  var nextY = y;
+  var nextM = m;
+  var nextD = 8;
+  if (d === 8 || d === 22) {
+    nextD = d;
+  } else if (d > 8 && d < 22) {
+    nextD = 22;
+  } else if (d > 22) {
+    nextM++;
+    if (nextM > 12) {
+      nextM = 1;
+      nextY++;
+    }
+  }
+  var todayKey = _trackingDateKey(y, m, d);
+  var nextKey = _trackingDateKey(nextY, nextM, nextD);
+  var daysUntilReset = Math.max(0, Math.round((_trackingDateFromKey(nextKey) - _trackingDateFromKey(todayKey)) / 86400000));
+  return {
+    cutoffPeriod: _trackingCutoffPeriodKey(now),
+    previousCutoffPeriod: _trackingPreviousCutoffPeriodKey(now),
+    nextResetDate: nextKey,
+    daysUntilReset: daysUntilReset,
+    isResetToday: daysUntilReset === 0,
+    timezone: tz
+  };
 }
 
 function _ensureTrackingCutoffColumn(sheet, headerColor) {
@@ -40,19 +114,55 @@ function _logTrackingCutoff(kind) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(TRACKING_CUTOFF_LOG_SHEET);
+    var headers;
     if (!sheet) {
       sheet = ss.insertSheet(TRACKING_CUTOFF_LOG_SHEET);
-      sheet.appendRow(['kind','cutoffPeriod','loggedAt']);
-      sheet.getRange(1,1,1,3).setBackground('#1f2937').setFontColor('white').setFontWeight('bold');
+      sheet.appendRow(['kind','cutoffPeriod','previousCutoffPeriod','event','loggedAt','resetEffective']);
+      sheet.getRange(1,1,1,6).setBackground('#1f2937').setFontColor('white').setFontWeight('bold');
       sheet.setFrozenRows(1);
+      headers = ['kind','cutoffPeriod','previousCutoffPeriod','event','loggedAt','resetEffective'];
+    } else {
+      headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+        .map(function(h){ return String(h).trim(); });
+      ['previousCutoffPeriod','event','resetEffective'].forEach(function(col) {
+        if (headers.indexOf(col) < 0) {
+          var nextCol = sheet.getLastColumn() + 1;
+          sheet.getRange(1, nextCol).setValue(col)
+            .setBackground('#1f2937').setFontColor('white').setFontWeight('bold');
+          headers.push(col);
+        }
+      });
     }
     var period = _trackingCutoffPeriodKey();
+    var previousPeriod = _trackingPreviousCutoffPeriodKey();
+    var event = 'CUTOFF_RESET';
+    var resetEffective = _isTrackingCutoffDate() ? 'YES' : 'YES_ON_PERIOD_CHANGE';
     var data = sheet.getDataRange().getValues();
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][0]) === kind && String(data[i][1]) === period) return;
     }
-    sheet.appendRow([kind, period, _bkkTimestamp()]);
+    var row = [];
+    for (var j = 0; j < headers.length; j++) row.push('');
+    row[headers.indexOf('kind')] = kind;
+    row[headers.indexOf('cutoffPeriod')] = period;
+    row[headers.indexOf('previousCutoffPeriod')] = previousPeriod;
+    row[headers.indexOf('event')] = event;
+    row[headers.indexOf('loggedAt')] = _bkkTimestamp();
+    row[headers.indexOf('resetEffective')] = resetEffective;
+    sheet.appendRow(row);
   } catch(e) {}
+}
+
+function runTrackingCutoffReset() {
+  _getOrCreateTrackingSheet();
+  _getOrCreateGrowthTrackingSheet();
+  return {
+    ok: true,
+    cutoffPeriod: _trackingCutoffPeriodKey(),
+    previousCutoffPeriod: _trackingPreviousCutoffPeriodKey(),
+    resetEffective: _isTrackingCutoffDate(),
+    loggedAt: _bkkTimestamp()
+  };
 }
 
 // สร้างหรือดึง Sheet 'Tracking' พร้อม headers
@@ -286,7 +396,7 @@ function getTrackingData(token) {
   try {
     var sheet = _getOrCreateTrackingSheet();
     var data  = sheet.getDataRange().getValues();
-    if (data.length <= 1) return { ok: true, data: [] };
+    if (data.length <= 1) return { ok: true, data: [], cutoff: _trackingCutoffMeta() };
 
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx   = headers.indexOf('key');
@@ -329,7 +439,7 @@ function getTrackingData(token) {
         cutoffPeriod: cutoffPeriod
       });
     }
-    return { ok: true, data: rows };
+    return { ok: true, data: rows, cutoff: _trackingCutoffMeta() };
   } catch(e) {
     return { ok: false, error: e.message };
   }
@@ -679,7 +789,7 @@ function getGrowthTrackingData(token) {
   try {
     var sheet = _getOrCreateGrowthTrackingSheet();
     var data  = sheet.getDataRange().getValues();
-    if (data.length <= 1) return { ok: true, data: [] };
+    if (data.length <= 1) return { ok: true, data: [], cutoff: _trackingCutoffMeta() };
 
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx   = headers.indexOf('key');
@@ -722,7 +832,7 @@ function getGrowthTrackingData(token) {
         cutoffPeriod: cutoffPeriod
       });
     }
-    return { ok: true, data: rows };
+    return { ok: true, data: rows, cutoff: _trackingCutoffMeta() };
   } catch(e) {
     return { ok: false, error: e.message };
   }
