@@ -3205,8 +3205,8 @@ function _reportCenterNotes(m,mp,totalRev,prevRev,totalVol,prevVol,tasks,bdRows,
   var volPct=mp&&prevVol?pctChg(prevVol,totalVol):null;
   notes.push({
     title:'Revenue trend',
-    text:(revPct==null?'ยังไม่มีเดือนก่อนให้เทียบ':'Revenue เดือน '+m.en+' '+(revPct>=0?'เติบโต ':'ลดลง ')+Math.abs(revPct).toFixed(1)+'% เมื่อเทียบกับ '+mp.en)
-      +' และ Volume '+(volPct==null?'ยังไม่มีค่าเทียบ':(volPct>=0?'เพิ่ม ':'ลด ')+Math.abs(volPct).toFixed(1)+'%')
+      text:(revPct==null?'ยังไม่มีเดือนก่อนให้เทียบ':'Revenue เดือน '+m.en+' '+(revPct>=0?'เติบโต ':'ลดลง ')+Math.abs(revPct).toFixed(2)+'% เมื่อเทียบกับ '+mp.en)
+      +' และ Volume '+(volPct==null?'ยังไม่มีค่าเทียบ':(volPct>=0?'เพิ่ม ':'ลด ')+Math.abs(volPct).toFixed(2)+'%')
   });
   if(tasks.length){
     var done=tasks.filter(function(t){return t.done;}).length;
@@ -3225,13 +3225,13 @@ function _reportCenterNotes(m,mp,totalRev,prevRev,totalVol,prevVol,tasks,bdRows,
     var topBd=bdRows[0];
     notes.push({
       title:'Top BD snapshot',
-      text:topBd.bd+' มียอด Revenue สูงสุดที่ '+fmtS(Math.round(topBd.rev))+' พร้อม follow-up '+topBd.followPct.toFixed(1)+'% และ success '+topBd.successPct.toFixed(1)+'%'
+      text:topBd.bd+' มียอด Revenue สูงสุดที่ '+fmtS(Math.round(topBd.rev))+' พร้อม follow-up '+topBd.followPct.toFixed(2)+'% และ success '+topBd.successPct.toFixed(2)+'%'
     });
   }
   if(carriers.length){
     notes.push({
       title:'Carrier concentration',
-      text:carriers[0].name+' ถือ volume share สูงสุด '+carriers[0].share.toFixed(1)+'% ของ scope ปัจจุบัน'
+      text:carriers[0].name+' ถือ volume share สูงสุด '+carriers[0].share.toFixed(2)+'% ของ scope ปัจจุบัน'
     });
   }
   return notes;
@@ -3250,8 +3250,8 @@ function _renderReportCenterSummary(model){
   document.getElementById('rc_summary_carriers').innerHTML=_reportCenterCarrierTable(model.carriers);
   document.getElementById('rc_summary_notes').innerHTML=_reportCenterNotesHtml(model.notes);
   setTimeout(function(){
-    _reportCenterBarLineChart('rc_summary_rev_chart',model.revSeries.labels,model.revSeries.values,_reportCenterGrowthSeries(model.revSeries.values),'Revenue','Growth %','#003F5C',fmtS,function(v){return v==null?'-':v.toFixed(1)+'%';});
-    _reportCenterBarLineChart('rc_summary_vol_chart',model.volSeries.labels,model.volSeries.values,_reportCenterGrowthSeries(model.volSeries.values),'Volume','Growth %','#009B9B',fmtS,function(v){return v==null?'-':v.toFixed(1)+'%';});
+    _reportCenterBarLineChart('rc_summary_rev_chart',model.revSeries.labels,model.revSeries.values,_reportCenterGrowthSeries(model.revSeries.values),'Revenue','Growth %','#003F5C',fmtS,function(v){return v==null?'-':v.toFixed(2)+'%';});
+    _reportCenterBarLineChart('rc_summary_vol_chart',model.volSeries.labels,model.volSeries.values,_reportCenterGrowthSeries(model.volSeries.values),'Volume','Growth %','#009B9B',fmtS,function(v){return v==null?'-':v.toFixed(2)+'%';});
   },0);
 }
 function _renderReportCenterTracking(model){
@@ -3277,7 +3277,7 @@ function _renderReportCenterTracking(model){
       'Follow-up %',
       '#E8622A',
       fmtS,
-      function(v){return v==null?'-':v.toFixed(1)+'%';}
+      function(v){return v==null?'-':v.toFixed(2)+'%';}
     );
   },0);
 }
@@ -3289,8 +3289,8 @@ function _renderReportCenterBD(model){
   document.getElementById('rc_bd_kpis').innerHTML=[
     _reportCenterKpi('Active BD',String(model.bdRows.length),'ผู้ดูแลใน scope ปัจจุบัน',_reportCenterTrendText(null,'')),
     _reportCenterKpi('Total Tasks',String(totalTasks),'งานรวมใน leaderboard',_reportCenterTrendText(null,'')),
-    _reportCenterKpi('Follow-up',totalTasks?(totalDone/totalTasks*100).toFixed(1)+'%':'0%','อัตราปิดงานติดตาม',_reportCenterTrendText(null,'')),
-    _reportCenterKpi('Avg Success',avgSuccess.toFixed(1)+'%','ค่าเฉลี่ย success rate ของ BD',_reportCenterTrendText(null,''))
+    _reportCenterKpi('Follow-up',totalTasks?(totalDone/totalTasks*100).toFixed(2)+'%':'0.00%','อัตราปิดงานติดตาม',_reportCenterTrendText(null,'')),
+    _reportCenterKpi('Avg Success',avgSuccess.toFixed(2)+'%','ค่าเฉลี่ย success rate ของ BD',_reportCenterTrendText(null,''))
   ].join('');
   document.getElementById('rc_bd_table').innerHTML=_reportCenterBdTable(model.bdRows);
   setTimeout(function(){
@@ -3303,7 +3303,7 @@ function _renderReportCenterBD(model){
       'MoM %',
       '#005F7A',
       fmtS,
-      function(v){return v==null?'-':v.toFixed(1)+'%';}
+      function(v){return v==null?'-':v.toFixed(2)+'%';}
     );
   },0);
 }
@@ -3329,7 +3329,7 @@ function _reportCenterKpi(label,value,sub,trendHtml){
 function _reportCenterTrendText(value,suffix,forceState){
   if(value===null || value===undefined || value==='')return '<div class="rc-kpi-trend flat">-</div>';
   var state=forceState || (N(value)>0?'up':(N(value)<0?'down':'flat'));
-  var num=typeof value==='number'?Math.abs(value).toFixed(1):String(value);
+  var num=typeof value==='number'?Math.abs(value).toFixed(2):String(value);
   var prefix=state==='up'?'▲ ':(state==='down'?'▼ ':'');
   return '<div class="rc-kpi-trend '+state+'">'+prefix+_esc(num+(suffix||''))+'</div>';
 }
@@ -3337,7 +3337,7 @@ function _reportCenterDeltaFmt(diff,fmt,pct){
   if(diff===null || diff===undefined)return '<div class="rc-kpi-trend flat">-</div>';
   var state=diff>0?'up':(diff<0?'down':'flat');
   var prefix=state==='up'?'▲ ':(state==='down'?'▼ ':'');
-  var pctText=(pct===null || pct===undefined)?'':(' ('+Math.abs(pct).toFixed(1)+'%)');
+  var pctText=(pct===null || pct===undefined)?'':(' ('+Math.abs(pct).toFixed(2)+'%)');
   return '<div class="rc-kpi-trend '+state+'">'+prefix+_esc(fmt(Math.abs(diff))+pctText)+'</div>';
 }
 function _reportCenterGrowthSeries(values){
@@ -3382,7 +3382,7 @@ function _reportCenterCarrierTable(rows){
   if(!rows.length)return '<div class="rc-empty">No carrier data in current scope.</div>';
   return '<table class="rc-table"><thead><tr><th>Carrier</th><th>Volume</th><th>Share</th><th>Rev/Vol</th></tr></thead><tbody>'
     + rows.map(function(r){
-      return '<tr><td>'+_esc(r.name)+'</td><td>'+_esc(fmtS(Math.round(r.vol)))+'</td><td>'+_reportCenterBadge(r.share,'flat')+'</td><td>'+_esc(fmtF(r.arv))+'</td></tr>';
+      return '<tr><td>'+_esc(r.name)+'</td><td>'+_esc(fmtS(Math.round(r.vol)))+'</td><td>'+_reportCenterBadge(r.share.toFixed(2)+'%','flat')+'</td><td>'+_esc(fmtF(r.arv))+'</td></tr>';
     }).join('')
     + '</tbody></table>';
 }
@@ -3391,7 +3391,7 @@ function _reportCenterZoneTable(rows){
   return '<table class="rc-table"><thead><tr><th>Zone</th><th>Risk</th><th>Growth</th><th>Follow-up</th><th>Success</th></tr></thead><tbody>'
     + rows.map(function(r){
       return '<tr><td>'+_esc(r.zone)+'</td><td>'+r.risk+'</td><td>'+r.growth+'</td><td>'
-        + '<div class="rc-meter"><div class="rc-meter-bar"><div class="rc-meter-fill" style="width:'+Math.max(0,Math.min(100,r.followPct))+'%"></div></div><div class="rc-meter-val">'+r.followPct.toFixed(0)+'%</div></div>'
+        + '<div class="rc-meter"><div class="rc-meter-bar"><div class="rc-meter-fill" style="width:'+Math.max(0,Math.min(100,r.followPct))+'%"></div></div><div class="rc-meter-val">'+r.followPct.toFixed(2)+'%</div></div>'
         + '</td><td>'+r.success+'</td></tr>';
     }).join('')
     + '</tbody></table>';
@@ -3400,7 +3400,7 @@ function _reportCenterBdTable(rows){
   if(!rows.length)return '<div class="rc-empty">No BD performance rows in current scope.</div>';
   return '<table class="rc-table"><thead><tr><th>#</th><th>BD</th><th>Revenue</th><th>MoM</th><th>Follow-up</th><th>Success</th><th>Risk Saved</th></tr></thead><tbody>'
     + rows.map(function(r,idx){
-      return '<tr><td><span class="rc-rank">'+(idx+1)+'</span></td><td>'+_esc(r.bd)+'</td><td>'+_esc(fmtS(Math.round(r.rev)))+'</td><td>'+_reportCenterPctBadge(r.momPct)+'</td><td>'+_esc(r.followPct.toFixed(1))+'%</td><td>'+_esc(r.successPct.toFixed(1))+'%</td><td>'+_esc(r.riskSavedPct.toFixed(1))+'%</td></tr>';
+      return '<tr><td><span class="rc-rank">'+(idx+1)+'</span></td><td>'+_esc(r.bd)+'</td><td>'+_esc(fmtS(Math.round(r.rev)))+'</td><td>'+_reportCenterPctBadge(r.momPct)+'</td><td>'+_esc(r.followPct.toFixed(2))+'%</td><td>'+_esc(r.successPct.toFixed(2))+'%</td><td>'+_esc(r.riskSavedPct.toFixed(2))+'%</td></tr>';
     }).join('')
     + '</tbody></table>';
 }
@@ -3417,7 +3417,7 @@ function _reportCenterPctBadge(value){
   if(value===null || value===undefined || value==='')return _reportCenterBadge('N/A','flat');
   var state=value>0?'up':(value<0?'down':'flat');
   var sign=value>0?'+':'';
-  return _reportCenterBadge(sign+value.toFixed(1)+'%',state);
+  return _reportCenterBadge(sign+value.toFixed(2)+'%',state);
 }
 function _reportCenterBadge(text,state){
   return '<span class="rc-badge '+(state||'flat')+'">'+_esc(text)+'</span>';
