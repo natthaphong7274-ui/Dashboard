@@ -3128,9 +3128,10 @@ function _buildReportCenterModel(meta){
   var volSeries=_monthMetricSeries(m.key,function(mm){return sumCol(FR,mm.colVol);});
   var taskSeries=_reportCenterTaskSeries(m.key);
   var tasks=mp?_buildReportTasks(FR,m,mp):[];
-  var bdRows=_buildBDPerformanceRows(FR,m,mp).slice(0,12);
+  var bdRows=_buildBDPerformanceRows(FR,m,mp);
   var carriers=_reportCenterCarrierRows(m);
   var bdTrend=_reportCenterBdTrendRows(m,bdRows);
+  var bdMonthly=_reportCenterBdMonthlyRows(m,bdRows);
   return {
     meta:meta,
     m:m,
@@ -3149,6 +3150,7 @@ function _buildReportCenterModel(meta){
     tasks:tasks,
     bdRows:bdRows,
     bdTrend:bdTrend,
+    bdMonthly:bdMonthly,
     carriers:carriers,
     zoneTracking:_reportCenterZoneTracking(tasks),
     notes:_reportCenterNotes(m,mp,totalRev,prevRev,totalVol,prevVol,tasks,bdRows,carriers)
@@ -3272,6 +3274,34 @@ function _reportCenterBdTrendRows(m,bdRows){
     series:series
   };
 }
+function _reportCenterBdMonthlyRows(m,bdRows){
+  var months=_recentMonths(m.key,6);
+  return {
+    labels:months.map(function(mm){return mm.en||mm.key;}),
+    rows:bdRows.map(function(row){
+      return {
+        bd:row.bd,
+        momPct:row.momPct,
+        currentRev:row.rev,
+        currentVol:_reportCenterBdMetricForMonth(row.bd,m,'vol'),
+        months:months.map(function(mm){
+          return {
+            label:mm.en||mm.key,
+            rev:_reportCenterBdMetricForMonth(row.bd,mm,'rev'),
+            vol:_reportCenterBdMetricForMonth(row.bd,mm,'vol')
+          };
+        })
+      };
+    })
+  };
+}
+function _reportCenterBdMetricForMonth(bdName,monthObj,type){
+  if(!monthObj)return 0;
+  return FR.reduce(function(sum,row){
+    if(_bdOwnerForReport(row)!==bdName)return sum;
+    return sum+N(row[type==='vol'?monthObj.colVol:monthObj.colRev]);
+  },0);
+}
 function _renderReportCenterSummary(model){
   var revPct=model.mp&&model.prevRev?pctChg(model.prevRev,model.totalRev):null;
   var volPct=model.mp&&model.prevVol?pctChg(model.prevVol,model.totalVol):null;
@@ -3331,19 +3361,22 @@ function _renderReportCenterBD(model){
   document.getElementById('rc_bd_table').innerHTML=_reportCenterBdTable(model.bdRows);
   var titleEl=document.getElementById('rc_bd_chart_title');
   var subEl=document.getElementById('rc_bd_chart_sub');
+  var chartHost=document.getElementById('rc_bd_chart_host');
+  var matrixHost=document.getElementById('rc_bd_trend_matrix');
   setTimeout(function(){
     if(_reportCenterBdView==='trend'){
       if(titleEl)titleEl.textContent='BD Monthly Trend';
-      if(subEl)subEl.textContent='Compare monthly revenue across top BDs in current scope';
-      _reportCenterMultiLineChart(
-        'rc_bd_chart',
-        model.bdTrend.labels,
-        model.bdTrend.series,
-        fmtS
-      );
+      if(subEl)subEl.textContent='Revenue / Volume by month for all visible BDs';
+      if(chartHost)chartHost.style.display='none';
+      if(matrixHost){
+        matrixHost.style.display='block';
+        matrixHost.innerHTML=_reportCenterBdMonthlyTable(model.bdMonthly);
+      }
     }else{
       if(titleEl)titleEl.textContent='Top BD Revenue';
       if(subEl)subEl.textContent='Bar = current revenue, line = MoM growth';
+      if(chartHost)chartHost.style.display='block';
+      if(matrixHost)matrixHost.style.display='none';
       _reportCenterBarLineChart(
         'rc_bd_chart',
         top.map(function(r){return r.bd;}),
@@ -3493,6 +3526,28 @@ function _reportCenterBdTable(rows){
       return '<tr><td><span class="rc-rank">'+(idx+1)+'</span></td><td>'+_esc(r.bd)+'</td><td>'+_esc(fmtS(Math.round(r.rev)))+'</td><td>'+_reportCenterPctBadge(r.momPct)+'</td><td>'+_esc(r.followPct.toFixed(2))+'%</td><td>'+_esc(r.successPct.toFixed(2))+'%</td><td>'+_esc(r.riskSavedPct.toFixed(2))+'%</td></tr>';
     }).join('')
     + '</tbody></table>';
+}
+function _reportCenterBdMonthlyTable(data){
+  if(!data || !data.rows || !data.rows.length)return '<div class="rc-empty">No BD monthly trend data in current scope.</div>';
+  var head='<thead><tr>'
+    + '<th class="rc-matrix-head-sticky">BD</th>'
+    + '<th class="rc-matrix-head-sticky">Current</th>'
+    + '<th>MoM</th>'
+    + data.labels.map(function(lbl){
+      return '<th><div class="rc-month-head"><span>'+_esc(lbl)+'</span><span class="rc-month-sub">Revenue / Volume</span></div></th>';
+    }).join('')
+    + '</tr></thead>';
+  var body='<tbody>'+data.rows.map(function(row){
+    return '<tr>'
+      + '<td class="rc-matrix-sticky"><div class="rc-pair"><span class="rc-pair-main">'+_esc(row.bd)+'</span><span class="rc-pair-sub">Visible in current scope</span></div></td>'
+      + '<td class="rc-matrix-sticky-2"><div class="rc-pair"><span class="rc-pair-main">'+_esc(fmtS(Math.round(row.currentRev)))+'</span><span class="rc-pair-sub">Vol '+_esc(fmtS(Math.round(row.currentVol)))+'</span></div></td>'
+      + '<td>'+_reportCenterPctBadge(row.momPct)+'</td>'
+      + row.months.map(function(month){
+        return '<td><div class="rc-pair"><span class="rc-pair-main">'+_esc(fmtS(Math.round(month.rev)))+'</span><span class="rc-pair-sub">Vol '+_esc(fmtS(Math.round(month.vol)))+'</span></div></td>';
+      }).join('')
+      + '</tr>';
+  }).join('')+'</tbody>';
+  return '<div class="rc-matrix-wrap"><table class="rc-matrix-table">'+head+body+'</table></div>';
 }
 function _reportCenterNotesHtml(notes){
   if(!notes.length)return '<div class="rc-empty">No summary notes.</div>';
