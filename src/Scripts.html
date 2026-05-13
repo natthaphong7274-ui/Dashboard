@@ -2930,6 +2930,139 @@ function exportCSV(){
   _clientLog('EXPORT_CSV','Export CSV เดือน: '+m.en+' | จำนวน: '+tRows.length+' rows | scope='+scope+' | generatedAt='+generatedAt);
 }
 
+function _exportGuard(reportName){
+  if(!_currentUser || !sessionStorage.getItem('DASH_TOKEN')){
+    renderError('home_content','Unauthorized export request','loadData');
+    _clientLog('EXPORT_DENIED',reportName+' without active session');
+    return null;
+  }
+  var scope=(_currentUser.zones&&_currentUser.zones.length)?_currentUser.zones.join('|'):'All';
+  return {
+    user:_currentUser.displayName||_currentUser.username||'-',
+    username:_currentUser.username||'-',
+    role:_currentUser.role||'-',
+    scope:scope,
+    generatedAt:_formatWatermarkTime(new Date())
+  };
+}
+function _csvCell(v){
+  return '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
+}
+function _downloadReportFile(filename,content,type){
+  var blob=new Blob(['\ufeff'+content],{type:type||'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+}
+function _reportMetaCsv(title,meta){
+  return [
+    ['Internal Use Only'],
+    ['Report',title],
+    ['Exported By',meta.user],
+    ['Role',meta.role],
+    ['Scope',meta.scope],
+    ['Generated At',meta.generatedAt],
+    []
+  ].map(function(row){return row.map(_csvCell).join(',');});
+}
+function _rowCode(r){return String(r[COL.agentCode]||'').trim();}
+function _trackingStatusFor(type,code,m){
+  if(!code)return '';
+  var key=type+'_'+code+'_'+m.key;
+  return ((_trkData&&_trkData[key])||{}).status||'';
+}
+function _isDoneTracking(type,status){
+  if(type==='risk')return ['contact','solving','success','fail'].indexOf(status)>=0;
+  return ['contacted','data_collected','rewarded','upsold','unreachable'].indexOf(status)>=0;
+}
+function _isSuccessTracking(type,status){
+  if(type==='risk')return status==='success';
+  return ['rewarded','upsold'].indexOf(status)>=0;
+}
+function _bdOwnerForReport(r){
+  return String(r['BD Name']||r['BD']||r['BD Username']||r['BD User']||r['Sales Name']||r['Owner']||r[COL.zoneName]||'Unknown').trim()||'Unknown';
+}
+function _buildReportTasks(rows,m,mp){
+  var out=[];
+  if(!mp)return out;
+  rows.forEach(function(r){
+    var code=_rowCode(r);
+    var risk=(N(r[mp.colAvg])-N(r[m.colAvg]))>(_riskThreshold||0);
+    var growth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);
+    if(risk){
+      var rs=_trackingStatusFor('risk',code,m);
+      out.push({type:'risk',code:code,name:r[COL.agentName]||'',bd:_bdOwnerForReport(r),zone:r[COL.zoneName]||'',rev:N(r[m.colRev]),prevRev:N(r[mp.colRev]),status:rs,done:_isDoneTracking('risk',rs),success:_isSuccessTracking('risk',rs)});
+    }
+    if(growth){
+      var gs=_trackingStatusFor('growth',code,m);
+      out.push({type:'growth',code:code,name:r[COL.agentName]||'',bd:_bdOwnerForReport(r),zone:r[COL.zoneName]||'',rev:N(r[m.colRev]),prevRev:N(r[mp.colRev]),status:gs,done:_isDoneTracking('growth',gs),success:_isSuccessTracking('growth',gs)});
+    }
+  });
+  return out;
+}
+function exportTrackingReport(){
+  var meta=_exportGuard('Tracking Report'); if(!meta)return;
+  var m=getMC(),mp=getMP(),tasks=_buildReportTasks(FR,m,mp);
+  var cols=['Type','Agent Code','Agent Name','BD','Zone','Revenue','Prev Revenue','Status','Done','Success'];
+  var lines=_reportMetaCsv('Tracking Report',meta).concat([cols.map(_csvCell).join(',')]);
+  tasks.forEach(function(t){
+    lines.push([t.type,t.code,t.name,t.bd,t.zone,Math.round(t.rev),Math.round(t.prevRev),t.status,t.done?'Y':'N',t.success?'Y':'N'].map(_csvCell).join(','));
+  });
+  _downloadReportFile('tracking_report_'+m.en+'.csv',lines.join('\n'),'text/csv;charset=utf-8');
+  _clientLog('EXPORT_TRACKING_REPORT','rows='+tasks.length+' | scope='+meta.scope+' | generatedAt='+meta.generatedAt);
+}
+function _buildBDPerformanceRows(rows,m,mp){
+  var map={};
+  rows.forEach(function(r){
+    var bd=_bdOwnerForReport(r),code=_rowCode(r);
+    if(!map[bd])map[bd]={bd:bd,zone:r[COL.zoneName]||'',agents:0,rev:0,prevRev:0,tasks:0,done:0,success:0,risk:0,riskSaved:0};
+    var d=map[bd]; d.agents++; d.rev+=N(r[m.colRev]); if(mp)d.prevRev+=N(r[mp.colRev]);
+    if(mp){
+      var isRisk=(N(r[mp.colAvg])-N(r[m.colAvg]))>(_riskThreshold||0);
+      var isGrowth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);
+      if(isRisk){var rs=_trackingStatusFor('risk',code,m);d.tasks++;d.risk++;if(_isDoneTracking('risk',rs))d.done++;if(_isSuccessTracking('risk',rs)){d.success++;d.riskSaved++;}}
+      if(isGrowth){var gs=_trackingStatusFor('growth',code,m);d.tasks++;if(_isDoneTracking('growth',gs))d.done++;if(_isSuccessTracking('growth',gs))d.success++;}
+    }
+  });
+  return Object.keys(map).map(function(k){
+    var d=map[k];
+    d.followPct=d.tasks?d.done/d.tasks*100:100;
+    d.successPct=d.done?d.success/d.done*100:(d.tasks?0:100);
+    d.riskSavedPct=d.risk?d.riskSaved/d.risk*100:100;
+    d.momPct=d.prevRev?((d.rev-d.prevRev)/Math.abs(d.prevRev)*100):null;
+    return d;
+  }).sort(function(a,b){return b.rev-a.rev;});
+}
+function exportBDPerformanceReport(){
+  var meta=_exportGuard('BD Performance'); if(!meta)return;
+  var m=getMC(),mp=getMP(),rows=_buildBDPerformanceRows(FR,m,mp);
+  var cols=['BD','Zone','Agents','Revenue','Prev Revenue','MoM %','Tasks','Done','Follow-up %','Success','Success %','Risk','Risk Saved','Risk Saved %'];
+  var lines=_reportMetaCsv('BD Performance',meta).concat([cols.map(_csvCell).join(',')]);
+  rows.forEach(function(d){
+    lines.push([d.bd,d.zone,d.agents,Math.round(d.rev),Math.round(d.prevRev),d.momPct==null?'':d.momPct.toFixed(1),d.tasks,d.done,d.followPct.toFixed(1),d.success,d.successPct.toFixed(1),d.risk,d.riskSaved,d.riskSavedPct.toFixed(1)].map(_csvCell).join(','));
+  });
+  _downloadReportFile('bd_performance_'+m.en+'.csv',lines.join('\n'),'text/csv;charset=utf-8');
+  _clientLog('EXPORT_BD_PERFORMANCE','rows='+rows.length+' | scope='+meta.scope+' | generatedAt='+meta.generatedAt);
+}
+function exportWeeklySummary(){
+  var meta=_exportGuard('Weekly Summary'); if(!meta)return;
+  var m=getMC(),mp=getMP();
+  var totalRev=sumCol(FR,m.colRev),totalVol=sumCol(FR,m.colVol);
+  var tasks=_buildReportTasks(FR,m,mp),done=tasks.filter(function(t){return t.done;}).length,success=tasks.filter(function(t){return t.success;}).length;
+  var bdRows=_buildBDPerformanceRows(FR,m,mp).slice(0,10);
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>Weekly Summary</title><style>body{font-family:Arial,sans-serif;color:#0f172a;padding:24px}h1{color:#003F5C}.meta{font-size:12px;color:#64748b}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.card{border:1px solid #cbd5e1;border-radius:10px;padding:12px}.val{font-size:22px;font-weight:800;color:#003F5C}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left;font-size:12px}.wm{position:fixed;right:18px;bottom:14px;color:rgba(0,63,92,.45);font-size:11px;font-weight:700}</style></head><body>'
+    +'<h1>Weekly Summary - '+_esc(m.en)+' '+_esc(DATA_YEAR)+'</h1>'
+    +'<div class="meta">Internal Use Only · Exported by '+_esc(meta.user)+' · Role '+_esc(meta.role)+' · Scope '+_esc(meta.scope)+' · '+_esc(meta.generatedAt)+'</div>'
+    +'<div class="grid"><div class="card"><div>Revenue</div><div class="val">'+fmtS(Math.round(totalRev))+'</div></div><div class="card"><div>Volume</div><div class="val">'+fmtS(Math.round(totalVol))+'</div></div><div class="card"><div>Tracking Done</div><div class="val">'+done+'/'+tasks.length+'</div></div><div class="card"><div>Success</div><div class="val">'+success+'</div></div></div>'
+    +'<h2>Top BD Performance</h2><table><thead><tr><th>BD</th><th>Zone</th><th>Revenue</th><th>Tasks</th><th>Done</th><th>Success</th></tr></thead><tbody>'
+    +bdRows.map(function(d){return '<tr><td>'+_esc(d.bd)+'</td><td>'+_esc(d.zone)+'</td><td>'+fmtS(Math.round(d.rev))+'</td><td>'+d.tasks+'</td><td>'+d.done+'</td><td>'+d.success+'</td></tr>';}).join('')
+    +'</tbody></table><div class="wm">INTERNAL USE ONLY · '+_esc(meta.username)+' · '+_esc(meta.generatedAt)+'</div></body></html>';
+  _downloadReportFile('weekly_summary_'+m.en+'.html',html,'text/html;charset=utf-8');
+  _clientLog('EXPORT_WEEKLY_SUMMARY','tasks='+tasks.length+' | scope='+meta.scope+' | generatedAt='+meta.generatedAt);
+}
+
 
 // ============================================================
 //  🚚 CARRIER SECTION
