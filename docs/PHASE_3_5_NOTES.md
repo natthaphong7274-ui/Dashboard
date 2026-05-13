@@ -35,6 +35,13 @@ Branch: `codex/phase-3.5`
 - ซ่อนแท็บ `BD Zone` ให้เหลือเฉพาะ Director เพราะเป็นมุมมองเปรียบเทียบระดับทีม/Zone มากกว่างานประจำของ BD และ AM
 - ปรับหน้า `ขนส่ง` ให้ BD ไม่เห็นแท็บ `ราย Zone` เพราะเป็นการเปรียบเทียบระดับพื้นที่ ไม่ใช่มุมมองที่เหมาะกับ role BD
 
+### 5. KPI Trend Cards
+
+- เพิ่ม helper กลางสำหรับ KPI card แบบ `ตัวเลขหลัก + mini bar รายเดือน + line % growth`
+- ใช้ helper นี้กับ KPI cards ในหน้า `ภาพรวม` ได้แก่ Revenue, Volume, Avg Rev/Day, Avg Rev/ชิ้น และ Avg Vol/วัน
+- ใช้ helper เดียวกันกับหน้า `ขนส่ง` ได้แก่ Volume, Revenue, Avg Rev/Day, การ์ดรายขนส่ง, Avg Rev/Vol และ Avg Vol/วัน
+- แท่งใน mini chart แสดงค่าจริงย้อนหลัง และเส้นแสดงการเติบโตแบบ MoM เพื่อให้เห็น trend โดยไม่ต้องเปิดกราฟใหญ่
+
 ## งานใน roadmap ที่แตะในรอบนี้
 
 - I2 Revenue/Volume Monthly Trend
@@ -43,6 +50,7 @@ Branch: `codex/phase-3.5`
 - I10 Target Progress + Forecast Chart
 - I11 Column Visibility แบบเริ่มต้นด้วย compact/full view
 - Role-based visualization cleanup สำหรับหน้า Overview และ Carrier
+- KPI mini trend card สำหรับ Overview และ Carrier
 
 ## จุดที่ควรเช็กบน dev
 
@@ -53,6 +61,7 @@ Branch: `codex/phase-3.5`
 5. ตารางรายการลูกค้ากดสลับมุมมองกระชับ/เต็มได้ และ refresh แล้วยังจำค่า
 6. Login เป็น BD แล้วหน้า `ภาพรวม` ต้องไม่เห็นกราฟ/ตารางราย Zone และ ranking ต้องเป็นราย Agent
 7. Login เป็น BD แล้วหน้า `ขนส่ง` ต้องไม่เห็นแท็บ `ราย Zone`; Director/AM ยังเห็นแท็บนี้ได้
+8. หน้า `ภาพรวม` และ `ขนส่ง` ต้องเห็น mini chart ใน KPI cards โดย layout ไม่ล้นบน desktop/mobile
 
 ## ข้อจำกัดที่ยังคงไว้
 

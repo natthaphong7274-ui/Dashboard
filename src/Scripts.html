@@ -800,6 +800,7 @@ function _isActiveAgent(r, m){
 function renderKPI(){
   var m=getMC();if(!m.colRev)return;
   var mp=getMP();
+  _resetKpiTrendCards();
   var mDay=getDAY1ForMonth(m.key);   // divisor ของเดือนปัจจุบัน
   var mpDay=mp?getDAY1ForMonth(mp.key):0; // divisor ของเดือนก่อน
   var revV=Math.round(sumCol(FR,m.colRev)),volV=Math.round(sumCol(FR,m.colVol)),avgV=Math.round(sumCol(FR,m.colAvg));
@@ -818,17 +819,33 @@ function renderKPI(){
   var avdDiff=avdV-avdPrev, avdPct=avdPrev?pctChg(avdPrev,avdV):null;
   var apDiff=apV-apPrev,    apPct=apPrev?pctChg(apPrev,apV):null;
 
+  var revSeries=_monthMetricSeries(m.key,function(mm){return sumCol(FR,mm.colRev);});
+  var volSeries=_monthMetricSeries(m.key,function(mm){return sumCol(FR,mm.colVol);});
+  var avgSeries=_monthMetricSeries(m.key,function(mm){return sumCol(FR,mm.colAvg);});
+  var apSeries=_monthMetricSeries(m.key,function(mm){
+    var r=sumCol(FR,mm.colRev),v=sumCol(FR,mm.colVol);
+    return v>0?r/v:0;
+  });
+  var avdSeries=_monthMetricSeries(m.key,function(mm){
+    var v=sumCol(FR,mm.colVol),d=getDAY1ForMonth(mm.key);
+    return d>0?v/d:0;
+  });
+
   var html=[
     {l:'รายการ',v:FR.length.toLocaleString(),s:'จาก '+R.length+' รายการ',c:'var(--t2)',i:'📋'},
     // Revenue — แสดงยอดรวม ไม่เทียบเดือน (ยังไม่เต็มเดือน)
-    {l:'REVENUE '+m.en,v:fmtS(revV),s:'ยอด Revenue รวม',c:'var(--c-rev)',i:'💰'},
+    {l:'REVENUE '+m.en,v:fmtS(revV),s:'ยอด Revenue รวม',c:'var(--c-rev)',i:'💰',series:revSeries,fmt:fmtS},
     // Volume — แสดงยอดรวม ไม่เทียบเดือน
-    {l:'VOLUME '+m.en,v:fmtS(volV),s:'จำนวน Volume รวม',c:'var(--c-vol)',i:'📦'},
+    {l:'VOLUME '+m.en,v:fmtS(volV),s:'จำนวน Volume รวม',c:'var(--c-vol)',i:'📦',series:volSeries,fmt:fmtS},
     // Avg Rev/Day — เทียบกับเดือนก่อน ✅
     {l:'AVG REV/DAY '+m.en,v:fmtS(avgV),s:'SUM Avg Rev/Day (÷'+mDay+'วัน)',c:'var(--c-avg)',i:'📐',
+     series:avgSeries,fmt:fmtS,
      trend:mp?'<div class="ktrend '+(avgDiff>=0?'tup':'tdn')+'">'+(avgDiff>=0?'▲':'▼')+fmtS(Math.abs(avgDiff))+' '+pill(avgPct)+' vs '+mp.en+'</div>':''},
   ].map(function(k){
-    return'<div class="kcard" style="--kc:'+k.c+'"><div class="kico">'+k.i+'</div>'
+    if(k.series){
+      return _kpiTrendCard({label:k.l,value:k.v,sub:k.s,color:k.c,icon:k.i,trend:k.trend,series:k.series,fmt:k.fmt});
+    }
+    return '<div class="kcard" style="--kc:'+k.c+'"><div class="kico">'+k.i+'</div>'
       +'<div class="klbl">'+k.l+'</div><div class="kval">'+k.v+'</div>'
       +'<div class="ksub">'+k.s+'</div>'+(k.trend||'')+'</div>';
   }).join('');
@@ -836,19 +853,132 @@ function renderKPI(){
 
   // Extra KPI row: Avg Rev/ชิ้น + Avg Vol/วัน — ทั้งคู่เทียบ vs เดือนก่อน ✅
   var extraHtml='';
-  extraHtml+='<div class="kcard-mini" style="--kc:var(--c-apc)"><div class="kico">🏷️</div>'
-    +'<div class="klbl">AVG REV/ชิ้น '+m.en+'</div>'
-    +'<div class="kval" style="color:var(--c-apc);font-size:17px;">'+fmtF(apV)+'</div>'
-    +'<div class="ksub">Revenue ÷ Volume รวม</div>'
-    +(mp?'<div class="ktrend '+(apDiff>=0?'tup':'tdn')+'">'+(apDiff>=0?'▲':'▼')+fmtF(Math.abs(apDiff))+' '+pill(apPct)+' vs '+mp.en+'</div>':'')
-    +'</div>';
-  extraHtml+='<div class="kcard-mini" style="--kc:var(--c-avd)"><div class="kico">📦</div>'
-    +'<div class="klbl">AVG VOL/วัน '+m.en+'</div>'
-    +'<div class="kval" style="color:var(--c-avd);font-size:17px;">'+fmtF(avdV)+'</div>'
-    +'<div class="ksub">Volume ÷ '+mDay+' วัน</div>'
-    +(mp?'<div class="ktrend '+(avdDiff>=0?'tup':'tdn')+'">'+(avdDiff>=0?'▲':'▼')+fmtF(Math.abs(avdDiff))+' '+pill(avdPct)+' vs '+mp.en+'</div>':'')
-    +'</div>';
+  extraHtml+=_kpiTrendCard({mini:true,label:'AVG REV/ชิ้น '+m.en,value:fmtF(apV),sub:'Revenue ÷ Volume รวม',color:'var(--c-apc)',icon:'🏷️',series:apSeries,fmt:fmtF,
+    trend:mp?'<div class="ktrend '+(apDiff>=0?'tup':'tdn')+'">'+(apDiff>=0?'▲':'▼')+fmtF(Math.abs(apDiff))+' '+pill(apPct)+' vs '+mp.en+'</div>':''});
+  extraHtml+=_kpiTrendCard({mini:true,label:'AVG VOL/วัน '+m.en,value:fmtF(avdV),sub:'Volume ÷ '+mDay+' วัน',color:'var(--c-avd)',icon:'📦',series:avdSeries,fmt:fmtF,
+    trend:mp?'<div class="ktrend '+(avdDiff>=0?'tup':'tdn')+'">'+(avdDiff>=0?'▲':'▼')+fmtF(Math.abs(avdDiff))+' '+pill(avdPct)+' vs '+mp.en+'</div>':''});
   document.getElementById('kgrid_extra').innerHTML=extraHtml;
+  _flushKpiTrendCards();
+}
+
+var _pendingKpiTrendCharts=[];
+var _kpiTrendSeq=0;
+function _resetKpiTrendCards(){
+  _pendingKpiTrendCharts=[];
+}
+function _kpiTrendCard(cfg){
+  var id=cfg.id||('kpi_trend_'+(++_kpiTrendSeq));
+  var cls=cfg.mini?'kcard-mini kcard-trend':'kcard kcard-trend';
+  _pendingKpiTrendCharts.push({
+    id:id,
+    labels:(cfg.series&&cfg.series.labels)||[],
+    values:(cfg.series&&cfg.series.values)||[],
+    color:cfg.color||'var(--ac)',
+    fmt:cfg.fmt||fmtS
+  });
+  return '<div class="'+cls+'" style="--kc:'+cfg.color+'"><div class="kico">'+(cfg.icon||'')+'</div>'
+    +'<div class="klbl">'+cfg.label+'</div>'
+    +'<div class="kval">'+cfg.value+'</div>'
+    +'<div class="ksub">'+(cfg.sub||'')+'</div>'
+    +(cfg.trend||'')
+    +'<div class="kmini-chart"><canvas id="'+id+'"></canvas></div>'
+    +'</div>';
+}
+function _flushKpiTrendCards(){
+  var jobs=_pendingKpiTrendCharts.slice();
+  setTimeout(function(){
+    jobs.forEach(function(job){_renderKpiTrendChart(job);});
+  },0);
+}
+function _renderKpiTrendChart(job){
+  var el=document.getElementById(job.id);
+  if(!el||!job.values||job.values.length<2)return;
+  dc(job.id);
+  var chartColor=_cssColor(job.color);
+  var growth=job.values.map(function(v,i){
+    if(i===0||!job.values[i-1])return null;
+    return ((v-job.values[i-1])/Math.abs(job.values[i-1]))*100;
+  });
+  CH[job.id]=new Chart(el.getContext('2d'),{
+    data:{
+      labels:job.labels,
+      datasets:[
+        {type:'bar',label:'Actual',data:job.values,backgroundColor:chartColor,borderRadius:3,borderSkipped:false,barPercentage:.72,categoryPercentage:.72,yAxisID:'y'},
+        {type:'line',label:'Growth %',data:growth,borderColor:chartColor,backgroundColor:chartColor,tension:.35,pointRadius:0,borderWidth:1.8,yAxisID:'y1'}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:function(ctx){
+          if(ctx.dataset.type==='line')return 'Growth '+(ctx.raw===null?'-':ctx.raw.toFixed(1)+'%');
+          return 'Actual '+(job.fmt?job.fmt(ctx.raw):ctx.raw);
+        }
+      }}},
+      scales:{
+        x:{display:false,grid:{display:false}},
+        y:{display:false,beginAtZero:true,grid:{display:false}},
+        y1:{display:false,position:'right',grid:{display:false}}
+      }
+    }
+  });
+}
+function _cssColor(color){
+  if(!color)return '#2d699f';
+  var m=String(color).match(/^var\((--[^)]+)\)$/);
+  if(m){
+    var v=getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim();
+    return v||'#2d699f';
+  }
+  return color;
+}
+function _recentMonths(curKey,count){
+  var months=MONTHS||[];
+  var idx=months.findIndex(function(m){return m.key===curKey;});
+  if(idx<0)idx=months.length-1;
+  return months.slice(Math.max(0,idx-(count||6)+1),idx+1);
+}
+function _monthMetricSeries(curKey,fn){
+  var months=_recentMonths(curKey,6);
+  return {
+    labels:months.map(function(m){return m.en||m.key;}),
+    values:months.map(function(m){return fn(m)||0;})
+  };
+}
+function _recentCarrierMonths(curKey,count){
+  var months=CARRIER_MONTHS||[];
+  var idx=months.findIndex(function(m){return m.key===curKey;});
+  if(idx<0)idx=months.length-1;
+  return months.slice(Math.max(0,idx-(count||6)+1),idx+1);
+}
+function _carrierMetricSeries(curKey,carrierName,fn){
+  var months=_recentCarrierMonths(curKey,6);
+  return {
+    labels:months.map(function(m){return m.key.toUpperCase();}),
+    values:months.map(function(m){
+      var carriers=carrierName?[carrierName]:CARRIERS.filter(function(c){return filterCarrierSet.size===0||filterCarrierSet.has(c);});
+      return carriers.reduce(function(sum,c){
+        var vol=sumCol(FR,carCol(c,'Vol',m.label));
+        var rev=sumCol(FR,carCol(c,'Rev',m.label));
+        return sum+(fn({vol:vol,rev:rev,month:m,carrier:c})||0);
+      },0);
+    })
+  };
+}
+function _carrierTotalMetricSeries(curKey,fn){
+  var months=_recentCarrierMonths(curKey,6);
+  return {
+    labels:months.map(function(m){return m.key.toUpperCase();}),
+    values:months.map(function(m){
+      var carriers=CARRIERS.filter(function(c){return filterCarrierSet.size===0||filterCarrierSet.has(c);});
+      var totals=carriers.reduce(function(acc,c){
+        acc.vol+=sumCol(FR,carCol(c,'Vol',m.label));
+        acc.rev+=sumCol(FR,carCol(c,'Rev',m.label));
+        return acc;
+      },{vol:0,rev:0});
+      return fn({vol:totals.vol,rev:totals.rev,month:m})||0;
+    })
+  };
 }
 
 // ===== CHART HELPERS =====
@@ -3453,6 +3583,7 @@ function loadAndRenderCarrier(){
 // ─── renderCarrierSection ─────────────────────────────────
 function renderCarrierSection(){
   _applyCarrierRoleRules();
+  _resetKpiTrendCards();
   if(!CARRIERS.length){
     document.getElementById('carrier_kgrid').innerHTML='<div style="padding:20px;color:var(--t2)">ไม่พบข้อมูลขนส่ง</div>';
     return;
@@ -3541,23 +3672,12 @@ function renderCarrierSection(){
   // ── KPI Cards — style เดียวกับภาพรวม ──
   // Row 1: Vol, Rev, Avg Rev/Day, Loss/Inactive placeholder
   var kHtml=
-    '<div class="kcard" style="--kc:var(--c-vol)"><div class="kico">📦</div>'
-    +'<div class="klbl">VOLUME '+curKey.toUpperCase()+'</div>'
-    +'<div class="kval" style="color:var(--c-vol)">'+fmtS(totalVol)+'</div>'
-    +'<div class="ksub">จำนวน Volume รวม</div>'
-    +diffTrend(totalVol,totalVolPrev,fmtS)+'</div>'
-
-    +'<div class="kcard" style="--kc:var(--c-rev)"><div class="kico">💰</div>'
-    +'<div class="klbl">REVENUE '+curKey.toUpperCase()+'</div>'
-    +'<div class="kval" style="color:var(--c-rev)">'+fmtS(totalRev)+'</div>'
-    +'<div class="ksub">ยอด Revenue รวม</div>'
-    +diffTrend(totalRev,totalRevPrev,fmtS)+'</div>'
-
-    +'<div class="kcard" style="--kc:var(--c-ard)"><div class="kico">📐</div>'
-    +'<div class="klbl">AVG REV/DAY '+curKey.toUpperCase()+'</div>'
-    +'<div class="kval" style="color:var(--c-ard)">'+fmtS(Math.round(totalAvgRevDay))+'</div>'
-    +'<div class="ksub">Rev รวม ÷ '+dayDiv+'วัน</div>'
-    +diffTrend(totalAvgRevDay,totalAvgRevDayPrev,function(v){return fmtS(Math.round(v));})+'</div>';
+    _kpiTrendCard({label:'VOLUME '+curKey.toUpperCase(),value:fmtS(totalVol),sub:'จำนวน Volume รวม',color:'var(--c-vol)',icon:'📦',fmt:fmtS,
+      series:_carrierTotalMetricSeries(curKey,function(d){return d.vol;}),trend:diffTrend(totalVol,totalVolPrev,fmtS)})
+    +_kpiTrendCard({label:'REVENUE '+curKey.toUpperCase(),value:fmtS(totalRev),sub:'ยอด Revenue รวม',color:'var(--c-rev)',icon:'💰',fmt:fmtS,
+      series:_carrierTotalMetricSeries(curKey,function(d){return d.rev;}),trend:diffTrend(totalRev,totalRevPrev,fmtS)})
+    +_kpiTrendCard({label:'AVG REV/DAY '+curKey.toUpperCase(),value:fmtS(Math.round(totalAvgRevDay)),sub:'Rev รวม ÷ '+dayDiv+'วัน',color:'var(--c-ard)',icon:'📐',fmt:function(v){return fmtS(Math.round(v));},
+      series:_carrierTotalMetricSeries(curKey,function(d){return d.rev/Math.max(1,getDAY1ForMonth(d.month.key));}),trend:diffTrend(totalAvgRevDay,totalAvgRevDayPrev,function(v){return fmtS(Math.round(v));})});
 
   // Top carriers
   carrierStats.slice(0,4).forEach(function(c){
@@ -3567,36 +3687,27 @@ function renderCarrierSection(){
     var avdPct=c.avgVolDayPrev>0?((avdDiff/Math.abs(c.avgVolDayPrev))*100).toFixed(1):null;
     var arvDiff=c.avgRevVol-c.avgRevVolPrev;
     var arvPct=c.avgRevVolPrev>0?((arvDiff/Math.abs(c.avgRevVolPrev))*100).toFixed(1):null;
-    kHtml+='<div class="kcard" style="--kc:'+c.color+'"><div class="kico">🚚</div>'
-      +'<div class="klbl">'+c.name+'</div>'
-      +'<div class="kval" style="color:'+c.color+'">'+fmtS(c.vCur)+'</div>'
-      +'<div class="ksub">'+pct+'% | Avg Vol/วัน: '+fmtF(c.avgVolDay)+' | Rev/ชิ้น: '+fmtF(c.avgRevVol)+'</div>'
-      +(prevLabel?
+    kHtml+=_kpiTrendCard({label:c.name,value:fmtS(c.vCur),sub:pct+'% | Avg Vol/วัน '+fmtF(c.avgVolDay)+' | Rev/ชิ้น '+fmtF(c.avgRevVol),color:c.color,icon:'🚚',fmt:fmtS,
+      series:_carrierMetricSeries(curKey,c.name,function(d){return d.vol;}),
+      trend:(prevLabel?
           '<div class="ktrend '+(avdDiff>=0?'tup':'tdn')+'">'
           +(avdDiff>=0?'▲':'▼')+fmtF(Math.abs(avdDiff))+(avdPct?' ('+Math.abs(avdPct)+'%)':'')+' Avg Vol/วัน vs '+prevKey
           +'</div>'
           +'<div class="ktrend '+(arvDiff>=0?'tup':'tdn')+'" style="font-size:9px;margin-top:1px">'
           +(arvDiff>=0?'▲':'▼')+fmtF(Math.abs(arvDiff))+(arvPct?' ('+Math.abs(arvPct)+'%)':'')+' Rev/ชิ้น vs '+prevKey
           +'</div>'
-        :'')
-      +'</div>';
+        :'')});
   });
   document.getElementById('carrier_kgrid').innerHTML=kHtml;
 
   // Row 2 (extra) — Avg Rev/Vol + Avg Vol/Day (เหมือน kpi-extra-row ในภาพรวม)
   var k2Html=
-    '<div class="kcard" style="--kc:var(--c-apc);min-width:160px"><div class="kico">🏷️</div>'
-    +'<div class="klbl">AVG REV/VOL '+curKey.toUpperCase()+'</div>'
-    +'<div class="kval" style="color:var(--c-apc)">'+fmtF(totalAvgRevVol)+'</div>'
-    +'<div class="ksub">Revenue ÷ Volume รวม</div>'
-    +diffTrend(totalAvgRevVol,totalAvgRevVolPrev,fmtF)+'</div>'
-
-    +'<div class="kcard" style="--kc:var(--c-avd);min-width:160px"><div class="kico">📦</div>'
-    +'<div class="klbl">AVG VOL/วัน '+curKey.toUpperCase()+'</div>'
-    +'<div class="kval" style="color:var(--c-avd)">'+fmtF(totalAvgVolDay)+'</div>'
-    +'<div class="ksub">Volume ÷ '+dayDiv+'วัน</div>'
-    +diffTrend(totalAvgVolDay,totalAvgVolDayPrev,fmtF)+'</div>';
+    _kpiTrendCard({mini:true,label:'AVG REV/VOL '+curKey.toUpperCase(),value:fmtF(totalAvgRevVol),sub:'Revenue ÷ Volume รวม',color:'var(--c-apc)',icon:'🏷️',fmt:fmtF,
+      series:_carrierTotalMetricSeries(curKey,function(d){return d.vol>0?d.rev/d.vol:0;}),trend:diffTrend(totalAvgRevVol,totalAvgRevVolPrev,fmtF)})
+    +_kpiTrendCard({mini:true,label:'AVG VOL/วัน '+curKey.toUpperCase(),value:fmtF(totalAvgVolDay),sub:'Volume ÷ '+dayDiv+'วัน',color:'var(--c-avd)',icon:'📦',fmt:fmtF,
+      series:_carrierTotalMetricSeries(curKey,function(d){return d.vol/Math.max(1,getDAY1ForMonth(d.month.key));}),trend:diffTrend(totalAvgVolDay,totalAvgVolDayPrev,fmtF)});
   document.getElementById('carrier_kgrid2').innerHTML=k2Html;
+  _flushKpiTrendCards();
 
   // ── ★ ข้อ 6: build dropdown filter ทุกครั้ง ──
   var fsel=document.getElementById('car_filter_sel');
