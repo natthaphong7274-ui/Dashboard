@@ -23,12 +23,15 @@ function doGet(e) {
 
 // สร้าง token แบบ random
 function _makeToken() {
-  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var t = '';
-  for (var i = 0; i < 32; i++) {
-    t += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return TOKEN_PREFIX + t;
+  var uuidA = Utilities.getUuid().replace(/-/g, '');
+  var uuidB = Utilities.getUuid().replace(/-/g, '');
+  return TOKEN_PREFIX + uuidA + uuidB;
+}
+
+function _isValidTokenFormat(token) {
+  if (!token || token.indexOf(TOKEN_PREFIX) !== 0) return false;
+  var body = String(token).slice(TOKEN_PREFIX.length);
+  return /^[A-Fa-f0-9]{64}$/.test(body) || /^[A-Za-z0-9]{32}$/.test(body);
 }
 
 // ล้าง token ที่หมดอายุออกจาก ScriptProperties
@@ -187,7 +190,10 @@ function login(username, password, userAgent) {
 
 // getSession(token, skipIdleCheck) → { ok, username, role, zones } | { ok:false, idle:true }
 function getSession(token, skipIdleCheck) {
-  if (!token || token.indexOf(TOKEN_PREFIX) !== 0) return { ok: false };
+  if (!_isValidTokenFormat(token)) {
+    if (token) logActivity('-', '-', 'INVALID_TOKEN_FORMAT', 'Rejected malformed session token');
+    return { ok: false };
+  }
   try {
     var props = PropertiesService.getScriptProperties();
     var raw   = props.getProperty(token);
