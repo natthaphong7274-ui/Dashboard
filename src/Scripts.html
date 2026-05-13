@@ -3362,21 +3362,20 @@ function _renderReportCenterBD(model){
   var titleEl=document.getElementById('rc_bd_chart_title');
   var subEl=document.getElementById('rc_bd_chart_sub');
   var chartHost=document.getElementById('rc_bd_chart_host');
-  var matrixHost=document.getElementById('rc_bd_trend_matrix');
+  var trendHost=document.getElementById('rc_bd_trend_charts');
   setTimeout(function(){
     if(_reportCenterBdView==='trend'){
       if(titleEl)titleEl.textContent='BD Monthly Trend';
-      if(subEl)subEl.textContent='Revenue / Volume by month for all visible BDs';
+      if(subEl)subEl.textContent='Revenue and Volume line charts for all visible BDs';
       if(chartHost)chartHost.style.display='none';
-      if(matrixHost){
-        matrixHost.style.display='block';
-        matrixHost.innerHTML=_reportCenterBdMonthlyTable(model.bdMonthly);
-      }
+      if(trendHost)trendHost.style.display='grid';
+      _reportCenterBdTrendLineChart('rc_bd_rev_trend_chart',model.bdMonthly,'rev','Revenue',fmtS);
+      _reportCenterBdTrendLineChart('rc_bd_vol_trend_chart',model.bdMonthly,'vol','Volume',fmtS);
     }else{
       if(titleEl)titleEl.textContent='Top BD Revenue';
       if(subEl)subEl.textContent='Bar = current revenue, line = MoM growth';
       if(chartHost)chartHost.style.display='block';
-      if(matrixHost)matrixHost.style.display='none';
+      if(trendHost)trendHost.style.display='none';
       _reportCenterBarLineChart(
         'rc_bd_chart',
         top.map(function(r){return r.bd;}),
@@ -3500,6 +3499,57 @@ function _reportCenterMultiLineChart(id,labels,series,fmtFn){
       }
     }
   });
+}
+function _reportCenterBdTrendLineChart(id,data,metric,label,fmtFn){
+  var el=document.getElementById(id);
+  if(!el || !data)return;
+  dc(id);
+  var rows=data.rows||[];
+  var count=Math.max(rows.length,1);
+  CH[id]=new Chart(el.getContext('2d'),{
+    type:'line',
+    data:{
+      labels:data.labels||[],
+      datasets:rows.map(function(row,idx){
+        var color=_reportCenterSeriesColor(idx,count);
+        return {
+          label:row.bd,
+          data:(row.months||[]).map(function(m){return metric==='vol'?m.vol:m.rev;}),
+          borderColor:color,
+          backgroundColor:color,
+          tension:.32,
+          fill:false,
+          pointRadius:2,
+          pointHoverRadius:4,
+          borderWidth:2
+        };
+      })
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'nearest',intersect:false},
+      plugins:{
+        legend:{
+          position:'bottom',
+          labels:{font:{size:9},boxWidth:9,usePointStyle:true}
+        },
+        tooltip:{callbacks:{
+          label:function(ctx){
+            return ctx.dataset.label+': '+(fmtFn?fmtFn(ctx.raw):ctx.raw);
+          }
+        }}
+      },
+      scales:{
+        x:{ticks:{font:{size:10}},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return fmtFn?fmtFn(v):v;}},grid:{color:'#eef2f7'}}
+      }
+    }
+  });
+}
+function _reportCenterSeriesColor(idx,total){
+  var hue=Math.round((idx*360)/Math.max(total,1));
+  return 'hsl('+hue+', 68%, 38%)';
 }
 function _reportCenterCarrierTable(rows){
   if(!rows.length)return '<div class="rc-empty">No carrier data in current scope.</div>';
