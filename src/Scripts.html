@@ -38,6 +38,69 @@ var _savedFilterState = {}; // เก็บค่า filter ข้าม tab
 // Drill-down sort state — แยกต่างหากสำหรับแต่ละ panel
 var DRILL_SORT={}; // { panelId: {field:'rev', dir:'desc'} }
 var PAL=['#003F5C','#009B9B','#E8622A','#005F7A','#007A7A','#CDD8D8','#5C3D8F','#00788C','#CC4A1A','#004A6E','#33B8B8','#F0A080'];
+var _watermarkTimer = null;
+
+// ===== UI STATE HELPERS =====
+function _uiEl(target){
+  if(!target) return null;
+  return (typeof target === 'string') ? document.getElementById(target) : target;
+}
+function _uiText(value){
+  return String(value == null ? '' : value)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+function _renderState(target, type, title, msg, retryFnName){
+  var el = _uiEl(target);
+  if(!el) return;
+  var cls = 'ui-state ui-state-card ' + (type || 'empty');
+  var icon = type === 'loading' ? '<div class="spin"></div>' : (type === 'error' ? '!' : (type === 'warning' ? '?' : '-'));
+  var action = retryFnName
+    ? '<div class="ui-state-actions"><button class="ui-retry-btn" onclick="'+_uiText(retryFnName)+'()">Retry</button></div>'
+    : '';
+  el.innerHTML =
+    '<div class="'+cls+'">'
+    + (type === 'loading' ? icon : '<div class="ui-state-icon">'+icon+'</div>')
+    + '<div class="ui-state-title">'+_uiText(title || '')+'</div>'
+    + (msg ? '<div class="ui-state-msg">'+_uiText(msg)+'</div>' : '')
+    + action
+    + '</div>';
+}
+function renderLoading(target,msg){ _renderState(target,'loading','Loading',msg || 'Preparing data...',null); }
+function renderEmpty(target,msg){ _renderState(target,'empty','No data',msg || 'No records match the current filters.',null); }
+function renderError(target,msg,retryFnName){ _renderState(target,'error','Unable to load',msg || 'Please try again.',retryFnName || 'loadData'); }
+
+function _formatWatermarkTime(d){
+  d = d || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0')
+    + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function _updateWatermark(){
+  var el = document.getElementById('dashboard_watermark');
+  if(!el) return;
+  if(!_currentUser){
+    el.classList.remove('on');
+    el.innerHTML = '';
+    return;
+  }
+  var name = _currentUser.displayName || _currentUser.username || '-';
+  var role = _currentUser.role || '-';
+  el.innerHTML = '<strong>Internal Use Only</strong><br>' + _uiText(name) + ' | ' + _uiText(role) + ' | ' + _formatWatermarkTime(new Date());
+  el.classList.add('on');
+}
+function _startWatermark(){
+  _stopWatermark();
+  _updateWatermark();
+  _watermarkTimer = setInterval(_updateWatermark, 60000);
+}
+function _stopWatermark(){
+  if(_watermarkTimer){ clearInterval(_watermarkTimer); _watermarkTimer = null; }
+  var el = document.getElementById('dashboard_watermark');
+  if(el){ el.classList.remove('on'); el.innerHTML = ''; }
+}
 // ── วันที่และ divisor ────────────────────────────────────────────────
 function daysInMonth(year, month){ return new Date(year, month, 0).getDate(); }
 
@@ -149,16 +212,17 @@ function grpAvgVolDayPrev(rows, groupCol, mp) {
 
 // ===== LOAD =====
 function loadData(){
-  document.getElementById('kgrid').innerHTML='<div class="loading"><div class="spin"></div>กำลังโหลด...</div>';
+  renderLoading('kgrid','Loading dashboard data...');
+  renderLoading('home_content','Loading workspace...');
   _chartsRendered = {}; // invalidate chart cache เมื่อโหลดข้อมูลใหม่
   google.script.run
     .withSuccessHandler(function(d){
       if(!d || d.error){
         var errMsg = (d&&d.error?d.error:'ข้อมูลผิดพลาด — กรุณาตรวจสอบ Spreadsheet และ Sheet ชื่อ Raw-KPI-*');
-        document.getElementById('kgrid').innerHTML='<div style="color:red;padding:20px">❌ '+errMsg+'</div>';
+        renderError('kgrid',errMsg,'loadData');
         // ★ แสดง error ใน home_content ด้วย ไม่ให้ว่างเงียบ
         var hc=document.getElementById('home_content');
-        if(hc) hc.innerHTML='<div style="padding:40px;text-align:center;color:#dc2626;font-size:14px">❌ โหลดข้อมูลไม่สำเร็จ<br><small style="color:#64748b">'+errMsg+'</small><br><br><button onclick="loadData()" style="padding:8px 20px;background:#003F5C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">🔄 ลองใหม่</button></div>';
+        if(hc) renderError(hc,errMsg,'loadData');
         _hideSplash();
         return;
       }
@@ -184,9 +248,9 @@ function loadData(){
         var noDataMsg = !MONTHS.length
           ? 'ไม่พบ Sheet ข้อมูลเดือน (ต้องการ Sheet ชื่อ Raw-KPI-Jan / Raw-KPI-Feb ฯลฯ)'
           : 'ไม่มีข้อมูล Agent (ตรวจสอบ Sheet: '+BASE_SHEET+')';
-        document.getElementById('kgrid').innerHTML='<div style="padding:20px;color:#f59e0b">⚠️ '+noDataMsg+'</div>';
+        renderEmpty('kgrid',noDataMsg);
         var hc2=document.getElementById('home_content');
-        if(hc2) hc2.innerHTML='<div style="padding:40px;text-align:center;color:#f59e0b;font-size:14px">⚠️ '+noDataMsg+'</div>';
+        if(hc2) renderEmpty(hc2,noDataMsg);
         _hideSplash();
         return;
       }
@@ -205,9 +269,9 @@ function loadData(){
     })
     .withFailureHandler(function(e){
       var errMsg='โหลดข้อมูลไม่สำเร็จ: '+(e&&e.message?e.message:'กรุณาลอง Refresh');
-      document.getElementById('kgrid').innerHTML='<div style="color:red;padding:20px">❌ '+errMsg+'</div>';
+      renderError('kgrid',errMsg,'loadData');
       var hc=document.getElementById('home_content');
-      if(hc) hc.innerHTML='<div style="padding:40px;text-align:center;color:#dc2626;font-size:14px">❌ '+errMsg+'<br><br><button onclick="loadData()" style="padding:8px 20px;background:#003F5C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">🔄 ลองใหม่</button></div>';
+      if(hc) renderError(hc,errMsg,'loadData');
       console.error('[loadData] failure:', e);
       _hideSplash();
     })
@@ -3773,6 +3837,7 @@ function _hideSplash(){
 }
 function showLoginOverlay(){
   _hideSplash();
+  if(!_currentUser) _stopWatermark();
   var el=document.getElementById('login_overlay');
   if(el){el.style.display='flex';}
 }
@@ -3967,6 +4032,7 @@ function doLogout(){
       _stopHeartbeat(); // หยุด Heartbeat เมื่อ logout
       sessionStorage.removeItem('DASH_TOKEN');
       _currentUser=null;
+      _stopWatermark();
       H=[];R=[];FR=[];MONTHS=[];CARRIERS=[];CARRIER_MONTHS=[];
       document.getElementById('kgrid').innerHTML='';
       document.getElementById('user_badge').innerHTML='';
@@ -3978,6 +4044,8 @@ function doLogout(){
     })
     .withFailureHandler(function(){
       sessionStorage.removeItem('DASH_TOKEN');
+      _currentUser=null;
+      _stopWatermark();
       showLoginOverlay();
     })
     .logout(token);
@@ -3995,6 +4063,7 @@ function _showUserBadge(user){
   // แสดง tab จัดการผู้ใช้เฉพาะ Director
   var umTab = document.getElementById('usermgmt_tab');
   if(umTab) umTab.style.display = (user.role==='Director') ? 'inline-block' : 'none';
+  _startWatermark();
 
   // ★ Role-based: ซ่อน BD Zone sub-tab สำหรับ BD/AM (ข้อมูล zone เดียว ไม่มีประโยชน์)
   var isBD = user.role === 'BD';
@@ -5669,6 +5738,7 @@ function _startHeartbeat() {
             _stopTrkPoll();
             sessionStorage.removeItem('DASH_TOKEN');
             _currentUser = null;
+            _stopWatermark();
             // แสดงข้อความต่างกันระหว่าง idle กับ session expire
             var msg = res.idle
               ? 'ไม่มีการใช้งาน 30 นาที\nระบบ Logout อัตโนมัติแล้ว\nกรุณา Login ใหม่'
@@ -8183,7 +8253,7 @@ function renderHome() {
   }
   if (!m || !FR || !FR.length) {
     if (loadingEl) loadingEl.style.display = 'block';
-    if (contentEl) contentEl.innerHTML = '';
+    if (contentEl) renderLoading(contentEl,'Waiting for dashboard data...');
     return;
   }
   if (loadingEl) loadingEl.style.display = 'none';
@@ -8193,23 +8263,12 @@ function renderHome() {
     else if (role === 'AM')       _renderHomeAM(m, mp);
     else                          _renderHomeBD(m, mp);  // BD / default
     if (contentEl && !String(contentEl.innerHTML || '').trim()) {
-      contentEl.innerHTML =
-        '<div style="padding:24px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;margin:16px;color:#92400e">'
-        + '<div style="font-size:14px;font-weight:700;margin-bottom:6px">⚠️ หน้าแรกยังไม่มีข้อมูลแสดงผล</div>'
-        + '<div style="font-size:12px">โหลดข้อมูลสำเร็จแล้ว แต่ renderer ไม่ได้สร้าง content สำหรับ role: '+role+'</div>'
-        + '<button onclick="renderHome()" style="margin-top:12px;padding:6px 16px;background:#003F5C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 ลอง Render ใหม่</button>'
-        + '</div>';
+      _renderState(contentEl,'warning','Workspace is empty','Renderer did not create content for role: '+role,'renderHome');
     }
   } catch(err) {
     console.error('[renderHome] error:', err);
     if (contentEl) {
-      contentEl.innerHTML =
-        '<div style="padding:24px;background:#fff5f5;border:1.5px solid #fca5a5;border-radius:12px;margin:16px">'
-        + '<div style="font-size:14px;font-weight:700;color:#dc2626;margin-bottom:8px">⚠️ renderHome error (role: '+role+')</div>'
-        + '<pre style="font-size:11px;color:#7f1d1d;white-space:pre-wrap;word-break:break-all;margin:0 0 12px">'+(err&&err.stack?err.stack:String(err))+'</pre>'
-        + '<div style="font-size:11px;color:#64748b;margin-bottom:8px">FR='+FR.length+' rows | MONTHS='+MONTHS.length+' | m.key='+(m&&m.key||'?')+' | m.colRev='+(m&&m.colRev||'?')+'</div>'
-        + '<button onclick="renderHome()" style="padding:6px 16px;background:#003F5C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 ลอง Render ใหม่</button>'
-        + '</div>';
+      renderError(contentEl,'renderHome error for role '+role+': '+(err&&err.message?err.message:String(err)),'renderHome');
     }
   }
 }
