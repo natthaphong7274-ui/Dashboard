@@ -98,7 +98,7 @@ function _updateWatermark(){
     var captureText = 'CONFIDENTIAL · ' + name + ' · ' + role + ' · ' + stamp;
     var safeText = _uiText(captureText);
     var tiles = [];
-    for(var i=0;i<45;i++) tiles.push('<span>'+safeText+'</span>');
+    for(var i=0;i<28;i++) tiles.push('<span>'+safeText+'</span>');
     captureEl.innerHTML = tiles.join('');
     captureEl.classList.add('on');
   }
