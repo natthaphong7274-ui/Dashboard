@@ -25,13 +25,68 @@ function doGet(e) {
 function _makeToken() {
   var uuidA = Utilities.getUuid().replace(/-/g, '');
   var uuidB = Utilities.getUuid().replace(/-/g, '');
-  return TOKEN_PREFIX + uuidA + uuidB;
+  var stamp = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyyMMddHHmmssSSS');
+  var digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    uuidA + uuidB + stamp,
+    Utilities.Charset.UTF_8
+  ).map(function(b){ return ('0' + ((b < 0 ? b + 256 : b).toString(16))).slice(-2); }).join('');
+  return TOKEN_PREFIX + uuidA + uuidB + digest.slice(0, 16);
 }
 
 function _isValidTokenFormat(token) {
   if (!token || token.indexOf(TOKEN_PREFIX) !== 0) return false;
   var body = String(token).slice(TOKEN_PREFIX.length);
-  return /^[A-Fa-f0-9]{64}$/.test(body) || /^[A-Za-z0-9]{32}$/.test(body);
+  return /^[A-Fa-f0-9]{80}$/.test(body) || /^[A-Fa-f0-9]{64}$/.test(body) || /^[A-Za-z0-9]{32}$/.test(body);
+}
+
+function _loginFingerprint(userAgent) {
+  var ua = String(userAgent || '').substring(0, 200);
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, ua, Utilities.Charset.UTF_8);
+  return digest.map(function(b){ return ('0' + ((b < 0 ? b + 256 : b).toString(16))).slice(-2); }).join('').slice(0, 16);
+}
+
+function _getBruteKey(userAgent) {
+  var prefix = (typeof BRUTE_PREFIX !== 'undefined') ? BRUTE_PREFIX : 'BRUTE_';
+  return prefix + _loginFingerprint(userAgent);
+}
+
+function _getBruteState(userAgent) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(_getBruteKey(userAgent));
+    if (!raw) return { count: 0, blocked: false };
+    var d = JSON.parse(raw);
+    var ttl = (typeof BRUTE_TTL_MS !== 'undefined') ? BRUTE_TTL_MS : (10 * 60 * 1000);
+    if (Date.now() - Number(d.lastFail || 0) > ttl) {
+      PropertiesService.getScriptProperties().deleteProperty(_getBruteKey(userAgent));
+      return { count: 0, blocked: false };
+    }
+    var maxFail = (typeof BRUTE_MAX_FAIL !== 'undefined') ? BRUTE_MAX_FAIL : 8;
+    return { count: Number(d.count || 0), blocked: Number(d.count || 0) >= maxFail };
+  } catch(e) {
+    return { count: 0, blocked: false };
+  }
+}
+
+function _incBruteFail(userAgent, username) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var state = _getBruteState(userAgent);
+    var next = { count: state.count + 1, lastFail: Date.now() };
+    props.setProperty(_getBruteKey(userAgent), JSON.stringify(next));
+    if (next.count >= ((typeof BRUTE_MAX_FAIL !== 'undefined') ? BRUTE_MAX_FAIL : 8)) {
+      logActivity(username || '-', '-', 'LOGIN_SOFT_BLOCK', 'Too many login failures | fp=' + _loginFingerprint(userAgent));
+    }
+    return next;
+  } catch(e) {
+    return { count: 0 };
+  }
+}
+
+function _clearBruteFail(userAgent) {
+  try {
+    PropertiesService.getScriptProperties().deleteProperty(_getBruteKey(userAgent));
+  } catch(e) {}
 }
 
 // ล้าง token ที่หมดอายุออกจาก ScriptProperties
@@ -95,6 +150,11 @@ function _clearFail(u) {
 function login(username, password, userAgent) {
   try {
     var uLower = (username || '').trim().toLowerCase();
+    var brute = _getBruteState(userAgent);
+    if (brute.blocked) {
+      logActivity(username || '-', '-', 'LOGIN_BLOCKED_SOFT', 'Soft block by user-agent fingerprint | fp=' + _loginFingerprint(userAgent));
+      return { ok: false, error: 'Username หรือ Password ไม่ถูกต้อง กรุณารอสักครู่แล้วลองใหม่' };
+    }
 
     // ── ตรวจว่า account ถูก lock ไหม (Director ข้ามขั้นตอนนี้ได้) ──
     var isDirector = false;
@@ -153,6 +213,7 @@ function login(username, password, userAgent) {
           logActivity(u, '-', 'LOGIN_FAIL', 'Password ผิด (Director - ไม่นับ fail) | UA: ' + (userAgent||'-'));
         } else {
           failRes = _incFail(uLower);
+          _incBruteFail(userAgent, uLower);
           msg = failRes.locked
             ? 'Password ผิด — บัญชีถูกระงับ 15 นาที (ผิดครบ ' + MAX_FAIL_LOGIN + ' ครั้ง)'
             : 'Password ไม่ถูกต้อง (ผิดแล้ว ' + failRes.count + '/' + MAX_FAIL_LOGIN + ' ครั้ง)';
@@ -163,6 +224,7 @@ function login(username, password, userAgent) {
 
       // ── Login สำเร็จ ──
       _clearFail(uLower);
+      _clearBruteFail(userAgent);
       var role     = rIdx >= 0 ? String(row[rIdx] || '').trim() : 'BD';
       var zoneRaw  = zIdx >= 0 ? String(row[zIdx] || '').trim() : '';
       var zones    = zoneRaw === 'All' ? ['All'] :
@@ -181,7 +243,9 @@ function login(username, password, userAgent) {
       return { ok: true, token: token, role: role, zones: zones, displayName: u };
     }
 
-    // ── username ไม่มีในระบบ (ไม่นับ fail เพื่อไม่ให้ enumerate users) ──
+    // ── username ไม่มีในระบบ (นับเฉพาะ soft block fingerprint แต่ยังไม่เปิดเผยว่ามี user หรือไม่) ──
+    _incBruteFail(userAgent, uLower || '-');
+    logActivity(uLower || '-', '-', 'LOGIN_FAIL_UNKNOWN', 'Unknown username | fp=' + _loginFingerprint(userAgent));
     return { ok: false, error: 'Username หรือ Password ไม่ถูกต้อง' };
   } catch (err) {
     return { ok: false, error: 'เกิดข้อผิดพลาด: ' + err.message };

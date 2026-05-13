@@ -60,6 +60,29 @@ function testBuildMonthSheets() {
 //  buildMonthSheets() — เรียก 1 ครั้งต่อ request ใน getAllData()
 //  ค้นหาชีต Raw-KPI-* ทั้งหมด แล้วสร้าง config อัตโนมัติ
 // ============================================================
+function _detectDataYear(ss, rawKpiSheets) {
+  var counts = {};
+  Object.keys(rawKpiSheets || {}).forEach(function(key) {
+    try {
+      var sh = ss.getSheetByName(rawKpiSheets[key]);
+      if (!sh) return;
+      var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0]
+        .map(function(h){ return String(h || '').trim(); });
+      headers.forEach(function(h) {
+        var m = h.match(/^Rev\s+[A-Za-z]{3,9}\s+(\d{2})$/i);
+        if (!m) return;
+        var year = '20' + m[1];
+        counts[year] = (counts[year] || 0) + 1;
+      });
+    } catch(e) {}
+  });
+  var best = DATA_YEAR;
+  Object.keys(counts).forEach(function(y) {
+    if (!counts[best] || counts[y] > counts[best] || (counts[y] === counts[best] && y > best)) best = y;
+  });
+  return best || DATA_YEAR;
+}
+
 function buildMonthSheets(ss) {
   var allSheets = ss.getSheets();
   var rawKpiSheets = {};  // { 'may': 'Raw-KPI-May', ... }
@@ -88,7 +111,8 @@ function buildMonthSheets(ss) {
   var lastMonthKey = sortedKeys[sortedKeys.length - 1];
 
   var result = [];
-  var year = DATA_YEAR;
+  var year = _detectDataYear(ss, rawKpiSheets);
+  DATA_YEAR = year;
 
   sortedKeys.forEach(function(key, idx) {
     var sheetName = rawKpiSheets[key] || null;

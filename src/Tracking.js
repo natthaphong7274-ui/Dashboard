@@ -584,6 +584,23 @@ function _growthReasonLabel(key) {
 
 // saveTrackingRow(token, payload) — upsert แถวเดียว (auto-save ตอนเปลี่ยน status)
 // payload: { key, status, reason, note, updatedBy, updatedAt }
+function _trackingConflictResult(kind, payload, currentUpdatedAt) {
+  return {
+    ok: false,
+    conflict: true,
+    error: 'This row was updated by someone else. Please refresh before saving.',
+    key: payload && payload.key,
+    kind: kind,
+    currentUpdatedAt: currentUpdatedAt || ''
+  };
+}
+
+function _hasTrackingConflict(payload, currentUpdatedAt) {
+  var known = String((payload && payload.lastKnownUpdatedAt) || (payload && payload.updatedAt) || '').trim();
+  var current = String(currentUpdatedAt || '').trim();
+  return !!(known && current && known !== current);
+}
+
 function saveTrackingRow(token, payload) {
   var session = _requireSession(token || '', 'SAVE_TRACKING_ROW');
   if (!session.ok) return session;
@@ -596,6 +613,7 @@ function saveTrackingRow(token, payload) {
     var kIdx    = headers.indexOf('key');
     var cpIdx   = headers.indexOf('cutoffPeriod');
     var znIdx   = headers.indexOf('zoneName');
+    var uaIdx   = headers.indexOf('updatedAt');
     var cutoffPeriod = _trackingCutoffPeriodKey();
 
     // หาแถวที่มี key ตรงกัน (upsert)
@@ -611,6 +629,11 @@ function saveTrackingRow(token, payload) {
     var existingZone = targetRow > 0 && znIdx >= 0 ? String(data[targetRow - 1][znIdx] || '') : '';
     var accessCheck = _requireRowAccess(session, { zoneName: existingZone || payload.zoneName || '' }, 'SAVE_TRACKING_ROW');
     if (!accessCheck.ok) return accessCheck;
+    var currentUpdatedAt = targetRow > 0 && uaIdx >= 0 ? String(data[targetRow - 1][uaIdx] || '') : '';
+    if (_hasTrackingConflict(payload, currentUpdatedAt)) {
+      logActivity(session.username, session.role, 'TRACKING_CONFLICT', 'key=' + payload.key + ' current=' + currentUpdatedAt + ' known=' + (payload.lastKnownUpdatedAt || payload.updatedAt || ''));
+      return _trackingConflictResult('risk', payload, currentUpdatedAt);
+    }
 
     var rowData = [
       payload.agentCode || '',
@@ -639,7 +662,7 @@ function saveTrackingRow(token, payload) {
 
     logActivity(session.username, session.role, 'TRACKING_SAVE',
       'บันทึกติดตาม: ' + payload.key + ' → ' + (payload.status || '(ว่าง)'));
-    return { ok: true };
+    return { ok: true, updatedAt: rowData[12] };
   } catch(e) {
     return { ok: false, error: e.message };
   }
@@ -864,6 +887,7 @@ function saveGrowthTrackingRow(token, payload) {
     var kIdx    = headers.indexOf('key');
     var cpIdx   = headers.indexOf('cutoffPeriod');
     var znIdx   = headers.indexOf('zoneName');
+    var uaIdx   = headers.indexOf('updatedAt');
     var cutoffPeriod = _trackingCutoffPeriodKey();
 
     var targetRow = -1;
@@ -878,6 +902,11 @@ function saveGrowthTrackingRow(token, payload) {
     var existingZone = targetRow > 0 && znIdx >= 0 ? String(data[targetRow - 1][znIdx] || '') : '';
     var accessCheck = _requireRowAccess(session, { zoneName: existingZone || payload.zoneName || '' }, 'SAVE_GROWTH_TRACKING_ROW');
     if (!accessCheck.ok) return accessCheck;
+    var currentUpdatedAt = targetRow > 0 && uaIdx >= 0 ? String(data[targetRow - 1][uaIdx] || '') : '';
+    if (_hasTrackingConflict(payload, currentUpdatedAt)) {
+      logActivity(session.username, session.role, 'GROWTH_TRACKING_CONFLICT', 'key=' + payload.key + ' current=' + currentUpdatedAt + ' known=' + (payload.lastKnownUpdatedAt || payload.updatedAt || ''));
+      return _trackingConflictResult('growth', payload, currentUpdatedAt);
+    }
 
     var rowData = [
       payload.agentCode  || '',
@@ -904,7 +933,7 @@ function saveGrowthTrackingRow(token, payload) {
 
     logActivity(session.username, session.role, 'GROWTH_TRACKING_SAVE',
       'บันทึกติดตาม(เติบโต): ' + payload.key + ' → ' + (payload.status || '(ว่าง)'));
-    return { ok: true };
+    return { ok: true, updatedAt: rowData[12] };
   } catch(e) {
     return { ok: false, error: e.message };
   }

@@ -174,6 +174,10 @@ function getAllData(token) {
     extraCols.filter(function(c){ return wantedCols.indexOf(c)<0; })
   );
 
+  var dataQuality = _buildDataQualitySummary(rows, allHeaders, MONTH_SHEETS, ss);
+  var sheetHealth = _buildSheetHealthSummary(ss, MONTH_SHEETS);
+  rows = rows.map(function(r){ return _maskSensitiveRowForSession(r, session); });
+
   var palette = [
     {color:'rgba(99,102,241,0.85)',  colorVol:'rgba(139,92,246,0.85)',  colorAvg:'rgba(168,85,247,0.85)'},
     {color:'rgba(14,165,233,0.85)',  colorVol:'rgba(6,182,212,0.85)',   colorAvg:'rgba(20,184,166,0.85)'},
@@ -193,10 +197,94 @@ function getAllData(token) {
 
   return { headers:allHeaders, rows:rows, months:months,
            carriers:CARRIERS, carrierMonths:CARRIER_MONTHS, dataYear:DATA_YEAR,
+           dataQuality:dataQuality, sheetHealth:sheetHealth,
            userInfo: session.ok ? { username:session.username, role:session.role, zones:session.zones } : null };
 }
 
 function getCarrierData(){ return {carrierCols:[],carrierRows:[]}; }
+
+function _maskPhoneForRole(phone, role) {
+  var raw = String(phone || '').trim();
+  if (!raw || role === 'Director') return raw;
+  var digits = raw.replace(/\D/g, '');
+  if (digits.length < 7) return raw.charAt(0) + '***';
+  return digits.slice(0, 3) + '***' + digits.slice(-2);
+}
+
+function _maskSensitiveRowForSession(row, session) {
+  if (!row) return row;
+  var out = {};
+  Object.keys(row).forEach(function(k){ out[k] = row[k]; });
+  if (session && session.role !== 'Director') {
+    ['Phone','phone','Tel','เบอร์โทร'].forEach(function(k) {
+      if (out[k] !== undefined && out[k] !== '') out[k] = _maskPhoneForRole(out[k], session.role);
+    });
+  }
+  return out;
+}
+
+function _qualityItem(severity, title, detail, count) {
+  return { severity: severity, title: title, detail: detail || '', count: count || 0 };
+}
+
+function _buildDataQualitySummary(rows, headers, months, ss) {
+  var items = [];
+  var required = ['Agent Code','Agent Name','Zone Name','Province'];
+  var missingCols = required.filter(function(c){ return headers.indexOf(c) < 0; });
+  if (missingCols.length) items.push(_qualityItem('error','Missing required columns',missingCols.join(', '),missingCols.length));
+
+  var missing = { code:0, name:0, zone:0, province:0 };
+  var codeMap = {};
+  (rows || []).forEach(function(r) {
+    var code = String(r['Agent Code'] || '').trim();
+    if (!code) missing.code++;
+    else codeMap[code] = (codeMap[code] || 0) + 1;
+    if (!String(r['Agent Name'] || '').trim()) missing.name++;
+    if (!String(r['Zone Name'] || '').trim()) missing.zone++;
+    if (!String(r['Province'] || '').trim()) missing.province++;
+  });
+  if (missing.code) items.push(_qualityItem('warning','Missing Agent Code',missing.code + ' rows',missing.code));
+  if (missing.name) items.push(_qualityItem('warning','Missing Agent Name',missing.name + ' rows',missing.name));
+  if (missing.zone) items.push(_qualityItem('warning','Missing Zone',missing.zone + ' rows',missing.zone));
+  if (missing.province) items.push(_qualityItem('warning','Missing Province',missing.province + ' rows',missing.province));
+
+  var dupes = Object.keys(codeMap).filter(function(k){ return codeMap[k] > 1; });
+  if (dupes.length) items.push(_qualityItem('warning','Duplicate Agent Code',dupes.slice(0, 8).join(', ') + (dupes.length > 8 ? '...' : ''),dupes.length));
+
+  var cur = (months || []).filter(function(m){ return m.currentMonth; })[0] || (months || [])[((months || []).length - 1)];
+  if (cur) {
+    var abnormal = 0;
+    rows.forEach(function(r) {
+      var rev = Number(r[cur.colRev] || 0);
+      var vol = Number(r[cur.colVol] || 0);
+      if (rev < 0 || vol < 0 || (vol === 0 && rev > 0) || rev > 100000000) abnormal++;
+    });
+    if (abnormal) items.push(_qualityItem('warning','Abnormal Rev/Vol values',abnormal + ' rows need review',abnormal));
+  }
+  return { ok: items.length === 0, items: items, checkedAt: _bkkTimestamp() };
+}
+
+function _sheetStatus(name, exists, severity, impact) {
+  return { name: name, status: exists ? 'ok' : severity, impact: exists ? '' : impact };
+}
+
+function _buildSheetHealthSummary(ss, months) {
+  var items = [];
+  items.push(_sheetStatus(USERS_SHEET, !!ss.getSheetByName(USERS_SHEET), 'error', 'Login and role lookup may fail'));
+  items.push(_sheetStatus(BASE_SHEET, !!ss.getSheetByName(BASE_SHEET), 'error', 'Dashboard base data may fail'));
+  ['Tracking','TrackingGrowth','ActivityLog'].forEach(function(name) {
+    items.push(_sheetStatus(name, !!ss.getSheetByName(name), 'warning', name + ' features may be incomplete until the sheet is created'));
+  });
+  var latest = (months || [])[((months || []).length - 1)];
+  if (latest && latest.sheetName) {
+    items.push(_sheetStatus(latest.sheetName, !!ss.getSheetByName(latest.sheetName), 'error', 'Latest month data is unavailable'));
+  }
+  return {
+    ok: items.every(function(i){ return i.status === 'ok'; }),
+    items: items,
+    checkedAt: _bkkTimestamp()
+  };
+}
 
 // ============================================================
 //  ACTIVITY LOG — บันทึกการใช้งาน Dashboard

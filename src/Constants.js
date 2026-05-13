@@ -13,6 +13,9 @@ var SESSION_TTL_MS    = 8 * 60 * 60 * 1000;   // session timeout: 8 ชั่ว
 var IDLE_TTL_MS       = 30 * 60 * 1000;       // idle timeout: 30 นาที
 var MAX_FAIL_LOGIN    = 5;              // จำนวนครั้งที่ login ผิดก่อนล็อกบัญชี
 var HEARTBEAT_MS      = 5 * 60 * 1000; // heartbeat interval: 5 นาที (client-side)
+var BRUTE_PREFIX      = 'BRUTE_';       // soft block counter by user-agent fingerprint
+var BRUTE_MAX_FAIL    = 8;              // failed login attempts before temporary soft block
+var BRUTE_TTL_MS      = 10 * 60 * 1000; // soft block window: 10 minutes
 
 // ── Spreadsheet ──────────────────────────────────────────────
 var LOG_SHEET         = 'ActivityLog';  // ชื่อ sheet สำหรับ Activity Log

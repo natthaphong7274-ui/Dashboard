@@ -12,6 +12,8 @@ var filterState={},cmpMode='two',cmpViewMode='bar';
 var _monthlyTargets = {};  // { [monthKey]: { type, value, note, setBy, setAt } }
 var _bdMonthlyTargets = {}; // { [monthKey]: { [bdUsername]: { type, value, note, setBy, setAt } } }
 var _targetPollStarted = false;
+var _dataQuality = null;
+var _sheetHealth = null;
 var filterCarrierSet=new Set(); // ★ carrier filter
 var FILTER_COLS=['21.00','Package','City','Province','Zone Name','AREA'];
 
@@ -72,6 +74,27 @@ function _renderState(target, type, title, msg, retryFnName){
 function renderLoading(target,msg){ _renderState(target,'loading','Loading',msg || 'Preparing data...',null); }
 function renderEmpty(target,msg){ _renderState(target,'empty','No data',msg || 'No records match the current filters.',null); }
 function renderError(target,msg,retryFnName){ _renderState(target,'error','Unable to load',msg || 'Please try again.',retryFnName || 'loadData'); }
+
+function _renderQualityHealthPanel(){
+  var el=document.getElementById('quality_health_panel');
+  if(!el)return;
+  var qItems=(_dataQuality&&_dataQuality.items)||[];
+  var hItems=(_sheetHealth&&_sheetHealth.items)||[];
+  var healthIssues=hItems.filter(function(i){return i.status&&i.status!=='ok';});
+  var items=qItems.concat(healthIssues.map(function(i){
+    return {severity:i.status==='error'?'error':'warning',title:i.name,detail:i.impact||'',count:0};
+  }));
+  if(!items.length){el.style.display='none';el.innerHTML='';return;}
+  var hasError=items.some(function(i){return i.severity==='error';});
+  el.className='quality-health-panel';
+  el.style.display='grid';
+  el.innerHTML='<div class="quality-health-card '+(hasError?'error':'warn')+'">'
+    +'<div class="quality-health-title">'+(hasError?'Data health needs attention':'Data quality warnings')+'</div>'
+    +'<div class="quality-health-list">'+items.slice(0,8).map(function(i){
+      return '<span class="quality-health-pill '+_esc(i.severity||'warning')+'" title="'+_esc(i.detail||'')+'">'+_esc(i.title)+(i.count?' ('+_esc(i.count)+')':'')+'</span>';
+    }).join('')+(items.length>8?'<span class="quality-health-pill">+'+(items.length-8)+' more</span>':'')+'</div>'
+    +'</div>';
+}
 
 function _formatWatermarkTime(d){
   d = d || new Date();
@@ -242,6 +265,7 @@ function loadData(){
       }
       H=d.headers||[]; R=d.rows||[]; FR=R.slice(); MONTHS=d.months||[];
       CARRIERS=d.carriers||[]; CARRIER_MONTHS=d.carrierMonths||[]; DATA_YEAR=d.dataYear||'2026';
+      _dataQuality=d.dataQuality||null; _sheetHealth=d.sheetHealth||null;
       carrierLoaded=true;
 
       // ★ DEBUG: log data state (ลบออกได้หลัง debug เสร็จ)
@@ -270,11 +294,9 @@ function loadData(){
       }
 
       buildMonthUI(); buildFilters(); renderKPI(); renderAllCharts(); renderTable();
+      _renderQualityHealthPanel();
       loadTrackingData();
       loadGrowthTrackingData();
-      _startTrkPoll();
-      _startRiskPoll();
-      _startGrowthPoll();
       loadMonthlyTargets();
       var n=new Date();
       document.getElementById('lupd').textContent='อัปเดต '+n.getHours()+':'+String(n.getMinutes()).padStart(2,'0');
@@ -629,6 +651,7 @@ function swMain(v){
   if(v==='growth') loadGrowthThreshold(function(){ renderGrowth(); });
   if(v==='usermgmt') loadUserStatus();
   applyRoleVisualizationRules();
+  _refreshDashboardPolling();
   var tabNames={home:'หน้าแรก',ov:'ภาพรวม',ls:'รายการลูกค้า',cr:'ขนส่ง',risk:'กลุ่มเสี่ยง',growth:'กลุ่มเติบโต',usermgmt:'จัดการผู้ใช้'};
   _clientLog('VIEW_TAB','เปิด Tab: '+(tabNames[v]||v));
 }
@@ -5695,7 +5718,7 @@ function renderRisk(){
 var _trkData = {};   // { trkKey: {status, reason, note, updatedBy, updatedAt} }
 var _trkCutoffMeta = null;
 var _trkPollInterval = null;
-var TRK_POLL_MS = 30 * 1000; // poll ทุก 30 วินาที
+var TRK_POLL_MS = 60 * 1000;
 
 function _trkSetCutoffMeta(meta) {
   if (!meta) return;
@@ -5756,13 +5779,14 @@ function _trkRenderCutoffStatus() {
 
 function _startTrkPoll() {
   _stopTrkPoll();
+  if(_activeMainTab!=='risk'&&_activeMainTab!=='growth')return;
   var badge = document.getElementById('trk_poll_badge');
   if (badge) badge.style.display = 'inline';
   _trkPollInterval = setInterval(function() {
     var token = sessionStorage.getItem('DASH_TOKEN') || '';
     if (!token) { _stopTrkPoll(); return; }
-    loadTrackingData();
-    loadGrowthTrackingData();
+    if(_activeMainTab==='risk')loadTrackingData();
+    if(_activeMainTab==='growth')loadGrowthTrackingData();
   }, TRK_POLL_MS);
 }
 
@@ -5774,10 +5798,11 @@ function _stopTrkPoll() {
 
 // ── Risk Threshold Polling — เช็คค่าเกณฑ์จาก server ทุก 30 วิ ──
 var _riskPollInterval = null;
-var RISK_POLL_MS = 30 * 1000; // poll ทุก 30 วินาที
+var RISK_POLL_MS = 60 * 1000;
 
 function _startRiskPoll() {
   _stopRiskPoll();
+  if(_activeMainTab!=='risk')return;
   _riskPollInterval = setInterval(function() {
     var token = sessionStorage.getItem('DASH_TOKEN') || '';
     if (!token) { _stopRiskPoll(); return; }
@@ -5809,10 +5834,11 @@ function _stopRiskPoll() {
 
 // ── Growth Threshold Polling — เช็คค่าเกณฑ์กลุ่มเติบโตจาก server ทุก 30 วิ ──
 var _growthPollInterval = null;
-var GROWTH_POLL_MS = 30 * 1000;
+var GROWTH_POLL_MS = 60 * 1000;
 
 function _startGrowthPoll() {
   _stopGrowthPoll();
+  if(_activeMainTab!=='growth')return;
   _growthPollInterval = setInterval(function() {
     var token = sessionStorage.getItem('DASH_TOKEN') || '';
     if (!token) { _stopGrowthPoll(); return; }
@@ -5840,6 +5866,20 @@ function _startGrowthPoll() {
 function _stopGrowthPoll() {
   if (_growthPollInterval) { clearInterval(_growthPollInterval); _growthPollInterval = null; }
 } // — กลุ่มเติบโต (Avg Rev/วัน เพิ่ม > threshold) ─────────────
+
+function _refreshDashboardPolling(){
+  _stopTrkPoll();
+  _stopRiskPoll();
+  _stopGrowthPoll();
+  if(!sessionStorage.getItem('DASH_TOKEN'))return;
+  if(_activeMainTab==='risk'){
+    _startTrkPoll();
+    _startRiskPoll();
+  }else if(_activeMainTab==='growth'){
+    _startTrkPoll();
+    _startGrowthPoll();
+  }
+}
 
 var _growthThreshold = 200;
 
@@ -6481,7 +6521,8 @@ function _growthTrkChange(el){
     agentName:  d.agentName   || '',
     city:       d.city        || '',
     province:   d.province    || '',
-    zoneName:   d.zoneName    || ''
+    zoneName:   d.zoneName    || '',
+    lastKnownUpdatedAt:d.updatedAt||''
   };
   var origBorder=el.style.border;
   el.style.border='1.5px solid #f59e0b';
@@ -6489,6 +6530,7 @@ function _growthTrkChange(el){
     .withSuccessHandler(function(res){
       el.style.border=origBorder;
       if(res&&res.ok){
+        if(res.updatedAt)_trkData[key].updatedAt=res.updatedAt;
         _trkToast('💾 บันทึกแล้ว');
       } else {
         _trkToast('❌ บันทึกไม่สำเร็จ: '+(res&&res.error?res.error:''), true);
@@ -6537,7 +6579,8 @@ function _trkChange(el){
     agentName:_trkData[key].agentName||'',
     city:_trkData[key].city||'',
     province:_trkData[key].province||'',
-    zoneName:_trkData[key].zoneName||''
+    zoneName:_trkData[key].zoneName||'',
+    lastKnownUpdatedAt:_trkData[key].updatedAt||''
   };
   // แสดง spinner เล็กๆ บน element
   var origBorder=el.style.border;
@@ -6546,6 +6589,7 @@ function _trkChange(el){
     .withSuccessHandler(function(res){
       el.style.border=origBorder;
       if(res&&res.ok){
+        if(res.updatedAt)_trkData[key].updatedAt=res.updatedAt;
         _trkToast('💾 บันทึกแล้ว');
       } else {
         _trkToast('❌ บันทึกไม่สำเร็จ: '+(res&&res.error?res.error:''), true);
@@ -6726,9 +6770,7 @@ document.addEventListener('visibilitychange', function() {
     // กลับมา focus — เริ่ม heartbeat ใหม่ถ้ายัง login อยู่
     if (sessionStorage.getItem('DASH_TOKEN')) {
       _startHeartbeat();
-      _startTrkPoll();
-      _startRiskPoll();
-      _startGrowthPoll();
+      _refreshDashboardPolling();
     }
   }
 });
@@ -12750,7 +12792,7 @@ function startTargetPolling() {
     if (!tok) return;
     if (document.visibilityState && document.visibilityState === 'hidden') return;
     loadMonthlyTargets();
-  }, 30000);
+  }, 300000);
 }
 
 function openMtModal(monthKey) {
