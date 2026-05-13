@@ -215,6 +215,65 @@ function getSession(token, skipIdleCheck) {
   }
 }
 
+function _sessionLabel(session) {
+  if (!session || !session.ok) return 'anonymous/-';
+  return (session.username || '-') + '/' + (session.role || '-');
+}
+
+function _auditDenied(session, action, detail) {
+  try {
+    logActivity(
+      session && session.username ? session.username : '-',
+      session && session.role ? session.role : '-',
+      'PERMISSION_DENIED',
+      action + (detail ? ' | ' + detail : '')
+    );
+  } catch(e) {}
+}
+
+function _requireSession(token, action) {
+  var session = getSession(token || '');
+  if (!session.ok) {
+    _auditDenied({ username: '-', role: '-' }, action || 'SESSION_REQUIRED', 'Unauthorized');
+    return { ok: false, error: 'Unauthorized' };
+  }
+  return session;
+}
+
+function _requireRole(session, roles, action) {
+  roles = Array.isArray(roles) ? roles : [roles];
+  if (!session || !session.ok || roles.indexOf(session.role) < 0) {
+    _auditDenied(session, action || 'ROLE_REQUIRED', 'required=' + roles.join(',') + ' actor=' + _sessionLabel(session));
+    return { ok: false, error: 'Permission denied' };
+  }
+  return { ok: true };
+}
+
+function _normalizeZoneName(zone) {
+  return String(zone || '').trim().toLowerCase();
+}
+
+function _canAccessZone(session, zoneName) {
+  if (!session || !session.ok) return false;
+  if (session.role === 'Director') return true;
+  var zones = session.zones || [];
+  if (zones.indexOf('All') >= 0) return true;
+  var target = _normalizeZoneName(zoneName);
+  if (!target) return false;
+  return zones.some(function(z){ return _normalizeZoneName(z) === target; });
+}
+
+function _canAccessRow(session, row) {
+  if (!row) return false;
+  return _canAccessZone(session, row.zoneName || row['Zone Name'] || row.zone || '');
+}
+
+function _requireRowAccess(session, row, action) {
+  if (_canAccessRow(session, row)) return { ok: true };
+  _auditDenied(session, action || 'ROW_ACCESS', 'zone=' + (row && (row.zoneName || row['Zone Name'] || row.zone) || '-'));
+  return { ok: false, error: 'Permission denied' };
+}
+
 // logout(token)
 function logout(token) {
   if (token && token.indexOf(TOKEN_PREFIX) === 0) {

@@ -28,8 +28,8 @@ var RISK_THRESHOLD_KEY = 'RISK_THRESHOLD_GLOBAL';
 
 // getRiskThreshold(token) — ดึงค่าเกณฑ์ปัจจุบัน (ทุก role เข้าถึงได้)
 function getRiskThreshold(token) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'GET_RISK_THRESHOLD');
+  if (!session.ok) return session;
   var props = PropertiesService.getScriptProperties();
   var raw   = props.getProperty(RISK_THRESHOLD_KEY);
   var val   = raw ? parseFloat(raw) : 200;
@@ -38,9 +38,10 @@ function getRiskThreshold(token) {
 
 // setRiskThreshold(token, value) — บันทึกค่าเกณฑ์ (เฉพาะ Director)
 function setRiskThreshold(token, value) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
-  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: เฉพาะ Director เท่านั้น' };
+  var session = _requireSession(token || '', 'SET_RISK_THRESHOLD');
+  if (!session.ok) return session;
+  var roleCheck = _requireRole(session, 'Director', 'SET_RISK_THRESHOLD');
+  if (!roleCheck.ok) return roleCheck;
   var v = parseFloat(value);
   if (isNaN(v) || v < 0) return { ok: false, error: 'ค่าไม่ถูกต้อง' };
   PropertiesService.getScriptProperties().setProperty(RISK_THRESHOLD_KEY, String(v));
@@ -52,8 +53,8 @@ var GROWTH_THRESHOLD_KEY = 'GROWTH_THRESHOLD_GLOBAL';
 
 // getGrowthThreshold(token) — ดึงค่าเกณฑ์กลุ่มเติบโต (ทุก role เข้าถึงได้)
 function getGrowthThreshold(token) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'GET_GROWTH_THRESHOLD');
+  if (!session.ok) return session;
   var props = PropertiesService.getScriptProperties();
   var raw   = props.getProperty(GROWTH_THRESHOLD_KEY);
   var val   = raw ? parseFloat(raw) : 200;
@@ -62,9 +63,10 @@ function getGrowthThreshold(token) {
 
 // setGrowthThreshold(token, value) — บันทึกค่าเกณฑ์กลุ่มเติบโต (เฉพาะ Director)
 function setGrowthThreshold(token, value) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
-  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: เฉพาะ Director เท่านั้น' };
+  var session = _requireSession(token || '', 'SET_GROWTH_THRESHOLD');
+  if (!session.ok) return session;
+  var roleCheck = _requireRole(session, 'Director', 'SET_GROWTH_THRESHOLD');
+  if (!roleCheck.ok) return roleCheck;
   var v = parseFloat(value);
   if (isNaN(v) || v < 0) return { ok: false, error: 'ค่าไม่ถูกต้อง' };
   PropertiesService.getScriptProperties().setProperty(GROWTH_THRESHOLD_KEY, String(v));
@@ -84,8 +86,8 @@ var BD_MONTHLY_TARGET_PREFIX = 'BD_MONTHLY_TARGET_';
 
 // getMonthlyTarget(token, monthKey) — ดึงเป้าของเดือนนั้น (ทุก role)
 function getMonthlyTarget(token, monthKey) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'GET_MONTHLY_TARGET');
+  if (!session.ok) return session;
   var key = MONTHLY_TARGET_PREFIX + DATA_YEAR + '_' + (monthKey || '').toLowerCase();
   var raw = PropertiesService.getScriptProperties().getProperty(key);
   if (!raw) return { ok: true, target: null };
@@ -95,9 +97,10 @@ function getMonthlyTarget(token, monthKey) {
 
 // setMonthlyTarget(token, monthKey, type, value, note) — ตั้งเป้า (Director only)
 function setMonthlyTarget(token, monthKey, type, value, note) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
-  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: เฉพาะ Director เท่านั้น' };
+  var session = _requireSession(token || '', 'SET_MONTHLY_TARGET');
+  if (!session.ok) return session;
+  var roleCheck = _requireRole(session, 'Director', 'SET_MONTHLY_TARGET');
+  if (!roleCheck.ok) return roleCheck;
   if (!monthKey) return { ok: false, error: 'ไม่ระบุ monthKey' };
   if (type !== 'pct' && type !== 'fixed') return { ok: false, error: 'type ต้องเป็น pct หรือ fixed' };
   var v = parseFloat(value);
@@ -115,8 +118,8 @@ function setMonthlyTarget(token, monthKey, type, value, note) {
 
 // getAllMonthlyTargets(token) — ดึงเป้าทุกเดือนพร้อมกัน (ทุก role)
 function getAllMonthlyTargets(token) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'GET_ALL_MONTHLY_TARGETS');
+  if (!session.ok) return session;
   var props = PropertiesService.getScriptProperties();
   var result = {};
   var ms = _getMonthSheets(); // auto-discover
@@ -130,9 +133,10 @@ function getAllMonthlyTargets(token) {
 
 // clearMonthlyTarget(token, monthKey) — ลบเป้า (Director only)
 function clearMonthlyTarget(token, monthKey) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
-  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: เฉพาะ Director เท่านั้น' };
+  var session = _requireSession(token || '', 'CLEAR_MONTHLY_TARGET');
+  if (!session.ok) return session;
+  var roleCheck = _requireRole(session, 'Director', 'CLEAR_MONTHLY_TARGET');
+  if (!roleCheck.ok) return roleCheck;
   if (!monthKey) return { ok: false, error: 'ไม่ระบุ monthKey' };
   var key = MONTHLY_TARGET_PREFIX + DATA_YEAR + '_' + monthKey.toLowerCase();
   PropertiesService.getScriptProperties().deleteProperty(key);
@@ -145,10 +149,11 @@ function _bdTargetKey(monthKey, bdUsername) {
 }
 
 function getBdMonthlyTarget(token, monthKey, bdUsername) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'GET_BD_MONTHLY_TARGET');
+  if (!session.ok) return session;
   var userKey = String(bdUsername || session.username || '').toLowerCase();
   if (session.role !== 'Director' && userKey !== String(session.username || '').toLowerCase()) {
+    _auditDenied(session, 'GET_BD_MONTHLY_TARGET', 'bdUsername=' + userKey);
     return { ok: false, error: 'Permission denied' };
   }
   var raw = PropertiesService.getScriptProperties().getProperty(_bdTargetKey(monthKey, userKey));
@@ -160,9 +165,10 @@ function getBdMonthlyTarget(token, monthKey, bdUsername) {
 // ★ parameter order: (token, bdUsername, monthKey, type, value, note)
 //   ตรงกับ frontend: .setBdMonthlyTarget(tok, uKey, mKey, type, v, note)
 function setBdMonthlyTarget(token, bdUsername, monthKey, type, value, note) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
-  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: Director only' };
+  var session = _requireSession(token || '', 'SET_BD_MONTHLY_TARGET');
+  if (!session.ok) return session;
+  var roleCheck = _requireRole(session, 'Director', 'SET_BD_MONTHLY_TARGET');
+  if (!roleCheck.ok) return roleCheck;
   if (!monthKey || !bdUsername) return { ok: false, error: 'monthKey and bdUsername are required' };
   if (type !== 'pct' && type !== 'fixed') return { ok: false, error: 'type must be pct or fixed' };
   var v = parseFloat(value);
@@ -178,9 +184,10 @@ function setBdMonthlyTarget(token, bdUsername, monthKey, type, value, note) {
 // ★ parameter order: (token, bdUsername, monthKey)
 //   ตรงกับ frontend: .clearBdMonthlyTarget(tok, uKey, mKey)
 function clearBdMonthlyTarget(token, bdUsername, monthKey) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
-  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: Director only' };
+  var session = _requireSession(token || '', 'CLEAR_BD_MONTHLY_TARGET');
+  if (!session.ok) return session;
+  var roleCheck = _requireRole(session, 'Director', 'CLEAR_BD_MONTHLY_TARGET');
+  if (!roleCheck.ok) return roleCheck;
   if (!monthKey || !bdUsername) return { ok: false, error: 'monthKey and bdUsername are required' };
   var userKey = String(bdUsername).toLowerCase();
   PropertiesService.getScriptProperties().deleteProperty(_bdTargetKey(monthKey, userKey));
@@ -189,8 +196,8 @@ function clearBdMonthlyTarget(token, bdUsername, monthKey) {
 }
 
 function getAllBdMonthlyTargets(token) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'GET_ALL_BD_MONTHLY_TARGETS');
+  if (!session.ok) return session;
   var props = PropertiesService.getScriptProperties();
   var all = props.getProperties();
   var result = {};
@@ -217,9 +224,10 @@ function getAllBdMonthlyTargets(token) {
 
 // getUserStatus(token) — ดึงรายชื่อ user + สถานะ lock/fail
 function getUserStatus(token) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
-  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: เฉพาะ Director เท่านั้น' };
+  var session = _requireSession(token || '', 'GET_USER_STATUS');
+  if (!session.ok) return session;
+  var roleCheck = _requireRole(session, 'Director', 'GET_USER_STATUS');
+  if (!roleCheck.ok) return roleCheck;
 
   try {
     var ss    = SpreadsheetApp.getActiveSpreadsheet();
@@ -282,9 +290,10 @@ function getUserStatus(token) {
 
 // unlockUser(token, username) — ปลดล็อกและรีเซ็ต fail counter
 function unlockUser(token, username) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
-  if (session.role !== 'Director') return { ok: false, error: 'Permission denied: เฉพาะ Director เท่านั้น' };
+  var session = _requireSession(token || '', 'UNLOCK_USER');
+  if (!session.ok) return session;
+  var roleCheck = _requireRole(session, 'Director', 'UNLOCK_USER');
+  if (!roleCheck.ok) return roleCheck;
   if (!username) return { ok: false, error: 'ไม่ระบุ username' };
 
   try {

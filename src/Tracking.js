@@ -390,8 +390,8 @@ function _normalizeReason(raw) {
 // getTrackingData(token) — โหลดข้อมูลทั้งหมดจาก Tracking sheet
 // เปิดให้ทุก role (BD / AM / Director) เข้าถึงได้
 function getTrackingData(token) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'GET_TRACKING_DATA');
+  if (!session.ok) return session;
 
   try {
     var sheet = _getOrCreateTrackingSheet();
@@ -422,7 +422,7 @@ function getTrackingData(token) {
       if (!key) continue;
       var cutoffPeriod = cpIdx >= 0 ? String(r[cpIdx] || '').trim() : '';
       if (cutoffPeriod !== curCutoff) continue;
-      rows.push({
+      var rowObj = {
         key:       key,
         status:    sIdx  >= 0 ? _normalizeStatus(String(r[sIdx]  || '')) : '',
         reason:    rIdx  >= 0 ? _normalizeReason(String(r[rIdx]  || '')) : '',
@@ -437,7 +437,8 @@ function getTrackingData(token) {
         province:  pvIdx  >= 0 ? String(r[pvIdx]  || '') : '',
         zoneName:  znIdx  >= 0 ? String(r[znIdx]  || '') : '',
         cutoffPeriod: cutoffPeriod
-      });
+      };
+      if (_canAccessRow(session, rowObj)) rows.push(rowObj);
     }
     return { ok: true, data: rows, cutoff: _trackingCutoffMeta() };
   } catch(e) {
@@ -584,8 +585,8 @@ function _growthReasonLabel(key) {
 // saveTrackingRow(token, payload) — upsert แถวเดียว (auto-save ตอนเปลี่ยน status)
 // payload: { key, status, reason, note, updatedBy, updatedAt }
 function saveTrackingRow(token, payload) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'SAVE_TRACKING_ROW');
+  if (!session.ok) return session;
   if (!payload || !payload.key) return { ok: false, error: 'ไม่มี key' };
 
   try {
@@ -594,6 +595,7 @@ function saveTrackingRow(token, payload) {
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx    = headers.indexOf('key');
     var cpIdx   = headers.indexOf('cutoffPeriod');
+    var znIdx   = headers.indexOf('zoneName');
     var cutoffPeriod = _trackingCutoffPeriodKey();
 
     // หาแถวที่มี key ตรงกัน (upsert)
@@ -605,6 +607,10 @@ function saveTrackingRow(token, payload) {
         break;
       }
     }
+
+    var existingZone = targetRow > 0 && znIdx >= 0 ? String(data[targetRow - 1][znIdx] || '') : '';
+    var accessCheck = _requireRowAccess(session, { zoneName: existingZone || payload.zoneName || '' }, 'SAVE_TRACKING_ROW');
+    if (!accessCheck.ok) return accessCheck;
 
     var rowData = [
       payload.agentCode || '',
@@ -642,8 +648,8 @@ function saveTrackingRow(token, payload) {
 // saveTrackingBatch(token, batch) — upsert หลายแถวพร้อมกัน (กด "💾 บันทึกทั้งหมด")
 // batch: [{ key, status, reason, note }, ...]
 function saveTrackingBatch(token, batch) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'SAVE_TRACKING_BATCH');
+  if (!session.ok) return session;
   if (!batch || !batch.length) return { ok: false, error: 'ไม่มีข้อมูล' };
 
   try {
@@ -652,6 +658,7 @@ function saveTrackingBatch(token, batch) {
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx    = headers.indexOf('key');
     var cpIdx   = headers.indexOf('cutoffPeriod');
+    var znIdx   = headers.indexOf('zoneName');
     var cutoffPeriod = _trackingCutoffPeriodKey();
     var now     = _bkkTimestamp();
     var updater = session.username;
@@ -661,7 +668,7 @@ function saveTrackingBatch(token, batch) {
     for (var i = 1; i < data.length; i++) {
       var k = String(data[i][kIdx] || '').trim();
       var cp = cpIdx >= 0 ? String(data[i][cpIdx] || '').trim() : '';
-      if (k && cp === cutoffPeriod) existingMap[k] = i + 1;
+      if (k && cp === cutoffPeriod) existingMap[k] = { row: i + 1, zoneName: znIdx >= 0 ? String(data[i][znIdx] || '') : '' };
     }
 
     var toAppend  = [];
@@ -669,6 +676,11 @@ function saveTrackingBatch(token, batch) {
 
     batch.forEach(function(payload) {
       if (!payload.key) return;
+      var existing = existingMap[payload.key];
+      if (!_canAccessRow(session, { zoneName: (existing && existing.zoneName) || payload.zoneName || '' })) {
+        _auditDenied(session, 'SAVE_TRACKING_BATCH', 'key=' + payload.key + ' zone=' + ((existing && existing.zoneName) || payload.zoneName || '-'));
+        return;
+      }
       var rowData = [
         payload.agentCode || '',
         payload.agentName || '',
@@ -686,9 +698,9 @@ function saveTrackingBatch(token, batch) {
         cutoffPeriod
       ];
 
-      if (existingMap[payload.key]) {
+      if (existing) {
         // update แถวที่มีอยู่
-        sheet.getRange(existingMap[payload.key], 1, 1, rowData.length).setValues([rowData]);
+        sheet.getRange(existing.row, 1, 1, rowData.length).setValues([rowData]);
       } else {
         toAppend.push(rowData);
       }
@@ -783,8 +795,8 @@ function _getOrCreateGrowthTrackingSheet() {
 
 // getGrowthTrackingData(token) — โหลดข้อมูลทั้งหมดจาก TrackingGrowth sheet
 function getGrowthTrackingData(token) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'GET_GROWTH_TRACKING_DATA');
+  if (!session.ok) return session;
 
   try {
     var sheet = _getOrCreateGrowthTrackingSheet();
@@ -815,7 +827,7 @@ function getGrowthTrackingData(token) {
       if (!key) continue;
       var cutoffPeriod = cpIdx >= 0 ? String(r[cpIdx] || '').trim() : '';
       if (cutoffPeriod !== curCutoff) continue;
-      rows.push({
+      var rowObj = {
         key:         key,
         status:      sIdx  >= 0 ? _normalizeGrowthStatus(String(r[sIdx]  || '')) : '',
         key_success: rIdx  >= 0 ? _normalizeGrowthReason(String(r[rIdx]  || '')) : '',
@@ -830,7 +842,8 @@ function getGrowthTrackingData(token) {
         province:    pvIdx  >= 0 ? String(r[pvIdx]  || '') : '',
         zoneName:    znIdx  >= 0 ? String(r[znIdx]  || '') : '',
         cutoffPeriod: cutoffPeriod
-      });
+      };
+      if (_canAccessRow(session, rowObj)) rows.push(rowObj);
     }
     return { ok: true, data: rows, cutoff: _trackingCutoffMeta() };
   } catch(e) {
@@ -840,8 +853,8 @@ function getGrowthTrackingData(token) {
 
 // saveGrowthTrackingRow(token, payload) — upsert แถวเดียว (auto-save)
 function saveGrowthTrackingRow(token, payload) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'SAVE_GROWTH_TRACKING_ROW');
+  if (!session.ok) return session;
   if (!payload || !payload.key) return { ok: false, error: 'ไม่มี key' };
 
   try {
@@ -850,6 +863,7 @@ function saveGrowthTrackingRow(token, payload) {
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx    = headers.indexOf('key');
     var cpIdx   = headers.indexOf('cutoffPeriod');
+    var znIdx   = headers.indexOf('zoneName');
     var cutoffPeriod = _trackingCutoffPeriodKey();
 
     var targetRow = -1;
@@ -860,6 +874,10 @@ function saveGrowthTrackingRow(token, payload) {
         break;
       }
     }
+
+    var existingZone = targetRow > 0 && znIdx >= 0 ? String(data[targetRow - 1][znIdx] || '') : '';
+    var accessCheck = _requireRowAccess(session, { zoneName: existingZone || payload.zoneName || '' }, 'SAVE_GROWTH_TRACKING_ROW');
+    if (!accessCheck.ok) return accessCheck;
 
     var rowData = [
       payload.agentCode  || '',
@@ -894,8 +912,8 @@ function saveGrowthTrackingRow(token, payload) {
 
 // saveGrowthTrackingBatch(token, batch) — upsert หลายแถวพร้อมกัน
 function saveGrowthTrackingBatch(token, batch) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
+  var session = _requireSession(token || '', 'SAVE_GROWTH_TRACKING_BATCH');
+  if (!session.ok) return session;
   if (!batch || !batch.length) return { ok: false, error: 'ไม่มีข้อมูล' };
 
   try {
@@ -904,6 +922,7 @@ function saveGrowthTrackingBatch(token, batch) {
     var headers = data[0].map(function(h){ return String(h).trim(); });
     var kIdx    = headers.indexOf('key');
     var cpIdx   = headers.indexOf('cutoffPeriod');
+    var znIdx   = headers.indexOf('zoneName');
     var cutoffPeriod = _trackingCutoffPeriodKey();
     var now     = _bkkTimestamp();
     var updater = session.username;
@@ -912,7 +931,7 @@ function saveGrowthTrackingBatch(token, batch) {
     for (var i = 1; i < data.length; i++) {
       var k = String(data[i][kIdx] || '').trim();
       var cp = cpIdx >= 0 ? String(data[i][cpIdx] || '').trim() : '';
-      if (k && cp === cutoffPeriod) existingMap[k] = i + 1;
+      if (k && cp === cutoffPeriod) existingMap[k] = { row: i + 1, zoneName: znIdx >= 0 ? String(data[i][znIdx] || '') : '' };
     }
 
     var toAppend  = [];
@@ -920,6 +939,11 @@ function saveGrowthTrackingBatch(token, batch) {
 
     batch.forEach(function(payload) {
       if (!payload.key) return;
+      var existing = existingMap[payload.key];
+      if (!_canAccessRow(session, { zoneName: (existing && existing.zoneName) || payload.zoneName || '' })) {
+        _auditDenied(session, 'SAVE_GROWTH_TRACKING_BATCH', 'key=' + payload.key + ' zone=' + ((existing && existing.zoneName) || payload.zoneName || '-'));
+        return;
+      }
       var rowData = [
         payload.agentCode  || '',
         payload.agentName  || '',
@@ -937,8 +961,8 @@ function saveGrowthTrackingBatch(token, batch) {
         cutoffPeriod
       ];
 
-      if (existingMap[payload.key]) {
-        sheet.getRange(existingMap[payload.key], 1, 1, rowData.length).setValues([rowData]);
+      if (existing) {
+        sheet.getRange(existing.row, 1, 1, rowData.length).setValues([rowData]);
       } else {
         toAppend.push(rowData);
       }

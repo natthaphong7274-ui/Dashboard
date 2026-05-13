@@ -15,21 +15,20 @@ function getAllData(token) {
     .map(function(m){ return { key:m.monthKey, label:m.label }; });
 
   // ── ตรวจ session จาก token ──
-  var session = getSession(token || '');
+  var session = _requireSession(token || '', 'GET_ALL_DATA');
+  if (!session.ok) return session;
   var allowedZones = null;
-  if (session.ok && session.role !== 'Director') {
+  if (session.role !== 'Director') {
     if (session.zones && session.zones[0] !== 'All') {
       allowedZones = session.zones;
     }
   }
 
   // บันทึก Log การดูข้อมูล Dashboard
-  if (session.ok) {
-    var zoneDesc = (session.zones && session.zones[0] !== 'All')
-      ? 'Zone: ' + session.zones.join(', ')
-      : 'Zone: All';
-    logActivity(session.username, session.role, 'VIEW_DASHBOARD', 'โหลดข้อมูล Dashboard | ' + zoneDesc);
-  }
+  var zoneDesc = (session.zones && session.zones[0] !== 'All')
+    ? 'Zone: ' + session.zones.join(', ')
+    : 'Zone: All';
+  logActivity(session.username, session.role, 'VIEW_DASHBOARD', 'โหลดข้อมูล Dashboard | ' + zoneDesc);
 
   // ── ดึง BASE SHEET ──
   var baseSheet   = ss.getSheetByName(BASE_SHEET);
@@ -253,11 +252,10 @@ function logActivity(username, role, action, detail, token) {
 
 // getActivityLog(token, limit) — ดึง log ล่าสุด (เฉพาะ Director/Admin)
 function getActivityLog(token, limit) {
-  var session = getSession(token || '');
-  if (!session.ok) return { ok: false, error: 'Unauthorized' };
-  if (session.role !== 'Director' && session.role !== 'Admin') {
-    return { ok: false, error: 'Permission denied: ต้องการสิทธิ์ Director หรือ Admin' };
-  }
+  var session = _requireSession(token || '', 'GET_ACTIVITY_LOG');
+  if (!session.ok) return session;
+  var roleCheck = _requireRole(session, ['Director', 'Admin'], 'GET_ACTIVITY_LOG');
+  if (!roleCheck.ok) return roleCheck;
   try {
     var sheet = _getOrCreateLogSheet();
     var data  = sheet.getDataRange().getValues();
