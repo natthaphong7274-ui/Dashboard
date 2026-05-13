@@ -10548,6 +10548,184 @@ function _targetDeltaLabel(targetValue, prevRev) {
   return (pct >= 0 ? '+' : '') + pct.toFixed(1) + '% จากเดือนก่อน';
 }
 
+function calcPriorityScore(row, tracking, ctx) {
+  ctx = ctx || {};
+  tracking = tracking || {};
+  var m = ctx.month || {};
+  var mp = ctx.prevMonth || null;
+  var type = ctx.type || 'risk';
+  var score = 0;
+  var reasons = [];
+  var curRev = N(row[m.colRev]);
+  var prevRev = mp ? N(row[mp.colRev]) : 0;
+  var curAvg = N(row[m.colAvg]);
+  var prevAvg = mp ? N(row[mp.colAvg]) : 0;
+  var diffAvg = mp ? curAvg - prevAvg : 0;
+  var pctRev = prevRev > 0 ? ((curRev - prevRev) / Math.abs(prevRev) * 100) : null;
+  var status = tracking.status || '';
+  var updatedAt = tracking.updatedAt || '';
+  var daysLeft = Number(ctx.daysLeft || 0);
+
+  if (type === 'risk') {
+    var drop = Math.max(0, prevAvg - curAvg);
+    score += Math.min(45, Math.round(drop / Math.max(_riskThreshold || 1, 1) * 18));
+    if (pctRev !== null && pctRev < 0) score += Math.min(20, Math.round(Math.abs(pctRev) / 3));
+    if (prevRev > 0) score += Math.min(15, Math.round(prevRev / 30000));
+    if (drop > 0) reasons.push('Avg ลด ' + fmtS(Math.round(drop)) + '/วัน');
+    if (pctRev !== null && pctRev < 0) reasons.push('ยอดลด ' + Math.abs(pctRev).toFixed(1) + '%');
+  } else {
+    var gain = Math.max(0, curAvg - prevAvg);
+    score += Math.min(35, Math.round(gain / Math.max(_growthThreshold || 1, 1) * 14));
+    if (pctRev !== null && pctRev > 0) score += Math.min(18, Math.round(pctRev / 4));
+    score += Math.min(12, Math.round(curRev / 40000));
+    if (gain > 0) reasons.push('Avg เพิ่ม ' + fmtS(Math.round(gain)) + '/วัน');
+    if (pctRev !== null && pctRev > 0) reasons.push('ยอดโต +' + pctRev.toFixed(1) + '%');
+  }
+
+  if (!status) {
+    score += 25;
+    reasons.push('ยังไม่อัปเดตสถานะ');
+  } else if (status === 'wait') {
+    score += 18;
+    reasons.push('รอดำเนินการ');
+  } else if (status === 'contact' || status === 'contacted') {
+    score += 9;
+    reasons.push('ติดต่อแล้ว รอต่อ');
+  } else if (status === 'success' || status === 'fail' || status === 'upsold' || status === 'unreachable') {
+    score -= 18;
+    reasons.push('มีผลลัพธ์แล้ว');
+  }
+  if (!updatedAt) {
+    score += 8;
+  }
+  if (daysLeft <= 7) {
+    score += 8;
+    reasons.push('ใกล้ปิดเดือน');
+  }
+
+  return {
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    reasons: reasons.slice(0, 3),
+    pctRev: pctRev,
+    diffAvg: diffAvg
+  };
+}
+
+function _nextFollowUpLabel(tracking) {
+  tracking = tracking || {};
+  var d = tracking.nextFollowUp || tracking.nextFollowUpDate || tracking.followUpDate || tracking.followDate || '';
+  return d ? _esc(d) : 'ยังไม่กำหนด';
+}
+
+function computeActionCenterRows(rows, trackingData, ctx) {
+  rows = rows || [];
+  trackingData = trackingData || {};
+  ctx = ctx || {};
+  var m = ctx.month || {};
+  var mp = ctx.prevMonth || null;
+  if (!m || !m.key || !mp) return [];
+  var items = [];
+  rows.forEach(function(r) {
+    var code = String(r[COL.agentCode] || r['Agent Code'] || '').trim();
+    if (!code) return;
+    var riskDrop = N(r[mp.colAvg]) - N(r[m.colAvg]);
+    var growthGain = N(r[m.colAvg]) - N(r[mp.colAvg]);
+    if (riskDrop > (_riskThreshold || 0)) {
+      var riskKey = 'risk_' + code + '_' + m.key;
+      var riskTrk = trackingData[riskKey] || {};
+      var riskScore = calcPriorityScore(r, riskTrk, Object.assign({}, ctx, { type:'risk' }));
+      items.push({
+        type:'risk', key:riskKey, row:r, tracking:riskTrk,
+        score:riskScore.score, reasons:riskScore.reasons,
+        actionLabel:'ดู Risk', actionTab:'risk',
+        badge:'Risk', badgeColor:'#dc2626',
+        handler:'_trkChange',
+        statusOptions:_trkStatusOptions(riskTrk.status || '')
+      });
+    }
+    if (growthGain > (_growthThreshold || 0)) {
+      var growthKey = 'growth_' + code + '_' + m.key;
+      var growthTrk = trackingData[growthKey] || {};
+      var growthScore = calcPriorityScore(r, growthTrk, Object.assign({}, ctx, { type:'growth' }));
+      items.push({
+        type:'growth', key:growthKey, row:r, tracking:growthTrk,
+        score:growthScore.score, reasons:growthScore.reasons,
+        actionLabel:'ดู Growth', actionTab:'growth',
+        badge:'Growth', badgeColor:'#16a34a',
+        handler:'_growthTrkChange',
+        statusOptions:_growthStatusOptions(growthTrk.status || '')
+      });
+    }
+  });
+  return items.sort(function(a,b){ return b.score - a.score; });
+}
+
+function _actionCenterMeta(item, m) {
+  var r = item.row || {};
+  var code = String(r[COL.agentCode] || r['Agent Code'] || '');
+  var meta = {
+    v21:String(r[COL.account21] || r['21.00'] || ''),
+    agentCode:code,
+    package:String(r[COL.package] || r['Package'] || ''),
+    agentName:String(r[COL.agentName] || r['Agent Name'] || ''),
+    city:String(r[COL.city] || r['City'] || ''),
+    province:String(r[COL.province] || r['Province'] || ''),
+    zoneName:String(r[COL.zoneName] || r['Zone Name'] || '')
+  };
+  if (!_trkData[item.key]) {
+    _trkData[item.key] = item.type === 'growth'
+      ? { status:'', key_success:'', note:'', updatedBy:'', updatedAt:'' }
+      : { status:'', reason:'', note:'', updatedBy:'', updatedAt:'' };
+  }
+  Object.assign(_trkData[item.key], meta);
+}
+
+function renderActionCenter(items, m) {
+  if (!items || !items.length) {
+    return '<div class="ccard" style="margin-bottom:12px">'
+      + '<div class="ctitle" style="margin-bottom:8px">Action Center</div>'
+      + '<div class="ui-state empty" style="min-height:96px;background:#f8fafc;border-radius:10px">ไม่มีงานเร่งด่วนจากข้อมูลเดือนนี้</div>'
+      + '</div>';
+  }
+  var top = items.slice(0, 8);
+  var html = '<div class="ccard" style="margin-bottom:12px;border:1.5px solid #bae6fd;background:linear-gradient(135deg,#f8fbff,#ffffff)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
+    + '<div><div class="ctitle">Action Center</div><div style="font-size:11px;color:var(--t2);margin-top:2px">เรียงตาม Priority Score จากยอด, สถานะ tracking และรอบปิดเดือน</div></div>'
+    + '<span style="font-size:11px;font-weight:800;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;border-radius:20px;padding:4px 10px">'+items.length+' งาน</span>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:7px">';
+  top.forEach(function(item, idx) {
+    _actionCenterMeta(item, m);
+    var r = item.row || {};
+    var trk = item.tracking || {};
+    var code = String(r[COL.agentCode] || r['Agent Code'] || '-');
+    var name = String(r[COL.agentName] || r['Agent Name'] || '-');
+    var zone = String(r[COL.zoneName] || r['Zone Name'] || '-');
+    var pkg = String(r[COL.package] || r['Package'] || '-');
+    var rev = N(r[m.colRev]);
+    var reason = item.reasons && item.reasons.length ? item.reasons.join(' · ') : 'ต้องตรวจสอบ';
+    var scoreColor = item.score >= 75 ? '#dc2626' : item.score >= 50 ? '#d97706' : '#0369a1';
+    html += '<div class="action-center-row" style="display:grid;grid-template-columns:34px minmax(180px,1fr) 92px 150px 96px;gap:8px;align-items:center;padding:9px 10px;border:1px solid #e2e8f0;border-radius:10px;background:white">'
+      + '<div style="width:28px;height:28px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#0f172a">'+(idx+1)+'</div>'
+      + '<div style="min-width:0">'
+      + '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap"><span style="font-size:12px;font-weight:900;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_esc(name)+'</span><span style="font-size:9px;font-weight:900;border-radius:20px;padding:2px 7px;background:'+item.badgeColor+'1A;color:'+item.badgeColor+'">'+item.badge+'</span></div>'
+      + '<div style="font-size:10px;color:#64748b;margin-top:2px">'+_esc(code)+' · '+_esc(zone)+' · '+_esc(pkg)+' · Rev '+fmtS(Math.round(rev))+'</div>'
+      + '<div style="font-size:10px;color:#334155;margin-top:3px">'+_esc(reason)+'</div>'
+      + '</div>'
+      + '<div><div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase">Priority</div><div style="font-size:20px;font-weight:900;color:'+scoreColor+'">'+item.score+'</div></div>'
+      + '<div><div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase">Next Follow-up</div><div style="font-size:11px;font-weight:800;color:#334155">'+_nextFollowUpLabel(trk)+'</div></div>'
+      + '<div style="display:flex;flex-direction:column;gap:5px">'
+      + '<select class="trk-status '+(item.type==='growth'?_growthStatusCls(trk.status):_trkStatusCls(trk.status))+'" data-trk="'+item.key+'" data-field="status" onchange="'+item.handler+'(this)" style="width:100%;font-size:10px;padding:4px 6px">'+item.statusOptions+'</select>'
+      + '<button class="home-qbtn" style="justify-content:center;font-size:10px;padding:5px 8px" onclick="swMain(\''+item.actionTab+'\')">'+item.actionLabel+'</button>'
+      + '</div>'
+      + '</div>';
+  });
+  html += '</div>'
+    + (items.length > top.length ? '<div style="font-size:10px;color:var(--t2);text-align:center;margin-top:8px">แสดง 8 งานแรกจากทั้งหมด '+items.length+' งาน</div>' : '')
+    + '</div>';
+  return html;
+}
+
 function _renderHomeBD(m, mp) {
   try {
   var userZones = _currentUser && _currentUser.zones ? _currentUser.zones : [];
@@ -10565,8 +10743,7 @@ function _renderHomeBD(m, mp) {
   var convRate = totLeads > 0 ? (totActive / totLeads * 100).toFixed(1) : '0.0';
   var momRev = _homeMoM(totRev, prevRev);
 
-  // Action list: sorted by revenue desc
-  var actionList = []; // T03
+  var actionList = [];
 
   var html = '';
   var uname = _currentUser ? (_currentUser.displayName || _currentUser.username || 'BD') : 'BD';
@@ -10586,6 +10763,11 @@ function _renderHomeBD(m, mp) {
   var daysInMonth = 30;
   var todayDay = TODAY_DATE > 0 ? TODAY_DATE : 1;
   var daysLeft = Math.max(0, daysInMonth - todayDay + 1);
+  actionList = computeActionCenterRows(myRows, window._trkData || {}, {
+    month:m,
+    prevMonth:mp,
+    daysLeft:daysLeft
+  });
 
   // Motivational message based on status
   var bdBannerMsg = '';
@@ -10780,6 +10962,8 @@ function _renderHomeBD(m, mp) {
     + '</div>';
 
   html += '</div>'; // close home-kpi-grid
+
+  html += renderActionCenter(actionList, m);
 
   // ── คำนวณมิติ Loss group ──
   var lossRows = []; // T03
