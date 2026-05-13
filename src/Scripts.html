@@ -2591,10 +2591,10 @@ function renderTable(){
     var ap=apM(r),apPrev=mp?avgPiecePrev(r,mp):0;
     var apDiff=mp?ap-apPrev:null,apPct=mp&&apPrev?pctChg(apPrev,ap):null;
     return'<tr>'
-      +'<td style="font-weight:700">'+r['Agent Name']+'</td>'
-      +'<td style="color:var(--t2);font-size:11px">'+String(r['Agent Code']||'-')+'</td>'
-      +(hasPhone?'<td style="font-size:11px">'+String(r['Phone']||r['phone']||r['เบอร์โทร']||r['Tel']||'-')+'</td>':'')
-      +'<td>'+r['Zone Name']+'</td><td>'+r['Package']+'</td><td>'+r['Province']+'</td>'
+      +'<td style="font-weight:700">'+_esc(r['Agent Name']||'-')+'</td>'
+      +'<td style="color:var(--t2);font-size:11px">'+_esc(r['Agent Code']||'-')+'</td>'
+      +(hasPhone?'<td style="font-size:11px">'+_esc(r['Phone']||r['phone']||r['เบอร์โทร']||r['Tel']||'-')+'</td>':'')
+      +'<td>'+_esc(r['Zone Name']||'-')+'</td><td>'+_esc(r['Package']||'-')+'</td><td>'+_esc(r['Province']||'-')+'</td>'
       // Revenue
       +(mp?'<td class="tdr" style="color:var(--t2)">'+fmtInt(revP)+'</td>':'')
       +'<td class="tdr" style="font-weight:700;color:var(--ac)">'+fmtInt(revC)+'</td>'
@@ -3763,10 +3763,10 @@ function renderCarrierTable(){
     var rc=i<3?['r1','r2','r3'][i]:'ro';
     var cells='<tr>'
       +'<td><span class="rn '+rc+'">'+(((carPg-1)*carPgPer)+i+1)+'</span></td>'
-      +'<td style="font-weight:700;white-space:nowrap;min-width:120px">'+String(r['Agent Name']||'-')+'</td>'
-      +'<td style="color:var(--t2);font-size:10px">'+String(r['Agent Code']||'-')+'</td>'
-      +'<td style="white-space:nowrap">'+String(r['Zone Name']||'-')+'</td>'
-      +'<td style="white-space:nowrap;font-size:10px">'+String(r['Package']||'-')+'</td>'
+      +'<td style="font-weight:700;white-space:nowrap;min-width:120px">'+_esc(r['Agent Name']||'-')+'</td>'
+      +'<td style="color:var(--t2);font-size:10px">'+_esc(r['Agent Code']||'-')+'</td>'
+      +'<td style="white-space:nowrap">'+_esc(r['Zone Name']||'-')+'</td>'
+      +'<td style="white-space:nowrap;font-size:10px">'+_esc(r['Package']||'-')+'</td>'
       +'<td class="tdr" style="font-weight:700;color:var(--c-vol)">'+fmtS(Math.round(rowVolCur))+'</td>';
 
     if(filterCar){
@@ -4718,13 +4718,13 @@ function renderRisk(){
       var trkMeta={v21:String(r['21.00']||''),agentCode:code,package:String(r['Package']||''),agentName:String(r['Agent Name']||''),city:String(r['City']||''),province:String(r['Province']||''),zoneName:String(r['Zone Name']||'')};
       if(!_trkData[trkKey])_trkData[trkKey]={status:'',reason:'',note:'',updatedBy:'',updatedAt:''};
       Object.assign(_trkData[trkKey],trkMeta);
-      return'<tr>'
-        +'<td><span class="rn '+rc+'">'+(i+1)+'</span></td>'
-        +'<td style="font-weight:700;white-space:nowrap">'+r['Agent Name']+'</td>'
-        +'<td style="font-size:10px">'+code+'</td>'
-        +'<td style="font-size:11px">'+r['Zone Name']+'</td>'
-        +'<td style="font-size:11px">'+r['Package']+'</td>'
-        +'<td style="font-size:11px">'+r['Province']+'</td>'
+        return'<tr>'
+          +'<td><span class="rn '+rc+'">'+(i+1)+'</span></td>'
+          +'<td style="font-weight:700;white-space:nowrap">'+_esc(r['Agent Name']||'-')+'</td>'
+          +'<td style="font-size:10px">'+_esc(code||'-')+'</td>'
+          +'<td style="font-size:11px">'+_esc(r['Zone Name']||'-')+'</td>'
+          +'<td style="font-size:11px">'+_esc(r['Package']||'-')+'</td>'
+          +'<td style="font-size:11px">'+_esc(r['Province']||'-')+'</td>'
         +'<td class="tdr" style="color:var(--t2)">'+fmtS(Math.round(ardP))+'</td>'
         +'<td class="tdr" style="color:var(--c-ard);font-weight:700">'+fmtS(Math.round(ardC))+'</td>'
         +'<td class="tdr tdneg">'+fmtS(Math.round(diff))+'</td>'
@@ -5327,11 +5327,11 @@ function renderGrowth(){
         Object.assign(_trkData[trkKey],trkMeta);
         return'<tr>'
           +'<td><span class="rn '+rc+'">'+(i+1)+'</span></td>'
-          +'<td style="font-weight:700;white-space:nowrap">'+r['Agent Name']+'</td>'
-          +'<td style="font-size:10px">'+code+'</td>'
-          +'<td style="font-size:11px">'+r['Zone Name']+'</td>'
-          +'<td style="font-size:11px">'+r['Package']+'</td>'
-          +'<td style="font-size:11px">'+r['Province']+'</td>'
+          +'<td style="font-weight:700;white-space:nowrap">'+_esc(r['Agent Name']||'-')+'</td>'
+          +'<td style="font-size:10px">'+_esc(code||'-')+'</td>'
+          +'<td style="font-size:11px">'+_esc(r['Zone Name']||'-')+'</td>'
+          +'<td style="font-size:11px">'+_esc(r['Package']||'-')+'</td>'
+          +'<td style="font-size:11px">'+_esc(r['Province']||'-')+'</td>'
           +'<td class="tdr" style="color:var(--t2)">'+fmtS(Math.round(ardP))+'</td>'
           +'<td class="tdr" style="color:#16a34a;font-weight:700">'+fmtS(Math.round(ardC))+'</td>'
           +'<td class="tdr" style="color:#16a34a;font-weight:700">+'+fmtS(Math.round(diff))+'</td>'
@@ -5420,7 +5420,14 @@ function loadGrowthTrackingData(){
 }
 
 // T03: loss tracking removed
-function _esc(str){ return String(str||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function _esc(str){
+  return String(str == null ? '' : str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
 
 function _trkStatusCls(s){
   var map={wait:'s-wait',contact:'s-contact',solving:'s-solving',success:'s-success',fail:'s-fail'};
