@@ -28,6 +28,13 @@ Branch: `codex/phase-3.5`
 - มุมมองเต็มยังเปิดดูคอลัมน์เสริม เช่น province, previous month, Avg/Vol/day, Avg Rev และ Avg/ชิ้น ได้
 - จำ preference ด้วย `localStorage`
 
+### 4. Role-based Visualization Cleanup
+
+- ปรับหน้า `ภาพรวม` ให้ BD ไม่เห็นกราฟสรุปแบบราย Zone เช่น `Revenue ราย Zone`, `Volume ราย Zone`, `Avg Rev ราย Zone`, `Avg Rev/ชิ้น ราย Zone` และ `Avg Vol/วัน ราย Zone`
+- Ranking ในหน้า `ภาพรวม` สำหรับ BD เปลี่ยนจากการจัดอันดับราย Zone เป็นราย Agent เพื่อให้ตรงกับพอร์ตที่ BD ต้องดูแล
+- ซ่อนแท็บ `BD Zone` ให้เหลือเฉพาะ Director เพราะเป็นมุมมองเปรียบเทียบระดับทีม/Zone มากกว่างานประจำของ BD และ AM
+- ปรับหน้า `ขนส่ง` ให้ BD ไม่เห็นแท็บ `ราย Zone` เพราะเป็นการเปรียบเทียบระดับพื้นที่ ไม่ใช่มุมมองที่เหมาะกับ role BD
+
 ## งานใน roadmap ที่แตะในรอบนี้
 
 - I2 Revenue/Volume Monthly Trend
@@ -35,6 +42,7 @@ Branch: `codex/phase-3.5`
 - I5 Action Center เป็น Priority List
 - I10 Target Progress + Forecast Chart
 - I11 Column Visibility แบบเริ่มต้นด้วย compact/full view
+- Role-based visualization cleanup สำหรับหน้า Overview และ Carrier
 
 ## จุดที่ควรเช็กบน dev
 
@@ -43,6 +51,8 @@ Branch: `codex/phase-3.5`
 3. เดือนที่มี target ต้องเห็น Forecast และ Required/day
 4. Action Center ต้องมี Priority bar โดยไม่กระทบการ save tracking
 5. ตารางรายการลูกค้ากดสลับมุมมองกระชับ/เต็มได้ และ refresh แล้วยังจำค่า
+6. Login เป็น BD แล้วหน้า `ภาพรวม` ต้องไม่เห็นกราฟ/ตารางราย Zone และ ranking ต้องเป็นราย Agent
+7. Login เป็น BD แล้วหน้า `ขนส่ง` ต้องไม่เห็นแท็บ `ราย Zone`; Director/AM ยังเห็นแท็บนี้ได้
 
 ## ข้อจำกัดที่ยังคงไว้
 

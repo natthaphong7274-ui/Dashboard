@@ -546,6 +546,55 @@ function _ensureMainPanelsMounted(){
   var hc = document.getElementById('home_content');
   if(home && hc && hc.parentElement !== home) home.appendChild(hc);
 }
+function _currentRole(){
+  return (_currentUser&&_currentUser.role)||'';
+}
+function _isBDRole(){
+  return _currentRole()==='BD';
+}
+function _setVisible(el,show){
+  if(el)el.style.display=show?'':'none';
+}
+function _findButtonByOnclick(fragment){
+  var btns=document.querySelectorAll('button[onclick]');
+  for(var i=0;i<btns.length;i++){
+    if((btns[i].getAttribute('onclick')||'').indexOf(fragment)>=0)return btns[i];
+  }
+  return null;
+}
+function _chartCard(id){
+  var el=document.getElementById(id);
+  if(!el)return null;
+  return el.closest?el.closest('.ccard'):el.parentElement;
+}
+function _applyOverviewRoleRules(){
+  var isBD=_isBDRole();
+  ['c_rev_zone','c_vol_zone','c_avg_zone','c_ap_zone','c_av_zone'].forEach(function(id){
+    _setVisible(_chartCard(id),!isBD);
+  });
+  var bdTab=_findButtonByOnclick("swSec('bd'");
+  var showBdTab=_currentRole()==='Director';
+  _setVisible(bdTab,showBdTab);
+  _setVisible(document.getElementById('sp-bd'),showBdTab);
+  var active=document.querySelector('#mainOv .spanel.active');
+  if(active&&active.id==='sp-bd'&&!showBdTab){
+    var revBtn=_findButtonByOnclick("swSec('revenue'");
+    swSec('revenue',revBtn);
+  }
+}
+function _applyCarrierRoleRules(){
+  var showZone=!_isBDRole();
+  _setVisible(document.getElementById('cr_tab_zone'),showZone);
+  _setVisible(document.getElementById('car_sp_zone'),showZone);
+  var zonePanel=document.getElementById('car_sp_zone');
+  if(!showZone&&zonePanel&&zonePanel.classList.contains('active')){
+    swCarSec('pie',document.getElementById('cr_tab_pie'));
+  }
+}
+function applyRoleVisualizationRules(){
+  _applyOverviewRoleRules();
+  _applyCarrierRoleRules();
+}
 function swMain(v){
   _ensureMainPanelsMounted();
   console.log('[swMain] switching to tab:', v, '| FR='+FR.length+' | MONTHS='+MONTHS.length+' | CUR_MONTH='+(CUR_MONTH&&CUR_MONTH.key||'null'));
@@ -579,6 +628,7 @@ function swMain(v){
   if(v==='risk') loadRiskThreshold(function(){ renderRisk(); });
   if(v==='growth') loadGrowthThreshold(function(){ renderGrowth(); });
   if(v==='usermgmt') loadUserStatus();
+  applyRoleVisualizationRules();
   var tabNames={home:'หน้าแรก',ov:'ภาพรวม',ls:'รายการลูกค้า',cr:'ขนส่ง',risk:'กลุ่มเสี่ยง',growth:'กลุ่มเติบโต',usermgmt:'จัดการผู้ใช้'};
   _clientLog('VIEW_TAB','เปิด Tab: '+(tabNames[v]||v));
 }
@@ -592,6 +642,7 @@ function swSec(sec,btn){
   if(sec==='avgpiece')renderAvgPieceSection();
   if(sec==='carrier') loadAndRenderCarrier();
   if(sec==='area') { /* charts only */ }
+  _applyOverviewRoleRules();
   var secNames={revenue:'Revenue',vol:'Volume',avgrev:'Avg Rev',avgpiece:'Avg Rev/ชิ้น',bd:'BD Zone',area:'พื้นที่',acc:'Account',pkg:'Package',compare:'เปรียบเทียบ'};
   _clientLog('VIEW_SUBTAB', '[ภาพรวม] เปิด Sub-tab: '+(secNames[sec]||sec));
 }
@@ -1254,6 +1305,9 @@ function showAvgVolDayDrill(groupCol, groupVal, panelId, titleId, bodyId) {
 function renderAllCharts(){
   var m=getMC();if(!m.colRev)return;
   var mp=getMP(); // ★ ต้องมีเพื่อให้ prevMap ทำงานได้
+  var role=_currentRole();
+  var isBD=role==='BD';
+  _applyOverviewRoleRules();
 
   // ★ Lazy: ถ้าไม่ได้อยู่ใน tab ภาพรวม ให้ skip chart render
   // (แต่ยังต้อง compute data เพราะ KPI ใช้ร่วมกัน)
@@ -1262,10 +1316,12 @@ function renderAllCharts(){
   // Revenue
   var sz=grpSum(FR,COL.zoneName,m.colRev).slice(0,15);
   if(isOvActive){
-  mkHBar('c_rev_zone',sz.map(function(e){return e[0];}),sz.map(function(e){return Math.round(e[1]);}),
-    'rgba(30,58,95,0.75)',true,{groupCol:COL.zoneName,metricCol:m.colRev,panelId:'dp_rev_zone',titleId:'dpt_rev_zone',bodyId:'dpb_rev_zone'});
-  updT('t_rev_zone','💰 Revenue ราย Zone ('+m.en+')');
-  mkRank('rev_rank',sz,'Revenue');
+  if(!isBD){
+    mkHBar('c_rev_zone',sz.map(function(e){return e[0];}),sz.map(function(e){return Math.round(e[1]);}),
+      'rgba(30,58,95,0.75)',true,{groupCol:COL.zoneName,metricCol:m.colRev,panelId:'dp_rev_zone',titleId:'dpt_rev_zone',bodyId:'dpb_rev_zone'});
+    updT('t_rev_zone','💰 Revenue ราย Zone ('+m.en+')');
+  }
+  mkRank('rev_rank',isBD?grpSum(FR,COL.agentName,m.colRev).slice(0,15):sz,'Revenue');
   var sp=grpSum(FR,COL.package,m.colRev).slice(0,10);
   mkHBar('c_rev_pkg',sp.map(function(e){return e[0];}),sp.map(function(e){return Math.round(e[1]);}),
     'rgba(30,58,95,0.65)',true,{groupCol:COL.package,metricCol:m.colRev,panelId:'dp_rev_pkg',titleId:'dpt_rev_pkg',bodyId:'dpb_rev_pkg'});
@@ -1276,10 +1332,12 @@ function renderAllCharts(){
 
   // Volume — ★ ใช้ colVol จริง (ไม่ใช่ colRev)
   var svz=grpSum(FR,COL.zoneName,m.colVol).slice(0,15);
-  mkHBar('c_vol_zone',svz.map(function(e){return e[0];}),svz.map(function(e){return Math.round(e[1]);}),
-    'rgba(21,94,117,0.75)',true,{groupCol:COL.zoneName,metricCol:m.colVol,panelId:'dp_vol_zone',titleId:'dpt_vol_zone',bodyId:'dpb_vol_zone'});
-  updT('t_vol_zone','📦 Volume ราย Zone ('+m.en+')');
-  mkRank('vol_rank',svz,'Volume');
+  if(!isBD){
+    mkHBar('c_vol_zone',svz.map(function(e){return e[0];}),svz.map(function(e){return Math.round(e[1]);}),
+      'rgba(21,94,117,0.75)',true,{groupCol:COL.zoneName,metricCol:m.colVol,panelId:'dp_vol_zone',titleId:'dpt_vol_zone',bodyId:'dpb_vol_zone'});
+    updT('t_vol_zone','📦 Volume ราย Zone ('+m.en+')');
+  }
+  mkRank('vol_rank',isBD?grpSum(FR,COL.agentName,m.colVol).slice(0,15):svz,'Volume');
   var svp=grpSum(FR,COL.package,m.colVol).slice(0,10);
   mkHBar('c_vol_pkg',svp.map(function(e){return e[0];}),svp.map(function(e){return Math.round(e[1]);}),
     'rgba(21,94,117,0.65)',true,{groupCol:COL.package,metricCol:m.colVol,panelId:'dp_vol_pkg',titleId:'dpt_vol_pkg',bodyId:'dpb_vol_pkg'});
@@ -1289,13 +1347,16 @@ function renderAllCharts(){
 
   // Avg Rev (จาก Sheet)
   var saz=grpSum(FR,COL.zoneName,m.colAvg).slice(0,15);
-  mkHBar('c_avg_zone',saz.map(function(e){return e[0];}),saz.map(function(e){return Math.round(e[1]);}),
-    'rgba(26,77,110,0.75)',true,{groupCol:COL.zoneName,metricCol:m.colAvg,panelId:'dp_avg_zone',titleId:'dpt_avg_zone',bodyId:'dpb_avg_zone'});
-  updT('t_avg_zone','📐 Avg Rev/Day ราย Zone ('+m.en+') — คลิกแท่ง→รายชื่อ');
+  if(!isBD){
+    mkHBar('c_avg_zone',saz.map(function(e){return e[0];}),saz.map(function(e){return Math.round(e[1]);}),
+      'rgba(26,77,110,0.75)',true,{groupCol:COL.zoneName,metricCol:m.colAvg,panelId:'dp_avg_zone',titleId:'dpt_avg_zone',bodyId:'dpb_avg_zone'});
+    updT('t_avg_zone','📐 Avg Rev/Day ราย Zone ('+m.en+') — คลิกแท่ง→รายชื่อ');
+  }
   // Avg Rev Ranking — แสดง % vs เดือนก่อน
   var avgPrevMap=null;
-  if(mp){var sazP=grpSum(FR,COL.zoneName,mp.colAvg);avgPrevMap={};sazP.forEach(function(e){avgPrevMap[e[0]]=e[1];});}
-  mkRank('avg_rank',saz,'Avg Rev',fmtS,avgPrevMap,'vs '+( mp?mp.en:''));
+  var avgRankData=isBD?grpSum(FR,COL.agentName,m.colAvg).slice(0,15):saz;
+  if(mp){var sazP=grpSum(FR,isBD?COL.agentName:COL.zoneName,mp.colAvg);avgPrevMap={};sazP.forEach(function(e){avgPrevMap[e[0]]=e[1];});}
+  mkRank('avg_rank',avgRankData,'Avg Rev',fmtS,avgPrevMap,'vs '+( mp?mp.en:''));
   var sap=grpSum(FR,COL.package,m.colAvg).slice(0,10);
   mkHBar('c_avg_pkg',sap.map(function(e){return e[0];}),sap.map(function(e){return Math.round(e[1]);}),
     'rgba(26,77,110,0.65)',true,{groupCol:COL.package,metricCol:m.colAvg,panelId:'dp_avg_pkg',titleId:'dpt_avg_pkg',bodyId:'dpb_avg_pkg'});
@@ -1304,7 +1365,6 @@ function renderAllCharts(){
     'rgba(26,77,110,0.55)',true,{groupCol:COL.province,metricCol:m.colAvg,panelId:'dp_avg_prov',titleId:'dpt_avg_prov',bodyId:'dpb_avg_prov'});
 
   // BD Zone — ★ ซ่อนสำหรับ BD/AM role (ไม่มีประโยชน์เพราะข้อมูล zone เดียว)
-  var role=_currentUser&&_currentUser.role;
   if(role!=='BD'&&role!=='AM'){
     var sbz=grpSum(FR,COL.zoneName,m.colRev).slice(0,15);
     mkHBar('c_bd_rev',sbz.map(function(e){return e[0];}),sbz.map(function(e){return Math.round(e[1]);}),
@@ -1387,6 +1447,10 @@ function renderAllCharts(){
 // ★ NEW: Render Avg Rev/piece section
 function renderAvgPieceSection(){
   var m=getMC(),mp=getMP();if(!m.colRev)return;
+  var isBD=_isBDRole();
+  var primaryGroup=isBD?COL.agentName:'Zone Name';
+  var primaryLabel=isBD?'Agent':'Zone';
+  _applyOverviewRoleRules();
 
   // KPI summary for Avg Piece section
   var totalRev=sumCol(FR,m.colRev),totalVol=sumCol(FR,m.colVol);
@@ -1396,8 +1460,8 @@ function renderAvgPieceSection(){
   var avdV=getDAY1ForMonth(m.key)>0?totalVol/getDAY1ForMonth(m.key):0;
 
   // Avg piece per Zone
-  var apz=grpAvgPiece(FR,'Zone Name',m).slice(0,15);
-  var apz_prev=mp?grpAvgPiece(FR,'Zone Name',mp):[];
+  var apz=grpAvgPiece(FR,primaryGroup,m).slice(0,15);
+  var apz_prev=mp?grpAvgPiece(FR,primaryGroup,mp):[];
   var apz_prevMap={};apz_prev.forEach(function(e){apz_prevMap[e[0]]=e[1];});
 
   // Avg piece per Package
@@ -1405,7 +1469,7 @@ function renderAvgPieceSection(){
   // Avg piece per Province
   var appv=grpAvgPiece(FR,'Province',m).slice(0,10);
   // Avg Vol/day per Zone
-  var avdz=grpAvgVolDay(FR,'Zone Name',m).slice(0,15);
+  var avdz=grpAvgVolDay(FR,primaryGroup,m).slice(0,15);
   // Avg Vol/day per Package
   var avdp=grpAvgVolDay(FR,'Package',m).slice(0,10);
 
@@ -1417,7 +1481,7 @@ function renderAvgPieceSection(){
     +(mp?'<div class="ktrend '+(apDiff>=0?'tup':'tdn')+'">'+(apDiff>=0?'▲':'▼')+fmtF(Math.abs(apDiff))+' vs '+mp.en+' '+pill(apPct)+'</div>':'')
     +'</div>'
     +'<div class="kcard" style="--kc:var(--c-apc)"><div class="kico">📊</div>'
-    +'<div class="klbl">TOP Zone — Avg Rev/ชิ้น</div>'
+    +'<div class="klbl">TOP '+primaryLabel+' — Avg Rev/ชิ้น</div>'
     +'<div class="kval" style="color:var(--c-apc);font-size:15px;">'+(apz.length?fmtF(apz[0][1]):'—')+'</div>'
     +'<div class="ksub">'+(apz.length?apz[0][0]:'')+'</div></div>';
   document.getElementById('avgpiece_kgrid').innerHTML=kHtml;
@@ -1429,18 +1493,20 @@ function renderAvgPieceSection(){
     +'<div class="ksub">Volume ÷ '+getDAY1ForMonth(m.key)+' วัน (Day-1)</div>'
     +'</div>'
     +'<div class="kcard" style="--kc:var(--c-avd)"><div class="kico">🏆</div>'
-    +'<div class="klbl">TOP Zone — Avg Vol/วัน</div>'
+    +'<div class="klbl">TOP '+primaryLabel+' — Avg Vol/วัน</div>'
     +'<div class="kval" style="color:var(--c-avd);font-size:15px;">'+(avdz.length?fmtF(avdz[0][1]):'—')+'</div>'
     +'<div class="ksub">'+(avdz.length?avdz[0][0]:'')+'</div></div>';
   document.getElementById('avgvol_kgrid').innerHTML=avdKHtml;
 
   // Charts — Avg/ชิ้น: สีเขียวถ้า >= prev, แดงถ้าต่ำกว่า
-  mkHBar('c_ap_zone',apz.map(function(e){return e[0];}),apz.map(function(e){return e[1];}),
-    apz.map(function(e){
-      var prev=apz_prevMap[e[0]]||0;
-      return e[1]>=(prev||0)?'rgba(74,29,150,0.7)':'rgba(220,38,38,0.7)';
-    }),true,{type:'avgpiece',groupCol:'Zone Name',panelId:'dp_ap_zone',titleId:'dpt_ap_zone',bodyId:'dpb_ap_zone'});
-  updT('t_ap_zone','Avg Rev/ชิ้น ราย Zone ('+m.en+')');
+  if(!isBD){
+    mkHBar('c_ap_zone',apz.map(function(e){return e[0];}),apz.map(function(e){return e[1];}),
+      apz.map(function(e){
+        var prev=apz_prevMap[e[0]]||0;
+        return e[1]>=(prev||0)?'rgba(74,29,150,0.7)':'rgba(220,38,38,0.7)';
+      }),true,{type:'avgpiece',groupCol:'Zone Name',panelId:'dp_ap_zone',titleId:'dpt_ap_zone',bodyId:'dpb_ap_zone'});
+    updT('t_ap_zone','Avg Rev/ชิ้น ราย Zone ('+m.en+')');
+  }
 
   mkHBar('c_ap_pkg',app.map(function(e){return e[0];}),app.map(function(e){return e[1];}),
     'rgba(74,29,150,0.7)',true,{type:'avgpiece',groupCol:'Package',panelId:'dp_ap_pkg',titleId:'dpt_ap_pkg',bodyId:'dpb_ap_pkg'});
@@ -1450,9 +1516,11 @@ function renderAvgPieceSection(){
     'rgba(74,29,150,0.6)',true,{type:'avgpiece',groupCol:'Province',panelId:'dp_ap_prov',titleId:'dpt_ap_prov',bodyId:'dpb_ap_prov'});
   updT('t_ap_prov','🏷️ Avg Rev/ชิ้น แยกจังหวัด ('+m.en+')');
 
-  mkHBar('c_av_zone',avdz.map(function(e){return e[0];}),avdz.map(function(e){return e[1];}),
-    'rgba(14,116,144,0.75)',true,{type:'avgvolday',groupCol:'Zone Name',panelId:'dp_av_zone',titleId:'dpt_av_zone',bodyId:'dpb_av_zone'});
-  updT('t_av_zone','📦 Avg Vol/วัน ราย Zone ('+m.en+', Day-1='+getDAY1ForMonth(m.key)+' วัน)');
+  if(!isBD){
+    mkHBar('c_av_zone',avdz.map(function(e){return e[0];}),avdz.map(function(e){return e[1];}),
+      'rgba(14,116,144,0.75)',true,{type:'avgvolday',groupCol:'Zone Name',panelId:'dp_av_zone',titleId:'dpt_av_zone',bodyId:'dpb_av_zone'});
+    updT('t_av_zone','📦 Avg Vol/วัน ราย Zone ('+m.en+', Day-1='+getDAY1ForMonth(m.key)+' วัน)');
+  }
 
   mkHBar('c_av_pkg',avdp.map(function(e){return e[0];}),avdp.map(function(e){return e[1];}),
     'rgba(14,116,144,0.65)',true);
@@ -1461,7 +1529,7 @@ function renderAvgPieceSection(){
   // Ranking
   // Avg Rev/ชิ้น Ranking — แสดง % vs เดือนก่อน
   var apPrevMap=null;
-  if(mp){var apzP=grpAvgPiece(FR,'Zone Name',mp);apPrevMap={};apzP.forEach(function(e){apPrevMap[e[0]]=e[1];});}
+  if(mp){var apzP=grpAvgPiece(FR,primaryGroup,mp);apPrevMap={};apzP.forEach(function(e){apPrevMap[e[0]]=e[1];});}
   mkRank('ap_rank',apz,'Avg Rev/ชิ้น',fmtF,apPrevMap,'vs '+(mp?mp.en:''));
 }
 
@@ -2775,6 +2843,10 @@ function getCarMonthLabel(key){ var cm=CARRIER_MONTHS.find(function(c){return c.
 
 // ─── Carrier Section Tab Switch ───────────────────────────
 function swCarSec(sec,btn){
+  if(sec==='zone'&&_isBDRole()){
+    sec='pie';
+    btn=document.getElementById('cr_tab_pie');
+  }
   document.querySelectorAll('#mainCr .cr-tab').forEach(function(b){b.classList.remove('active');});
   if(btn)btn.classList.add('active');
   document.querySelectorAll('#mainCr .spanel').forEach(function(p){p.classList.remove('active');});
@@ -2786,6 +2858,7 @@ function swCarSec(sec,btn){
   if(sec==='avg')    setTimeout(function(){renderCarrierAvg();},50);
   if(sec==='growth') setTimeout(function(){renderGrowthChart();},50);
   if(sec==='cmp')    renderCarrierComparison();
+  _applyCarrierRoleRules();
   var secNames={pie:'สัดส่วน',zone:'ราย Zone',avg:'Avg',growth:'การเติบโต',cmp:'เปรียบเทียบ',tbl:'ตาราง Agent'};
   _clientLog('VIEW_SUBTAB','[ขนส่ง] เปิด Sub-tab: '+(secNames[sec]||sec));
   if(sec==='tbl')    {carPg=1;renderCarrierTable();}
@@ -3379,6 +3452,7 @@ function loadAndRenderCarrier(){
 
 // ─── renderCarrierSection ─────────────────────────────────
 function renderCarrierSection(){
+  _applyCarrierRoleRules();
   if(!CARRIERS.length){
     document.getElementById('carrier_kgrid').innerHTML='<div style="padding:20px;color:var(--t2)">ไม่พบข้อมูลขนส่ง</div>';
     return;
