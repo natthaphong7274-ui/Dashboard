@@ -8492,22 +8492,14 @@ function _renderHomeDirector(m, mp) {
   var dirRiskCount = mp ? FR.filter(function(r){ return (N(r[mp.colAvg])-N(r[m.colAvg]))>_riskThreshold; }).length : 0;
 
   // ── Director layout variables ──
-  var DIR_TARGET = (function() {
-    var t = _monthlyTargets[m.key];
-    if (!t) return prevRev > 0 ? Math.round(prevRev * 1.05) : (totRev > 0 ? Math.round(totRev * 1.25) : 1);
-    if (t.type === 'pct') return prevRev > 0 ? Math.round(prevRev * t.value / 100) : (totRev > 0 ? Math.round(totRev * t.value / 100) : 1);
-    return Math.round(t.value);
-  })();
-  var _dirTargetLabel = (function() {
-    var t = _monthlyTargets[m.key];
-    if (!t) return 'เป้าประเทศ (vs เดือนก่อน +5%)';
-    if (t.type === 'pct') return 'เป้าประเทศ (' + t.value + '% vs เดือนก่อน)';
-    return 'เป้าประเทศ (Fixed ฿' + fmtS(Math.round(t.value)) + ')';
-  })();
-  var targetPct  = DIR_TARGET > 0 ? Math.min(Math.round(totRev / DIR_TARGET * 100), 100) : 0;
+  var dirTargetMeta = _targetFromConfig(m.key, prevRev, _targetTotalPrevRev(m.key), null);
+  var DIR_TARGET = dirTargetMeta.value || 0;
+  var dirHasTarget = !!(dirTargetMeta.hasTarget && DIR_TARGET > 0);
+  var _dirTargetLabel = dirHasTarget ? 'เป้าประเทศ (' + dirTargetMeta.label + ')' : 'ยังไม่ตั้งเป้าประเทศ';
+  var targetPct  = dirHasTarget ? Math.min(Math.round(totRev / DIR_TARGET * 100), 100) : 0;
   var targetColor = targetPct >= 100 ? '#86efac' : targetPct >= 80 ? '#fde68a' : targetPct >= 60 ? '#fdba74' : '#fca5a5';
   var targetGlow  = targetPct >= 100 ? 'rgba(134,239,172,.5)' : targetPct >= 80 ? 'rgba(253,230,138,.4)' : 'rgba(252,165,165,.35)';
-  var needAmt     = DIR_TARGET > 0 ? Math.max(0, DIR_TARGET - totRev) : 0;
+  var needAmt     = dirHasTarget ? Math.max(0, DIR_TARGET - totRev) : 0;
   var dayPct = Math.round((TODAY_DATE-1) / daysInMonth * 100);
 
   // Zone Manager map
@@ -8519,8 +8511,8 @@ function _renderHomeDirector(m, mp) {
 
   // ── Motivational message (Director-level) ──
   var dirMsg = '', dirIcon = '';
-  if (DIR_TARGET <= 0) {
-    dirIcon = '📊'; dirMsg = 'เลือก 2 เดือนเพื่อดูเป้าหมายประเทศครับ';
+  if (!dirHasTarget) {
+    dirIcon = '📌'; dirMsg = 'ยังไม่ตั้งเป้าประเทศเดือนนี้ ใช้ปุ่มตั้งเป้าเพื่อเปิด Target Progress จริง';
   } else if (targetPct >= 100) {
     dirIcon = '🏆'; dirMsg = 'ยอดรวมประเทศ <strong>ถึงเป้าแล้ว!</strong> ฿'+fmtS(Math.round(totRev))+' — ยอดเยี่ยม ดูแล Zone ที่ยังล้าหลังต่อครับ 🎉';
   } else if (targetPct >= 80) {
@@ -8562,7 +8554,7 @@ function _renderHomeDirector(m, mp) {
     + '</div>'
     + '<div class="hero-bottom">'
     +   '<div class="hero-msg">'+dirIcon+' '+dirMsg+'</div>'
-    + (DIR_TARGET > 0
+    + (dirHasTarget
       ? '<div class="hero-progress-wrap">'
         + '<div class="hero-progress-labels">'
         +   '<span>🎯 ' + _dirTargetLabel + '&nbsp;<span style="font-size:10px;opacity:.65">฿'+fmtS(Math.round(totRev))+' / ฿'+fmtS(DIR_TARGET)+'</span></span>'
@@ -8639,21 +8631,21 @@ function _renderHomeDirector(m, mp) {
     + '</div>';
 
   // Card 6: % เป้าประเทศ
-  html += '<div class="home-kcard" style="--kc:'+(targetPct>=100?'#16a34a':targetPct>=70?'#f59e0b':'#dc2626')+'">'
+  html += '<div class="home-kcard" style="--kc:'+(dirHasTarget?(targetPct>=100?'#16a34a':targetPct>=70?'#f59e0b':'#dc2626'):'#64748b')+'">'
     + '<div class="home-kcard-ico">🎯</div>'
     + '<div class="home-kcard-lbl">% เป้าประเทศ</div>'
     + '<div style="display:flex;align-items:center;gap:8px;margin-top:3px">'
     +   '<div style="position:relative;width:46px;height:46px;flex-shrink:0">'
     +     '<svg viewBox="0 0 36 36" style="width:46px;height:46px;transform:rotate(-90deg)">'
     +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="3.5"/>'
-    +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+(targetPct>=100?'#16a34a':targetPct>=70?'#f59e0b':'#dc2626')+'" stroke-width="3.5" stroke-dasharray="'+targetPct+' '+(100-targetPct)+'" stroke-linecap="round"/>'
+    +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+(dirHasTarget?(targetPct>=100?'#16a34a':targetPct>=70?'#f59e0b':'#dc2626'):'#94a3b8')+'" stroke-width="3.5" stroke-dasharray="'+targetPct+' '+(100-targetPct)+'" stroke-linecap="round"/>'
     +     '</svg>'
-    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:'+(targetPct>=100?'#16a34a':targetPct>=70?'#f59e0b':'#dc2626')+'">'+targetPct+'%</div>'
+    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:'+(dirHasTarget?(targetPct>=100?'#16a34a':targetPct>=70?'#f59e0b':'#dc2626'):'#64748b')+'">'+(dirHasTarget?targetPct+'%':'-')+'</div>'
     +   '</div>'
     +   '<div>'
     +     '<div style="font-size:12px;font-weight:800;color:var(--pr)">฿'+fmtS(Math.round(totRev))+'</div>'
-    +     '<div style="font-size:10px;color:var(--t2)">เป้า ฿'+fmtS(DIR_TARGET)+'</div>'
-    +     (needAmt > 0 ? '<div style="font-size:10px;color:#dc2626;font-weight:700">ขาด ฿'+fmtS(needAmt)+'</div>' : '<div style="font-size:10px;color:#16a34a;font-weight:700">✅ ถึงเป้า!</div>')
+    +     '<div style="font-size:10px;color:var(--t2)">'+(dirHasTarget?'เป้า ฿'+fmtS(DIR_TARGET):'ยังไม่ตั้งเป้า')+'</div>'
+    +     (dirHasTarget ? (needAmt > 0 ? '<div style="font-size:10px;color:#dc2626;font-weight:700">ขาด ฿'+fmtS(needAmt)+'</div>' : '<div style="font-size:10px;color:#16a34a;font-weight:700">✅ ถึงเป้า!</div>') : '<div style="font-size:10px;color:#64748b;font-weight:700">รอตั้งเป้า</div>')
     +   '</div>'
     + '</div>'
     + '</div>';
@@ -8755,9 +8747,9 @@ function _renderHomeDirector(m, mp) {
     +   '<div style="font-size:9px;color:var(--t2);margin-top:1px">ชิ้น/agent</div>'
     + '</div>'
     // % เป้า
-    + '<div style="background:'+(targetPct>=100?'#f0fdf4':targetPct>=75?'#fefce8':'#fff0f0')+';border-radius:10px;padding:10px 12px;border:1px solid '+(targetPct>=100?'#86efac':targetPct>=75?'#fde68a':'#fca5a5')+';text-align:center">'
+    + '<div style="background:'+(dirHasTarget?(targetPct>=100?'#f0fdf4':targetPct>=75?'#fefce8':'#fff0f0'):'#f8fafc')+';border-radius:10px;padding:10px 12px;border:1px solid '+(dirHasTarget?(targetPct>=100?'#86efac':targetPct>=75?'#fde68a':'#fca5a5'):'#cbd5e1')+';text-align:center">'
     +   '<div style="font-size:10px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">% เป้า</div>'
-    +   '<div style="font-size:20px;font-weight:800;color:'+(targetPct>=100?'#16a34a':targetPct>=75?'#b45309':'#dc2626')+';line-height:1">'+targetPct+'%</div>'
+    +   '<div style="font-size:20px;font-weight:800;color:'+(dirHasTarget?(targetPct>=100?'#16a34a':targetPct>=75?'#b45309':'#dc2626'):'#64748b')+';line-height:1">'+(dirHasTarget?targetPct+'%':'-')+'</div>'
     + '</div>'
     + '</div>';
 
@@ -9661,17 +9653,18 @@ function _renderHomeAM(m, mp) {
 
   // ── Zone overall target ──
   var zoneTargetMeta = _targetFromConfig(m.key, prevRev, _targetTotalPrevRev(m.key), null);
-  var zoneTarget    = zoneTargetMeta.value;
-  var zoneTargetDelta = _targetDeltaLabel(zoneTarget, prevRev);
-  var zonePct       = zoneTarget > 0 ? Math.min(Math.round(totRev / zoneTarget * 100), 100) : 0;
+  var zoneTarget    = zoneTargetMeta.value || 0;
+  var zoneHasTarget = !!(zoneTargetMeta.hasTarget && zoneTarget > 0);
+  var zoneTargetDelta = zoneHasTarget ? _targetDeltaLabel(zoneTarget, prevRev) : '';
+  var zonePct       = zoneHasTarget ? Math.min(Math.round(totRev / zoneTarget * 100), 100) : 0;
   var zonePctColor  = zonePct >= 100 ? '#86efac' : zonePct >= 80 ? '#fde68a' : zonePct >= 50 ? '#fdba74' : '#fca5a5';
   var zoneGlow      = zonePct >= 100 ? 'rgba(134,239,172,.5)' : zonePct >= 80 ? 'rgba(253,230,138,.4)' : 'rgba(252,165,165,.35)';
-  var needAmt       = zoneTarget > 0 ? Math.max(0, zoneTarget - totRev) : 0;
+  var needAmt       = zoneHasTarget ? Math.max(0, zoneTarget - totRev) : 0;
 
   // ── Motivational message ──
   var amMsg = '', amIcon = '';
-  if (zoneTarget <= 0) {
-    amIcon = '📊'; amMsg = 'เลือก 2 เดือนเพื่อดูเป้าหมาย Zone ครับ';
+  if (!zoneHasTarget) {
+    amIcon = '📌'; amMsg = 'ยังไม่ตั้งเป้า Zone เดือนนี้ ตั้งเป้าก่อนเพื่อให้ Target Progress ทำงานจากข้อมูลจริง';
   } else if (zonePct >= 100) {
     amIcon = '🏆'; amMsg = 'Zone ของคุณ <strong>ถึงเป้าแล้ว!</strong> ยอด <strong style="color:#86efac">'+fmtS(Math.round(totRev))+'</strong> เกินเป้า — ดูแล BD ต่อและสร้าง momentum เดือนหน้าครับ 🎉';
   } else if (zonePct >= 80) {
@@ -9712,7 +9705,7 @@ function _renderHomeAM(m, mp) {
     + '<div class="hero-bottom">'
     +   '<div class="hero-msg">'+amIcon+' '+amMsg+'</div>'
     // Zone overall progress bar
-    + (zoneTarget > 0
+    + (zoneHasTarget
       ? '<div class="hero-progress-wrap">'
         + '<div class="hero-progress-labels">'
         +   '<span>🎯 เป้า Zone ('+zoneTargetMeta.label+(zoneTargetDelta ? ' · '+zoneTargetDelta : '')+')&nbsp;<span style="font-size:10px;opacity:.65">'+fmtS(Math.round(totRev))+' / '+fmtS(zoneTarget)+'</span></span>'
@@ -9808,20 +9801,20 @@ function _renderHomeAM(m, mp) {
     + '</div>';
 
   // Card 6: % เป้า Zone
-  html += '<div class="home-kcard" style="--kc:'+(zonePct>=100?'#16a34a':zonePct>=70?'#f59e0b':'#dc2626')+'">'
+  html += '<div class="home-kcard" style="--kc:'+(zoneHasTarget?(zonePct>=100?'#16a34a':zonePct>=70?'#f59e0b':'#dc2626'):'#64748b')+'">'
     + '<div class="home-kcard-ico">🎯</div>'
     + '<div class="home-kcard-lbl">% เป้า Zone</div>'
     + '<div style="display:flex;align-items:center;gap:8px;margin-top:3px">'
     +   '<div style="position:relative;width:46px;height:46px;flex-shrink:0">'
     +     '<svg viewBox="0 0 36 36" style="width:46px;height:46px;transform:rotate(-90deg)">'
     +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="3.5"/>'
-    +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+(zonePct>=100?'#16a34a':zonePct>=70?'#f59e0b':'#dc2626')+'" stroke-width="3.5" stroke-dasharray="'+zonePct+' '+(100-zonePct)+'" stroke-linecap="round"/>'
+    +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+(zoneHasTarget?(zonePct>=100?'#16a34a':zonePct>=70?'#f59e0b':'#dc2626'):'#94a3b8')+'" stroke-width="3.5" stroke-dasharray="'+zonePct+' '+(100-zonePct)+'" stroke-linecap="round"/>'
     +     '</svg>'
-    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:'+(zonePct>=100?'#16a34a':zonePct>=70?'#f59e0b':'#dc2626')+'">'+zonePct+'%</div>'
+    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:'+(zoneHasTarget?(zonePct>=100?'#16a34a':zonePct>=70?'#f59e0b':'#dc2626'):'#64748b')+'">'+(zoneHasTarget?zonePct+'%':'-')+'</div>'
     +   '</div>'
     +   '<div>'
     +     '<div style="font-size:12px;font-weight:800;color:var(--pr)">'+fmtS(Math.round(totRev))+'</div>'
-    +     '<div style="font-size:10px;color:var(--t2)">เป้า '+fmtS(zoneTarget)+'</div>'
+    +     '<div style="font-size:10px;color:var(--t2)">'+(zoneHasTarget?'เป้า '+fmtS(zoneTarget):'ยังไม่ตั้งเป้า')+'</div>'
     +   '</div>'
     + '</div>'
     + '</div>';
@@ -10508,9 +10501,10 @@ function _targetFromConfig(monthKey, prevRev, totalPrevRev, explicitCfg) {
   var cfg = explicitCfg || _monthlyTargets[monthKey] || null;
   if (!cfg) {
     return {
-      value: prevRev > 0 ? Math.round(prevRev * 1.05) : 0,
-      source: 'default',
-      label: 'vs เดือนก่อน +5%'
+      value: 0,
+      source: 'none',
+      label: 'ยังไม่ตั้งเป้า',
+      hasTarget: false
     };
   }
   if (cfg.type === 'pct') {
@@ -10518,17 +10512,19 @@ function _targetFromConfig(monthKey, prevRev, totalPrevRev, explicitCfg) {
     return {
       value: prevRev > 0 ? Math.round(prevRev * Number(cfg.value || 0) / 100) : 0,
       source: explicitCfg ? 'bd' : 'overall',
-      label: (explicitCfg ? 'เป้า BD ' : 'ตามเป้ารวม ') + (targetPctDelta >= 0 ? '+' : '') + targetPctDelta.toFixed(1) + '% จากเดือนก่อน'
+      label: (explicitCfg ? 'เป้า BD ' : 'ตามเป้ารวม ') + (targetPctDelta >= 0 ? '+' : '') + targetPctDelta.toFixed(1) + '% จากเดือนก่อน',
+      hasTarget: true
     };
   }
   var fixed = Math.round(Number(cfg.value || 0));
   if (explicitCfg) {
-    return { value: fixed, source: 'bd', label: 'เป้า BD รายคน' };
+    return { value: fixed, source: 'bd', label: 'เป้า BD รายคน', hasTarget: true };
   }
   return {
     value: totalPrevRev > 0 ? Math.round(fixed * prevRev / totalPrevRev) : 0,
     source: 'overall',
-    label: 'กระจายจากเป้ารวม'
+    label: 'กระจายจากเป้ารวม',
+    hasTarget: true
   };
 }
 
@@ -10565,11 +10561,12 @@ function _renderHomeBD(m, mp) {
   var bdUserKey = String((_currentUser && (_currentUser.username || _currentUser.displayName)) || '').toLowerCase();
   var bdTargetCfg = (_bdMonthlyTargets[m.key] && (_bdMonthlyTargets[m.key][bdUserKey] || _bdMonthlyTargets[m.key][String(uname).toLowerCase()])) || null;
   var bdTargetMeta = _targetFromConfig(m.key, prevRev, _targetTotalPrevRev(m.key), bdTargetCfg);
-  var bdTarget = bdTargetMeta.value;
-  var bdTargetDelta = _targetDeltaLabel(bdTarget, prevRev);
-  var bdTargetInfo = bdTargetMeta.label + (bdTargetDelta ? ' · ' + bdTargetDelta : '') + ' · เป้า ฿' + fmtS(Math.round(bdTarget));
-  var bdNeedAmt = bdTarget > 0 ? Math.max(0, Math.round(bdTarget - totRev)) : 0;
-  var bdTargetPct = bdTarget > 0 ? Math.min(Math.round(totRev / bdTarget * 100), 100) : 0;
+  var bdTarget = bdTargetMeta.value || 0;
+  var bdHasTarget = !!(bdTargetMeta.hasTarget && bdTarget > 0);
+  var bdTargetDelta = bdHasTarget ? _targetDeltaLabel(bdTarget, prevRev) : '';
+  var bdTargetInfo = bdHasTarget ? (bdTargetMeta.label + (bdTargetDelta ? ' · ' + bdTargetDelta : '') + ' · เป้า ฿' + fmtS(Math.round(bdTarget))) : 'ยังไม่ตั้งเป้า';
+  var bdNeedAmt = bdHasTarget ? Math.max(0, Math.round(bdTarget - totRev)) : 0;
+  var bdTargetPct = bdHasTarget ? Math.min(Math.round(totRev / bdTarget * 100), 100) : 0;
 
   // Days left countdown
   var daysInMonth = 30;
@@ -10579,7 +10576,9 @@ function _renderHomeBD(m, mp) {
   // Motivational message based on status
   var bdBannerMsg = '';
   var bdBannerIcon = '';
-  if (prevRev <= 0) {
+  if (!bdHasTarget) {
+    bdBannerIcon = '📌'; bdBannerMsg = '<strong>'+uname+'</strong> ยังไม่ตั้งเป้าเดือนนี้ ตั้งเป้า BD ก่อนเพื่อให้ Target Progress คำนวณจากข้อมูลจริง';
+  } else if (prevRev <= 0) {
     bdBannerIcon = '📊'; bdBannerMsg = 'ยินดีต้อนรับ <strong>'+uname+'</strong>! เลือก 2 เดือนเพื่อดูเป้าหมายของคุณ';
   } else if (bdTargetPct >= 100) {
     bdBannerIcon = '🎉';
@@ -10620,7 +10619,7 @@ function _renderHomeBD(m, mp) {
     // Motivational message
     +   '<div class="hero-msg">'+bdBannerIcon+' '+bdBannerMsg+'</div>'
     // Progress bar
-    + (prevRev > 0
+    + (bdHasTarget
       ? '<div class="hero-progress-wrap">'
         + '<div class="hero-progress-labels">'
         +   '<span>🎯 เป้าเดือนนี้ ('+bdTargetInfo+') &nbsp; <span style="font-size:10px;opacity:.65">'+fmtS(Math.round(totRev))+' / '+fmtS(bdTarget)+'</span></span>'
@@ -10650,6 +10649,7 @@ function _renderHomeBD(m, mp) {
   // ── growth count for BD ──
   var bdGrowthRows = mp ? myRows.filter(function(r){ return (N(r[m.colAvg])-N(r[mp.colAvg]))>_growthThreshold; }) : [];
   var bdGrowthRevGain = bdGrowthRows.reduce(function(s,r){ return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev])); },0);
+  var bdRiskCount = mp ? myRows.filter(function(r){ return (N(r[mp.colAvg])-N(r[m.colAvg]))>_riskThreshold; }).length : 0;
 
   // ── Hero KPI — Redesigned with VOL dimension ──
   var runRate       = Math.round(totRev / Math.max(TODAY_DATE-1, 1));
@@ -10743,8 +10743,8 @@ function _renderHomeBD(m, mp) {
     'var(--pr)', '👤', 'Active '+totActive+' / '+totLeads);
 
   // Card 8: % บรรลุเป้า
-  var targetPctBD = bdTarget > 0 ? Math.min(Math.round(totRev / bdTarget * 100), 100) : 0;
-  var tClr = targetPctBD >= 100 ? '#16a34a' : targetPctBD >= 70 ? '#f59e0b' : '#dc2626';
+  var targetPctBD = bdHasTarget ? Math.min(Math.round(totRev / bdTarget * 100), 100) : 0;
+  var tClr = bdHasTarget ? (targetPctBD >= 100 ? '#16a34a' : targetPctBD >= 70 ? '#f59e0b' : '#dc2626') : '#64748b';
   html += '<div class="home-kcard" style="--kc:'+tClr+'">'
     + '<div class="home-kcard-ico">🎯</div>'
     + '<div class="home-kcard-lbl">% บรรลุเป้า</div>'
@@ -10755,12 +10755,12 @@ function _renderHomeBD(m, mp) {
     +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+tClr+'" stroke-width="3.5"'
     +       ' stroke-dasharray="'+targetPctBD+' '+(100-targetPctBD)+'" stroke-linecap="round"/>'
     +     '</svg>'
-    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:'+tClr+'">'+targetPctBD+'%</div>'
+    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:'+tClr+'">'+(bdHasTarget?targetPctBD+'%':'-')+'</div>'
     +   '</div>'
     +   '<div>'
     +     '<div style="font-size:13px;font-weight:800;color:var(--pr)">'+fmtS(Math.round(totRev))+'</div>'
-    +     '<div style="font-size:10px;color:var(--t2)">เป้า '+fmtS(Math.round(bdTarget))+'</div>'
-    +     (bdTarget > 0 ? '<div style="font-size:10px;color:'+tClr+';font-weight:700">'+(totRev>=bdTarget?'🎉 ถึงเป้า!':'ขาด '+fmtS(Math.round(bdTarget-totRev)))+'</div>' : '')
+    +     '<div style="font-size:10px;color:var(--t2)">'+(bdHasTarget?'เป้า '+fmtS(Math.round(bdTarget)):'ยังไม่ตั้งเป้า')+'</div>'
+    +     (bdHasTarget ? '<div style="font-size:10px;color:'+tClr+';font-weight:700">'+(totRev>=bdTarget?'🎉 ถึงเป้า!':'ขาด '+fmtS(Math.round(bdTarget-totRev)))+'</div>' : '<div style="font-size:10px;color:#64748b;font-weight:700">รอตั้งเป้า</div>')
     +   '</div>'
     + '</div>'
     + '</div>';
@@ -11213,8 +11213,30 @@ function _homePopulateTrkSummary() {
 
   var riskTotal   = Object.values(riskCounts).reduce(function(s,v){return s+v;},0);
   var growthTotal = Object.values(growthCounts).reduce(function(s,v){return s+v;},0);
+  var dailyTotal = riskTotal + growthTotal;
+  var dailyDone = riskCounts.success + riskCounts.fail + growthCounts.upsold + growthCounts.unreachable;
+  var dailyInProgress = riskCounts.contact + riskCounts.solving + growthCounts.contacted + growthCounts.data_collected + growthCounts.rewarded;
+  var dailyWaiting = riskCounts.wait + growthCounts.wait;
+  var dailyPct = dailyTotal ? Math.round(dailyDone / dailyTotal * 100) : 0;
 
   var html = '';
+  if (dailyTotal) {
+    html += '<div style="padding:8px 9px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;margin-bottom:8px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
+      + '<div style="font-size:11px;font-weight:800;color:#0f172a">Daily Task Progress</div>'
+      + '<div style="font-size:12px;font-weight:900;color:'+(dailyPct>=80?'#16a34a':dailyPct>=50?'#b45309':'#dc2626')+'">'+dailyPct+'%</div>'
+      + '</div>'
+      + '<div style="height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-bottom:6px">'
+      + '<div style="height:100%;width:'+dailyPct+'%;background:'+(dailyPct>=80?'#16a34a':dailyPct>=50?'#f59e0b':'#ef4444')+';border-radius:99px"></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center">'
+      + '<div><div style="font-size:10px;color:#64748b">ทั้งหมด</div><div style="font-size:13px;font-weight:900">'+dailyTotal+'</div></div>'
+      + '<div><div style="font-size:10px;color:#64748b">เสร็จ</div><div style="font-size:13px;font-weight:900;color:#16a34a">'+dailyDone+'</div></div>'
+      + '<div><div style="font-size:10px;color:#64748b">กำลังทำ</div><div style="font-size:13px;font-weight:900;color:#b45309">'+dailyInProgress+'</div></div>'
+      + '<div><div style="font-size:10px;color:#64748b">รอ</div><div style="font-size:13px;font-weight:900;color:#64748b">'+dailyWaiting+'</div></div>'
+      + '</div>'
+      + '</div>';
+  }
 
   // Risk tracking
   if (riskTotal) {
@@ -11265,337 +11287,7 @@ function _trkStatusLabel(key) {
 }
 </script>
 <script>
-// ================================================================
-//  ROLE MAP PREVIEW — สำหรับ Home Panel  (v2 — 5-level + zone borders)
-// ================================================================
-var _rmMaps = { bd: null, am: null, dir: null };
-
-// ── 5-level status helper ──────────────────────────────────────
-// ── Director-level Zone Health: ใช้ MoM + Loss Rate ──
-// lossRate = loss / agents (ถ้าไม่มี agents ให้ส่ง 0)
-function _rmStatus(chg, lossRate) {
-  var lr = lossRate || 0;
-  // วิกฤต: ลดหนักมาก หรือ Loss rate สูง
-  if (chg < -15 || lr > 0.05) return 'critical';
-  // เฝ้าระวัง: ลดปานกลาง หรือ Loss rate เริ่มสูง
-  if (chg < -5  || lr > 0.03) return 'watch';
-  // เติบโตดีเยี่ยม + revenue tier สูง (ตรวจใน caller)
-  if (chg >= 15) return 'top';
-  // เติบโต: บวกและ Loss ต่ำ
-  if (chg >= 5)  return 'grow';
-  // ทรงตัว: เกือบเท่าเดิม, ไม่มีวิกฤต
-  return 'stable';
-}
-var _rmStatusMeta = {
-  'critical': { label:'วิกฤต — ต้องแก้ไขทันที', color:'#b91c1c', fill:'rgba(185,28,28,.22)', icon:'🔴' },
-  'watch':    { label:'เฝ้าระวัง',               color:'#ea580c', fill:'rgba(234,88,12,.18)',  icon:'🟠' },
-  'stable':   { label:'ทรงตัว',                  color:'#2563eb', fill:'rgba(37,99,235,.15)',  icon:'🔵' },
-  'grow':     { label:'เติบโต',                  color:'#16a34a', fill:'rgba(22,163,74,.18)',  icon:'🟢' },
-  'top':      { label:'Top Zone ⭐',              color:'#b45309', fill:'rgba(180,83,9,.20)',   icon:'⭐' },
-};
-
-// ── BD data — grouped by owner zone ───────────────────────────
-// Polygons are non-overlapping and share exact boundary edges
-// เหนือ: lat 13.88–14.12, lng 99.95–100.80  (ครอบ ปทุมธานี, บางบัวทอง, ลำลูกกา, ดอนเมือง, บางเขน, นนทบุรี, นครปฐม)
-// กลาง:  lat 13.70–13.88, lng 100.46–100.80  (ครอบ มีนบุรี, ลาดพร้าว, รามคำแหง, บางรัก)
-// ใต้:   lat 13.55–13.70, lng 100.46–100.80  (ครอบ บางนา, ลาดกระบัง, พระโขนง, บางพลี, สมุทรปราการ)
-var _rmBdZones = [
-  {
-    owner:'ศิรวิทย์ (BD-เหนือ)', ownerColor:'#60a5fa',
-    // ครอบคลุม lat 13.88–14.12, lng 99.95–100.80
-    polygon:[
-      [14.12, 99.95],[14.12,100.80],
-      [13.88,100.80],[13.88, 99.95],
-      [14.12, 99.95]
-    ],
-    agents:[
-      {name:'ขนส่งไทย Central',  code:'A2-0005',area:'ปทุมธานี',  lat:14.020,lng:100.528,chg:5,  rev:'฿48K'},
-      {name:'พรทิพย์ Logistics', code:'A2-0019',area:'บางบัวทอง', lat:13.922,lng:100.435,chg:14, rev:'฿62K'},
-      {name:'ไทยเร็ว ชิปปิ้ง',   code:'A2-0031',area:'ลำลูกกา',  lat:13.953,lng:100.723,chg:19, rev:'฿71K'},
-      {name:'สมศรี Logistics',   code:'A2-0022',area:'ดอนเมือง',  lat:13.919,lng:100.606,chg:-8, rev:'฿38K'},
-      {name:'ชัยณรงค์ ชิปปิ้ง', code:'A2-0033',area:'บางเขน',    lat:13.882,lng:100.570,chg:-44,rev:'฿19K'},
-      {name:'สุดา Cargo นนทบุรี',code:'A2-0009',area:'นนทบุรี',   lat:13.858,lng:100.507,chg:-38,rev:'฿22K'},
-      {name:'เร็วส่ง Cargo',     code:'A2-0055',area:'นครปฐม',    lat:13.820,lng:100.064,chg:-4, rev:'฿41K'},
-    ]
-  },
-  {
-    owner:'อมรรัตน์ (BD-กลาง)', ownerColor:'#fb923c',
-    // ติดกับเหนือ (lat 13.88) ถึง 13.70, lng 100.46–100.80
-    polygon:[
-      [13.88,100.46],[13.88,100.80],
-      [13.70,100.80],[13.70,100.46],
-      [13.88,100.46]
-    ],
-    agents:[
-      {name:'มาลี ชิปปิ้ง',       code:'A2-0017',area:'มีนบุรี',  lat:13.804,lng:100.728,chg:-31,rev:'฿28K'},
-      {name:'ร้านสมชาย Express',  code:'A2-0041',area:'ลาดพร้าว', lat:13.801,lng:100.574,chg:-68,rev:'฿12K'},
-      {name:'Fast Fruit รามคำแหง',code:'A2-0028',area:'รามคำแหง', lat:13.752,lng:100.649,chg:-22,rev:'฿31K'},
-      {name:'วิชัย Shipping',     code:'A2-0014',area:'บางรัก',    lat:13.723,lng:100.514,chg:-17,rev:'฿35K'},
-    ]
-  },
-  {
-    owner:'ธนพล (BD-ใต้)', ownerColor:'#34d399',
-    // ติดกับกลาง (lat 13.70) ถึง 13.55, lng 100.46–100.80
-    polygon:[
-      [13.70,100.46],[13.70,100.80],
-      [13.55,100.80],[13.55,100.46],
-      [13.70,100.46]
-    ],
-    agents:[
-      {name:'ด่วน Express บางนา',code:'A2-0052',area:'บางนา',       lat:13.663,lng:100.608,chg:-52,rev:'฿15K'},
-      {name:'ปริญญา Express',    code:'A2-0061',area:'ลาดกระบัง',   lat:13.726,lng:100.758,chg:-19,rev:'฿33K'},
-      {name:'สยาม Express',      code:'A2-0038',area:'พระโขนง',     lat:13.701,lng:100.603,chg:8,  rev:'฿55K'},
-      {name:'เจริญ Cargo',       code:'A2-0047',area:'บางพลี',      lat:13.601,lng:100.695,chg:3,  rev:'฿44K'},
-      {name:'โลจิสติกส์ไทย',    code:'A2-0044',area:'สมุทรปราการ', lat:13.590,lng:100.560,chg:1,  rev:'฿42K'},
-    ]
-  }
-];
-
-// ── AM zones ──────────────────────────────────────────────────
-var _rmAmZones = [
-  {name:'Zone A2',label:'กรุงเทพ',  lat:13.756,lng:100.502,rev:3.2,chg:-8.1, loss:4, agents:48, am:'สุรีรัตน์', color:'#3b82f6',
-   polygon:[[14.3,99.5],[14.3,101.2],[13.4,101.2],[13.4,99.5],[14.3,99.5]]},
-  {name:'Zone B1',label:'เชียงใหม่',lat:18.787,lng:98.993, rev:2.8,chg:-21.3,loss:8, agents:52, am:'ประเสริฐ',  color:'#a855f7',
-   polygon:[[20.5,97.3],[20.5,100.2],[17.3,100.2],[17.3,97.3],[20.5,97.3]]},
-  {name:'Zone C3',label:'ภาคอีสาน', lat:15.228,lng:104.120,rev:2.4,chg:3.2,  loss:2, agents:52, am:'วาสนา',    color:'#f59e0b',
-   polygon:[[18.2,101.8],[18.2,106.2],[13.8,106.2],[13.8,101.8],[18.2,101.8]]},
-];
-
-// ── Director zones ─────────────────────────────────────────────
-var _rmDirZones = [
-  {name:'Zone A2',label:'กรุงเทพ',  lat:13.756,lng:100.502,rev:9.3, chg:-8.1, loss:12,agents:980,  am:'สุรีรัตน์', color:'#3b82f6',
-   polygon:[[14.3,99.5],[14.3,101.2],[13.4,101.2],[13.4,99.5],[14.3,99.5]]},
-  {name:'Zone B1',label:'เชียงใหม่',lat:18.787,lng:98.993, rev:8.2, chg:-21.3,loss:41,agents:1140, am:'ประเสริฐ',  color:'#a855f7',
-   polygon:[[20.5,97.3],[20.5,100.2],[17.3,100.2],[17.3,97.3],[20.5,97.3]]},
-  {name:'Zone C3',label:'ภาคอีสาน', lat:15.228,lng:104.120,rev:5.6, chg:3.2,  loss:4, agents:890,  am:'วาสนา',    color:'#f59e0b',
-   polygon:[[18.2,101.8],[18.2,106.2],[13.8,106.2],[13.8,101.8],[18.2,101.8]]},
-  {name:'Zone D2',label:'ภาคใต้',   lat:7.900, lng:98.300, rev:4.1, chg:-15.7,loss:28,agents:720,  am:'มณีรัตน์', color:'#06b6d4',
-   polygon:[[11.8,97.8],[11.8,102.2],[5.3,102.2],[5.3,97.8],[11.8,97.8]]},
-  {name:'Zone E1',label:'ภาคเหนือ', lat:17.520,lng:100.400,rev:2.7, chg:1.1,  loss:3, agents:410,  am:'สมพงษ์',   color:'#ec4899',
-   polygon:[[20.5,100.2],[20.5,102.0],[17.3,102.0],[17.3,100.2],[20.5,100.2]]},
-  {name:'Zone F1',label:'ภาคกลาง', lat:14.800,lng:100.500,rev:3.6, chg:-5.2, loss:9, agents:560,  am:'รัชนี',    color:'#84cc16',
-   polygon:[[17.3,98.5],[17.3,101.5],[14.3,101.5],[14.3,98.5],[17.3,98.5]]},
-  {name:'Zone G2',label:'ตะวันออก', lat:12.800,lng:101.500,rev:2.1, chg:2.1,  loss:2, agents:340,  am:'ไพบูลย์',  color:'#fb923c',
-   polygon:[[14.2,101.5],[14.2,103.8],[11.8,103.8],[11.8,101.5],[14.2,101.5]]},
-];
-
-// ── Tile & shared options ──────────────────────────────────────
-var _rmTile    = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-var _rmTileOpt = { maxZoom:19, opacity:0.88, attribution:'© OpenStreetMap © CartoDB' };
-
-// ── Popup builder ─────────────────────────────────────────────
-function _rmPopupAgent(a, ownerName, ownerColor) {
-  var s = _rmStatus(a.chg, 0), m = _rmStatusMeta[s];
-  var sgn = a.chg > 0 ? '+' : '';
-  var chgStyle = a.chg >= 0 ? 'color:#15803d' : 'color:#b91c1c';
-  return '<div class="rm-map-popup">'
-    + '<div class="pm-row"><span class="pm-key">รหัส</span><span class="pm-val">' + a.code + '</span></div>'
-    + '<div class="pm-row"><span class="pm-key">พื้นที่</span><span class="pm-val">' + a.area + '</span></div>'
-    + '<div class="pm-row"><span class="pm-key">Revenue</span><span class="pm-val">' + (a.rev||'—') + '</span></div>'
-    + '<div class="pm-divider"></div>'
-    + '<div class="pm-row"><span class="pm-key">MoM</span><span style="font-weight:700;' + chgStyle + '">' + sgn + a.chg + '%</span></div>'
-    + '<span class="pm-status" style="background:' + m.fill + ';color:' + m.color + '">' + m.icon + ' ' + m.label + '</span>'
-    + (ownerName ? '<span class="pm-owner" style="border-left:3px solid ' + ownerColor + ';color:#374151">' + ownerName + '</span>' : '')
-    + '</div>';
-}
-
-function _rmPopupZone(z) {
-  var s = _rmStatus(z.chg, 0), m = _rmStatusMeta[s];
-  var sgn = z.chg > 0 ? '+' : '';
-  var chgStyle = z.chg >= 0 ? 'color:#15803d' : 'color:#b91c1c';
-  return '<div class="rm-map-popup">'
-    + '<strong>' + z.name + ' — ' + z.label + '</strong>'
-    + (z.am ? '<div class="pm-row"><span class="pm-key">AM</span><span class="pm-val">' + z.am + '</span></div>' : '')
-    + '<div class="pm-row"><span class="pm-key">Revenue</span><span class="pm-val">' + z.rev + 'M ฿</span></div>'
-    + '<div class="pm-row"><span class="pm-key">Agents</span><span class="pm-val">' + (z.agents||0).toLocaleString() + ' ราย</span></div>'
-    + '<div class="pm-divider"></div>'
-    + '<div class="pm-row"><span class="pm-key">MoM</span><span style="font-weight:700;' + chgStyle + '">' + sgn + z.chg + '%</span></div>'
-    + '<span class="pm-status" style="background:' + m.fill + ';color:' + m.color + '">' + m.icon + ' ' + m.label + '</span>'
-    + '</div>';
-}
-
-// ── BD Zone visual styles — solid thick borders + distinct fills ─
-var _rmBdBorderStyles = [
-  { dashArray: null,    weight: 2.6, casingWeight: 5.6, glowWeight: 10, fillOpacity: 0.07, lineColor: '#f8fafc' },  // เหนือ — solid
-  { dashArray: '14 8', weight: 2.6, casingWeight: 5.6, glowWeight: 10, fillOpacity: 0.07, lineColor: '#f8fafc' },  // กลาง  — long dash
-  { dashArray: '2 8',  weight: 2.6, casingWeight: 5.6, glowWeight: 10, fillOpacity: 0.07, lineColor: '#f8fafc' },  // ใต้   — dotted
-];
-
-// ── BD map ─────────────────────────────────────────────────────
-function _rmInitBdMap() {
-  if (_rmMaps.bd) return;
-  _rmMaps.bd = L.map('rm-map-bd', { scrollWheelZoom:false }).setView([13.82, 100.45], 10);
-  enableClickDragMap(_rmMaps.bd);
-  L.tileLayer(_rmTile, _rmTileOpt).addTo(_rmMaps.bd);
-
-  _rmBdZones.forEach(function(zone, idx) {
-    var bs = _rmBdBorderStyles[idx % _rmBdBorderStyles.length];
-
-    // ── 1. Wide soft glow (no fill) ──
-    L.polygon(zone.polygon, {
-      color: zone.ownerColor, weight: bs.glowWeight,
-      opacity: 0.09, fill: false,
-    }).addTo(_rmMaps.bd);
-
-    // ── 2. Solid fill layer ──
-    L.polygon(zone.polygon, {
-      color: 'transparent', weight: 0,
-      fillColor: zone.ownerColor, fillOpacity: bs.fillOpacity,
-    }).addTo(_rmMaps.bd);
-
-    // ── 3. Contrast casing: thin neutral boundaries stay separate from status colors ──
-    L.polygon(zone.polygon, {
-      color: 'rgba(3,7,18,.92)', weight: bs.casingWeight, opacity: 0.94,
-      fill: false, dashArray: bs.dashArray,
-      lineCap: 'round', lineJoin: 'round',
-    }).addTo(_rmMaps.bd);
-
-    // ── 4. Sharp border line (dashed per zone) ──
-    L.polygon(zone.polygon, {
-      color: bs.lineColor, weight: bs.weight, opacity: 0.96,
-      fill: false, dashArray: bs.dashArray,
-      lineCap: 'round', lineJoin: 'round',
-    }).addTo(_rmMaps.bd);
-
-    // ── 5. Zone label at centre ──
-    var lats = zone.polygon.map(function(p){return p[0];});
-    var lngs = zone.polygon.map(function(p){return p[1];});
-    var cLat = (Math.max.apply(null,lats) + Math.min.apply(null,lats)) / 2;
-    var cLng = (Math.max.apply(null,lngs) + Math.min.apply(null,lngs)) / 2;
-
-    var dashSvg = bs.dashArray
-      ? '<svg width="32" height="8" style="flex-shrink:0"><line x1="1" y1="4" x2="31" y2="4" stroke="rgba(3,7,18,.9)" stroke-width="5.6" stroke-dasharray="' + bs.dashArray + '" stroke-linecap="round"/><line x1="1" y1="4" x2="31" y2="4" stroke="' + bs.lineColor + '" stroke-width="2.6" stroke-dasharray="' + bs.dashArray + '" stroke-linecap="round"/></svg>'
-      : '<svg width="32" height="8" style="flex-shrink:0"><line x1="1" y1="4" x2="31" y2="4" stroke="rgba(3,7,18,.9)" stroke-width="5.6" stroke-linecap="round"/><line x1="1" y1="4" x2="31" y2="4" stroke="' + bs.lineColor + '" stroke-width="2.6" stroke-linecap="round"/></svg>';
-
-    L.marker([cLat, cLng], {
-      icon: L.divIcon({
-        className: '',
-        html: '<div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;'
-            + 'color:' + zone.ownerColor + ';'
-            + 'background:rgba(8,12,22,.92);padding:5px 11px;border-radius:7px;'
-            + 'border:2px solid ' + zone.ownerColor + ';white-space:nowrap;'
-            + 'box-shadow:0 3px 12px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.06)">'
-            + dashSvg
-            + '<span>' + zone.owner + '</span>'
-            + '</div>',
-        iconAnchor: [70, 14]
-      }),
-      interactive: false
-    }).addTo(_rmMaps.bd);
-
-    // ── 6. Agent dots ──
-    zone.agents.forEach(function(a) {
-      var s = _rmStatus(a.chg, 0), m = _rmStatusMeta[s];
-      var r = (s==='critical'||s==='top') ? 10 : (s==='watch'||s==='grow') ? 8 : 7;
-
-      // Outer zone-color halo — ties dot to its BD zone
-      L.circleMarker([a.lat, a.lng], {
-        radius: r + 5, color: zone.ownerColor, weight: 2,
-        fill: false, opacity: 0.55,
-      }).addTo(_rmMaps.bd);
-
-      // Status-color fill dot
-      L.circleMarker([a.lat, a.lng], {
-        radius: r, color: '#fff', weight: 1.5,
-        fillColor: m.color, fillOpacity: 0.92, opacity: 0.7,
-      }).addTo(_rmMaps.bd)
-        .bindPopup(_rmPopupAgent(a, zone.owner, zone.ownerColor), { maxWidth:220 });
-    });
-  });
-}
-
-// ── AM map ─────────────────────────────────────────────────────
-function _rmInitAmMap() {
-  if (_rmMaps.am) return;
-  _rmMaps.am = L.map('rm-map-am', { scrollWheelZoom:false }).setView([15.5, 101.0], 6);
-  enableClickDragMap(_rmMaps.am);
-  L.tileLayer(_rmTile, _rmTileOpt).addTo(_rmMaps.am);
-
-  _rmAmZones.forEach(function(z) {
-    var s = _rmStatus(z.chg, z.agents > 0 ? z.loss / z.agents : 0), m = _rmStatusMeta[s];
-    var sgn = z.chg > 0 ? '+' : '';
-    // zone boundary (owner color) + fill (status color)
-    L.polygon(z.polygon, {
-      color: z.color, weight: 2.8, opacity: 0.85,
-      fillColor: m.color, fillOpacity: 0.11,
-    }).addTo(_rmMaps.am)
-      .bindPopup(_rmPopupZone(z), { maxWidth:230 });
-    // outer glow
-    L.polygon(z.polygon, { color:z.color, weight:7, opacity:0.12, fill:false }).addTo(_rmMaps.am);
-    // centre bubble (size = agents)
-    var r = 16 + Math.sqrt(z.agents) * 0.55;
-    L.circleMarker([z.lat, z.lng], {
-      radius: r, color: m.color, weight: 2.2, opacity:0.9,
-      fillColor: m.color, fillOpacity: 0.18
-    }).addTo(_rmMaps.am)
-      .bindPopup(_rmPopupZone(z), { maxWidth:230 });
-    // label
-    L.marker([z.lat, z.lng], {
-      icon: L.divIcon({
-        className: '',
-        html: '<div style="text-align:center;line-height:1.35">'
-          + '<div style="font-size:11px;font-weight:700;color:' + z.color + ';text-shadow:0 0 6px #000,0 0 10px #000">' + z.name + '</div>'
-          + '<div style="font-size:10px;font-weight:600;color:' + m.color + ';text-shadow:0 0 4px #000">' + sgn + z.chg + '%</div>'
-          + '</div>',
-        iconAnchor: [28, -r - 4]
-      }),
-      interactive: false
-    }).addTo(_rmMaps.am);
-  });
-}
-
-// ── Director map ───────────────────────────────────────────────
-function _rmInitDirMap() {
-  if (_rmMaps.dir) return;
-  _rmMaps.dir = L.map('rm-map-dir', { scrollWheelZoom:false }).setView([13.5, 101.5], 5);
-  enableClickDragMap(_rmMaps.dir);
-  L.tileLayer(_rmTile, _rmTileOpt).addTo(_rmMaps.dir);
-
-  _rmDirZones.forEach(function(z) {
-    var s = _rmStatus(z.chg, z.agents > 0 ? z.loss / z.agents : 0), m = _rmStatusMeta[s];
-    var sgn = z.chg > 0 ? '+' : '';
-    // zone polygon: owner border color + status fill color
-    L.polygon(z.polygon, {
-      color: z.color, weight: 2.5, opacity: 0.82,
-      fillColor: m.color, fillOpacity: 0.10,
-    }).addTo(_rmMaps.dir)
-      .bindPopup(_rmPopupZone(z), { maxWidth:230 });
-    // glow
-    L.polygon(z.polygon, { color:z.color, weight:8, opacity:0.10, fill:false }).addTo(_rmMaps.dir);
-    // revenue bubble
-    var r = 13 + Math.sqrt(z.rev) * 7.5;
-    L.circleMarker([z.lat, z.lng], {
-      radius: r, color: m.color, weight: 2, opacity:1,
-      fillColor: m.color, fillOpacity: 0.17
-    }).addTo(_rmMaps.dir)
-      .bindPopup(_rmPopupZone(z), { maxWidth:230 });
-    // label
-    L.marker([z.lat, z.lng], {
-      icon: L.divIcon({
-        className: '',
-        html: '<div style="text-align:center;line-height:1.3;min-width:56px">'
-          + '<div style="font-size:10px;font-weight:700;color:' + z.color + ';text-shadow:0 0 6px #000,0 0 10px #000">' + z.name + '</div>'
-          + '<div style="font-size:9px;font-weight:600;color:' + m.color + ';text-shadow:0 0 4px #000">' + sgn + z.chg + '%</div>'
-          + '<div style="font-size:9px;color:rgba(255,255,255,.6);text-shadow:0 0 4px #000">' + z.rev + 'M</div>'
-          + '</div>',
-        iconAnchor: [28, -r - 5]
-      }),
-      interactive: false
-    }).addTo(_rmMaps.dir);
-  });
-}
-
-function rmSwitchRole(role, btn) {
-  document.querySelectorAll('.rm-rbtn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  document.querySelectorAll('.rm-screen').forEach(function(s){ s.classList.remove('on'); });
-  document.getElementById('rm-screen-'+role).classList.add('on');
-  setTimeout(function() {
-    if (role==='bd')       { _rmInitBdMap();  if(_rmMaps.bd)  _rmMaps.bd.invalidateSize(); }
-    if (role==='am')       { _rmInitAmMap();  if(_rmMaps.am)  _rmMaps.am.invalidateSize(); }
-    if (role==='director') { _rmInitDirMap(); if(_rmMaps.dir) _rmMaps.dir.invalidateSize(); }
-  }, 250);
-}
+// Legacy role map preview removed in Phase 2. Home now renders from live scoped data.
 </script>
 
 <!-- ═══ MONTHLY TARGET MODAL ═══ -->
