@@ -2645,6 +2645,11 @@ function lsSort(f,d,btn){
 }
 function tSort(f){tSortF=f;tSortD=tSortD==='desc'?'asc':'desc';tPg=1;renderTable();}
 function exportCSV(){
+  if(!_currentUser || !sessionStorage.getItem('DASH_TOKEN')){
+    renderError('home_content','Unauthorized export request','loadData');
+    _clientLog('EXPORT_DENIED','CSV export without active session');
+    return;
+  }
   if(!tRows.length)return;
   var m=getTM(),mp=getTMP();
   var cols=['Agent Code','Agent Name','Phone','Zone Name','Package','Province','AREA'];
@@ -2660,7 +2665,20 @@ function exportCSV(){
   if(mp)cols.push('Avg_Rev_per_Piece_Prev','Diff_Piece','Pct_Piece');
   cols.push('Avg_Vol_per_Day_D1');
   // T03: colGroup (Group Focus) removed
-  var csv=[cols.join(',')].concat(tRows.map(function(r){
+  function csvCell(v){
+    return '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
+  }
+  var scope = (_currentUser.zones && _currentUser.zones.length) ? _currentUser.zones.join('|') : 'All';
+  var generatedAt = _formatWatermarkTime(new Date());
+  var meta = [
+    ['Internal Use Only'],
+    ['Exported By', _currentUser.displayName || _currentUser.username || '-'],
+    ['Role', _currentUser.role || '-'],
+    ['Scope', scope],
+    ['Generated At', generatedAt],
+    []
+  ].map(function(row){ return row.map(csvCell).join(','); });
+  var csv=meta.concat([cols.map(csvCell).join(',')]).concat(tRows.map(function(r){
     var revC=N(r[m.colRev]),revP=mp?N(r[mp.colRev]):0;
     var volC=N(r[m.colVol]),volP=mp?N(r[mp.colVol]):0;
     var diffVol=mp?Math.round(volC-volP):0;
@@ -2681,12 +2699,12 @@ function exportCSV(){
       if(c==='Avg_Rev_per_Piece_Prev')return apP;
       if(c==='Diff_Piece')return apD;
       if(c==='Pct_Piece')return pctPiece;
-      return'"'+(r[c]!==undefined?r[c]:'')+'"';
+      return csvCell(r[c]!==undefined?r[c]:'');
     }).join(',');
   })).join('\n');
   var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='dashboard_'+m.en+'.csv';a.click();
-  _clientLog('EXPORT_CSV','Export CSV เดือน: '+m.en+' | จำนวน: '+tRows.length+' rows');
+  _clientLog('EXPORT_CSV','Export CSV เดือน: '+m.en+' | จำนวน: '+tRows.length+' rows | scope='+scope+' | generatedAt='+generatedAt);
 }
 
 
