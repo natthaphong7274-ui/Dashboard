@@ -543,9 +543,7 @@
           </select>
           <button class="btnexp" id="table_compact_btn" onclick="toggleTableCompact()">มุมมองเต็ม</button>
           <button class="btnexp" onclick="exportCSV()">⬇ Export CSV</button>
-          <button class="btnexp" onclick="exportTrackingReport()">Tracking Report</button>
-          <button class="btnexp" onclick="exportBDPerformanceReport()">BD Performance</button>
-          <button class="btnexp" onclick="exportWeeklySummary()">Weekly Summary</button>
+          <button class="btnexp rc-report-btn" onclick="openReportCenter()">Report Center</button>
         </div>
       </div>
       <div class="twrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
@@ -766,6 +764,145 @@
       </div>
       <div id="um_table_wrap" style="overflow-x:auto">
         <div style="padding:30px;text-align:center;color:var(--t2)">กด รีเฟรช เพื่อโหลดข้อมูล</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="rc-overlay" id="rcOverlay" onclick="if(event.target===this)closeReportCenter()">
+  <div class="rc-modal">
+    <div class="rc-head">
+      <div>
+        <div class="rc-title">Report Center</div>
+        <div class="rc-sub" id="rc_sub">Preparing report preview...</div>
+      </div>
+      <button class="rc-close" onclick="closeReportCenter()">✕</button>
+    </div>
+    <div class="rc-body">
+      <div class="rc-tabs">
+        <button class="rc-tab active" id="rc_tab_summary" onclick="switchReportCenterTab('summary',this)">Summary</button>
+        <button class="rc-tab" id="rc_tab_tracking" onclick="switchReportCenterTab('tracking',this)">Tracking</button>
+        <button class="rc-tab" id="rc_tab_bd" onclick="switchReportCenterTab('bd',this)">BD Performance</button>
+        <button class="rc-tab" id="rc_tab_export" onclick="switchReportCenterTab('export',this)">Export</button>
+      </div>
+
+      <div id="rc_summary_panel" class="rc-panel active">
+        <div class="rc-krow" id="rc_summary_kpis"></div>
+        <div class="rc-grid rc-grid-2">
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">Revenue by Month</div>
+                <div class="rc-card-sub">Bar = actual revenue, line = MoM growth</div>
+              </div>
+            </div>
+            <div class="rc-chart-wrap"><canvas id="rc_summary_rev_chart"></canvas></div>
+          </div>
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">Volume by Month</div>
+                <div class="rc-card-sub">Bar = actual volume, line = MoM growth</div>
+              </div>
+            </div>
+            <div class="rc-chart-wrap"><canvas id="rc_summary_vol_chart"></canvas></div>
+          </div>
+        </div>
+        <div class="rc-grid rc-grid-2">
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">Carrier Snapshot</div>
+                <div class="rc-card-sub">Top carriers in current scope</div>
+              </div>
+            </div>
+            <div id="rc_summary_carriers"></div>
+          </div>
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">Executive Summary</div>
+                <div class="rc-card-sub">Quick read before export</div>
+              </div>
+            </div>
+            <div id="rc_summary_notes"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="rc_tracking_panel" class="rc-panel">
+        <div class="rc-krow" id="rc_tracking_kpis"></div>
+        <div class="rc-grid rc-grid-2">
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">Tracking Tasks by Month</div>
+                <div class="rc-card-sub">Bar = total tasks, line = follow-up completion</div>
+              </div>
+            </div>
+            <div class="rc-chart-wrap"><canvas id="rc_tracking_chart"></canvas></div>
+          </div>
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">Zone Tracking Snapshot</div>
+                <div class="rc-card-sub">Current month risk and growth workload</div>
+              </div>
+            </div>
+            <div id="rc_tracking_zones"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="rc_bd_panel" class="rc-panel">
+        <div class="rc-krow" id="rc_bd_kpis"></div>
+        <div class="rc-grid rc-grid-2">
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">Top BD Revenue</div>
+                <div class="rc-card-sub">Bar = current revenue, line = MoM growth</div>
+              </div>
+            </div>
+            <div class="rc-chart-wrap"><canvas id="rc_bd_chart"></canvas></div>
+          </div>
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">BD Leaderboard</div>
+                <div class="rc-card-sub">Revenue, follow-up, success, risk saved</div>
+              </div>
+            </div>
+            <div id="rc_bd_table"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="rc_export_panel" class="rc-panel">
+        <div class="rc-grid rc-grid-2">
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">Export Actions</div>
+                <div class="rc-card-sub">Use the same filtered scope from the current dashboard</div>
+              </div>
+            </div>
+            <div class="rc-export-list">
+              <button class="rc-export-btn" onclick="exportTrackingReport()">Tracking Report CSV</button>
+              <button class="rc-export-btn" onclick="exportBDPerformanceReport()">BD Performance CSV</button>
+              <button class="rc-export-btn" onclick="exportWeeklySummary()">Weekly Summary HTML</button>
+            </div>
+          </div>
+          <div class="rc-card">
+            <div class="rc-card-head">
+              <div>
+                <div class="rc-card-title">Export Metadata</div>
+                <div class="rc-card-sub">Session and visibility scope used for generated files</div>
+              </div>
+            </div>
+            <div id="rc_export_meta"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

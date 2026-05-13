@@ -14,7 +14,7 @@ branch นี้รวมงานตั้งแต่ Phase 0 ถึง Phase 
 | Phase 3 | [PHASE_3_NOTES.md](./PHASE_3_NOTES.md) | เพิ่ม Action Center, Priority Score และ Next Follow-up แบบอ่านจากข้อมูลเดิม |
 | Phase 3.5 | [PHASE_3_5_NOTES.md](./PHASE_3_5_NOTES.md) | ปรับ visualization ด้วย Home trend/forecast, priority bars และ table compact view |
 | Phase 4 | [PHASE_4_NOTES.md](./PHASE_4_NOTES.md) | เริ่ม AM/Director Workspace ด้วย BD Ranking ตามสูตร D3 |
-| Phase 5 | [PHASE_5_NOTES.md](./PHASE_5_NOTES.md) | เพิ่ม Tracking Report, BD Performance Report และ Weekly Summary export |
+| Phase 5 | [PHASE_5_NOTES.md](./PHASE_5_NOTES.md) | เพิ่ม Report Center พร้อม preview, Tracking Report, BD Performance Report และ Weekly Summary export |
 
 ## วิธีอ่าน
 

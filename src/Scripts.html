@@ -3063,6 +3063,366 @@ function exportWeeklySummary(){
   _clientLog('EXPORT_WEEKLY_SUMMARY','tasks='+tasks.length+' | scope='+meta.scope+' | generatedAt='+meta.generatedAt);
 }
 
+var _reportCenterTab='summary';
+var _reportCenterModel=null;
+function openReportCenter(){
+  var meta=_exportGuard('Report Center'); if(!meta)return;
+  var overlay=document.getElementById('rcOverlay');
+  if(!overlay)return;
+  _reportCenterModel=_buildReportCenterModel(meta);
+  overlay.classList.add('open');
+  var sub=document.getElementById('rc_sub');
+  if(sub){
+    sub.textContent='Month '+_reportCenterModel.m.en+' '+DATA_YEAR+' | Role '+meta.role+' | Scope '+meta.scope;
+  }
+  switchReportCenterTab(_reportCenterTab||'summary');
+  _clientLog('OPEN_REPORT_CENTER','scope='+meta.scope+' | month='+_reportCenterModel.m.key);
+}
+function closeReportCenter(){
+  var overlay=document.getElementById('rcOverlay');
+  if(overlay)overlay.classList.remove('open');
+}
+function switchReportCenterTab(tab,btn){
+  _reportCenterTab=tab||'summary';
+  ['summary','tracking','bd','export'].forEach(function(key){
+    var panel=document.getElementById('rc_'+key+'_panel');
+    var tabEl=document.getElementById('rc_tab_'+key);
+    if(panel)panel.classList.toggle('active',key===_reportCenterTab);
+    if(tabEl)tabEl.classList.toggle('active',key===_reportCenterTab);
+  });
+  if(btn){
+    var all=document.querySelectorAll('.rc-tab');
+    Array.prototype.forEach.call(all,function(el){ el.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+  if(!_reportCenterModel)return;
+  if(_reportCenterTab==='summary')_renderReportCenterSummary(_reportCenterModel);
+  else if(_reportCenterTab==='tracking')_renderReportCenterTracking(_reportCenterModel);
+  else if(_reportCenterTab==='bd')_renderReportCenterBD(_reportCenterModel);
+  else _renderReportCenterExport(_reportCenterModel);
+}
+function _buildReportCenterModel(meta){
+  var m=getMC(),mp=getMP();
+  var totalRev=sumCol(FR,m.colRev),totalVol=sumCol(FR,m.colVol);
+  var prevRev=mp?sumCol(FR,mp.colRev):0,prevVol=mp?sumCol(FR,mp.colVol):0;
+  var mDay=getDAY1ForMonth(m.key),mpDay=mp?getDAY1ForMonth(mp.key):0;
+  var avgPerPiece=totalVol?totalRev/totalVol:0;
+  var prevAvgPerPiece=(mp&&prevVol)?prevRev/prevVol:0;
+  var avgVolDay=mDay?totalVol/mDay:0;
+  var prevAvgVolDay=(mp&&mpDay)?prevVol/mpDay:0;
+  var revSeries=_monthMetricSeries(m.key,function(mm){return sumCol(FR,mm.colRev);});
+  var volSeries=_monthMetricSeries(m.key,function(mm){return sumCol(FR,mm.colVol);});
+  var taskSeries=_reportCenterTaskSeries(m.key);
+  var tasks=mp?_buildReportTasks(FR,m,mp):[];
+  var bdRows=_buildBDPerformanceRows(FR,m,mp).slice(0,12);
+  var carriers=_reportCenterCarrierRows(m);
+  return {
+    meta:meta,
+    m:m,
+    mp:mp,
+    totalRev:totalRev,
+    totalVol:totalVol,
+    prevRev:prevRev,
+    prevVol:prevVol,
+    avgPerPiece:avgPerPiece,
+    prevAvgPerPiece:prevAvgPerPiece,
+    avgVolDay:avgVolDay,
+    prevAvgVolDay:prevAvgVolDay,
+    revSeries:revSeries,
+    volSeries:volSeries,
+    taskSeries:taskSeries,
+    tasks:tasks,
+    bdRows:bdRows,
+    carriers:carriers,
+    zoneTracking:_reportCenterZoneTracking(tasks),
+    notes:_reportCenterNotes(m,mp,totalRev,prevRev,totalVol,prevVol,tasks,bdRows,carriers)
+  };
+}
+function _reportCenterTaskSeries(curKey){
+  var months=_recentMonths(curKey,6);
+  return months.map(function(mm,idx){
+    if(idx===0)return {label:mm.en||mm.key,total:0,done:0,success:0,risk:0,growth:0,followPct:null,successPct:null};
+    var prev=months[idx-1];
+    var list=_buildReportTasks(FR,mm,prev);
+    var done=list.filter(function(t){return t.done;}).length;
+    var success=list.filter(function(t){return t.success;}).length;
+    var risk=list.filter(function(t){return t.type==='risk';}).length;
+    var growth=list.filter(function(t){return t.type==='growth';}).length;
+    return {
+      label:mm.en||mm.key,
+      total:list.length,
+      done:done,
+      success:success,
+      risk:risk,
+      growth:growth,
+      followPct:list.length?(done/list.length*100):null,
+      successPct:done?(success/done*100):null
+    };
+  });
+}
+function _reportCenterCarrierRows(m){
+  var carrierMonth=(CARRIER_MONTHS||[]).find(function(cm){return cm.key===m.key;});
+  if(!carrierMonth)return [];
+  var list=(CARRIERS||[]).filter(function(c){
+    return filterCarrierSet.size===0 || filterCarrierSet.has(c);
+  }).map(function(c){
+    var vol=sumCol(FR,carCol(c,'Vol',carrierMonth.label));
+    var rev=sumCol(FR,carCol(c,'Rev',carrierMonth.label));
+    var days=getDAY1ForMonth(m.key);
+    return {
+      name:c,
+      vol:vol,
+      rev:rev,
+      avd:days?vol/days:0,
+      arv:vol?rev/vol:0
+    };
+  }).filter(function(c){return c.vol>0 || c.rev>0;});
+  var totalVol=list.reduce(function(sum,c){return sum+c.vol;},0);
+  list.forEach(function(c){ c.share=totalVol?(c.vol/totalVol*100):0; });
+  return list.sort(function(a,b){return b.vol-a.vol;}).slice(0,8);
+}
+function _reportCenterZoneTracking(tasks){
+  var map={};
+  tasks.forEach(function(t){
+    var key=t.zone||'Unknown';
+    if(!map[key])map[key]={zone:key,risk:0,growth:0,done:0,success:0,total:0};
+    var z=map[key];
+    z.total++;
+    if(t.type==='risk')z.risk++;
+    if(t.type==='growth')z.growth++;
+    if(t.done)z.done++;
+    if(t.success)z.success++;
+  });
+  return Object.keys(map).map(function(k){
+    var z=map[k];
+    z.followPct=z.total?(z.done/z.total*100):0;
+    return z;
+  }).sort(function(a,b){return b.total-a.total;}).slice(0,10);
+}
+function _reportCenterNotes(m,mp,totalRev,prevRev,totalVol,prevVol,tasks,bdRows,carriers){
+  var notes=[];
+  var revPct=mp&&prevRev?pctChg(prevRev,totalRev):null;
+  var volPct=mp&&prevVol?pctChg(prevVol,totalVol):null;
+  notes.push({
+    title:'Revenue trend',
+    text:(revPct==null?'ยังไม่มีเดือนก่อนให้เทียบ':'Revenue เดือน '+m.en+' '+(revPct>=0?'เติบโต ':'ลดลง ')+Math.abs(revPct).toFixed(1)+'% เมื่อเทียบกับ '+mp.en)
+      +' และ Volume '+(volPct==null?'ยังไม่มีค่าเทียบ':(volPct>=0?'เพิ่ม ':'ลด ')+Math.abs(volPct).toFixed(1)+'%')
+  });
+  if(tasks.length){
+    var done=tasks.filter(function(t){return t.done;}).length;
+    var success=tasks.filter(function(t){return t.success;}).length;
+    notes.push({
+      title:'Tracking workload',
+      text:'เดือนนี้มีงานติดตาม '+tasks.length+' รายการ, follow-up แล้ว '+done+' รายการ และ success '+success+' รายการ'
+    });
+  }else{
+    notes.push({
+      title:'Tracking workload',
+      text:'เดือนนี้ยังไม่มีรายการ risk/growth ที่เกิน threshold ใน scope ปัจจุบัน'
+    });
+  }
+  if(bdRows.length){
+    var topBd=bdRows[0];
+    notes.push({
+      title:'Top BD snapshot',
+      text:topBd.bd+' มียอด Revenue สูงสุดที่ '+fmtS(Math.round(topBd.rev))+' พร้อม follow-up '+topBd.followPct.toFixed(1)+'% และ success '+topBd.successPct.toFixed(1)+'%'
+    });
+  }
+  if(carriers.length){
+    notes.push({
+      title:'Carrier concentration',
+      text:carriers[0].name+' ถือ volume share สูงสุด '+carriers[0].share.toFixed(1)+'% ของ scope ปัจจุบัน'
+    });
+  }
+  return notes;
+}
+function _renderReportCenterSummary(model){
+  var revPct=model.mp&&model.prevRev?pctChg(model.prevRev,model.totalRev):null;
+  var volPct=model.mp&&model.prevVol?pctChg(model.prevVol,model.totalVol):null;
+  var tasks=model.tasks;
+  var done=tasks.filter(function(t){return t.done;}).length;
+  document.getElementById('rc_summary_kpis').innerHTML=[
+    _reportCenterKpi('Revenue',fmtS(Math.round(model.totalRev)),'ยอดรวมเดือน '+model.m.en,_reportCenterTrendText(revPct,'%')),
+    _reportCenterKpi('Volume',fmtS(Math.round(model.totalVol)),'จำนวนชิ้นรวมเดือน '+model.m.en,_reportCenterTrendText(volPct,'%')),
+    _reportCenterKpi('Avg Rev/Vol',fmtF(model.avgPerPiece),'Revenue ต่อชิ้น',model.mp?_reportCenterDeltaFmt(model.avgPerPiece-model.prevAvgPerPiece,fmtF,model.prevAvgPerPiece?pctChg(model.prevAvgPerPiece,model.avgPerPiece):null):_reportCenterTrendText(null,'')),
+    _reportCenterKpi('Tracking Done',done+'/'+tasks.length,'งานติดตามที่ดำเนินการแล้ว',tasks.length?_reportCenterTrendText(done/tasks.length*100,'% follow-up','up'):_reportCenterTrendText(null,''))
+  ].join('');
+  document.getElementById('rc_summary_carriers').innerHTML=_reportCenterCarrierTable(model.carriers);
+  document.getElementById('rc_summary_notes').innerHTML=_reportCenterNotesHtml(model.notes);
+  setTimeout(function(){
+    _reportCenterBarLineChart('rc_summary_rev_chart',model.revSeries.labels,model.revSeries.values,_reportCenterGrowthSeries(model.revSeries.values),'Revenue','Growth %','#003F5C',fmtS,function(v){return v==null?'-':v.toFixed(1)+'%';});
+    _reportCenterBarLineChart('rc_summary_vol_chart',model.volSeries.labels,model.volSeries.values,_reportCenterGrowthSeries(model.volSeries.values),'Volume','Growth %','#009B9B',fmtS,function(v){return v==null?'-':v.toFixed(1)+'%';});
+  },0);
+}
+function _renderReportCenterTracking(model){
+  var tasks=model.tasks;
+  var done=tasks.filter(function(t){return t.done;}).length;
+  var success=tasks.filter(function(t){return t.success;}).length;
+  var risk=tasks.filter(function(t){return t.type==='risk';}).length;
+  var growth=tasks.filter(function(t){return t.type==='growth';}).length;
+  document.getElementById('rc_tracking_kpis').innerHTML=[
+    _reportCenterKpi('Total Tasks',String(tasks.length),'งาน risk + growth ที่เข้าเกณฑ์',_reportCenterTrendText(null,'')),
+    _reportCenterKpi('Risk',String(risk),'รายการที่ต้องกู้กลับ',_reportCenterTrendText(null,'')),
+    _reportCenterKpi('Growth',String(growth),'รายการที่ควรต่อยอด',_reportCenterTrendText(null,'')),
+    _reportCenterKpi('Success',String(success),'งานที่ปิดผลสำเร็จ',tasks.length?_reportCenterTrendText(success/tasks.length*100,'% of tasks','up'):_reportCenterTrendText(null,''))
+  ].join('');
+  document.getElementById('rc_tracking_zones').innerHTML=_reportCenterZoneTable(model.zoneTracking);
+  setTimeout(function(){
+    _reportCenterBarLineChart(
+      'rc_tracking_chart',
+      model.taskSeries.map(function(x){return x.label;}),
+      model.taskSeries.map(function(x){return x.total;}),
+      model.taskSeries.map(function(x){return x.followPct;}),
+      'Tasks',
+      'Follow-up %',
+      '#E8622A',
+      fmtS,
+      function(v){return v==null?'-':v.toFixed(1)+'%';}
+    );
+  },0);
+}
+function _renderReportCenterBD(model){
+  var top=model.bdRows.slice(0,8);
+  var totalTasks=model.bdRows.reduce(function(sum,r){return sum+r.tasks;},0);
+  var totalDone=model.bdRows.reduce(function(sum,r){return sum+r.done;},0);
+  var avgSuccess=model.bdRows.length?(model.bdRows.reduce(function(sum,r){return sum+r.successPct;},0)/model.bdRows.length):0;
+  document.getElementById('rc_bd_kpis').innerHTML=[
+    _reportCenterKpi('Active BD',String(model.bdRows.length),'ผู้ดูแลใน scope ปัจจุบัน',_reportCenterTrendText(null,'')),
+    _reportCenterKpi('Total Tasks',String(totalTasks),'งานรวมใน leaderboard',_reportCenterTrendText(null,'')),
+    _reportCenterKpi('Follow-up',totalTasks?(totalDone/totalTasks*100).toFixed(1)+'%':'0%','อัตราปิดงานติดตาม',_reportCenterTrendText(null,'')),
+    _reportCenterKpi('Avg Success',avgSuccess.toFixed(1)+'%','ค่าเฉลี่ย success rate ของ BD',_reportCenterTrendText(null,''))
+  ].join('');
+  document.getElementById('rc_bd_table').innerHTML=_reportCenterBdTable(model.bdRows);
+  setTimeout(function(){
+    _reportCenterBarLineChart(
+      'rc_bd_chart',
+      top.map(function(r){return r.bd;}),
+      top.map(function(r){return Math.round(r.rev);}),
+      top.map(function(r){return r.momPct;}),
+      'Revenue',
+      'MoM %',
+      '#005F7A',
+      fmtS,
+      function(v){return v==null?'-':v.toFixed(1)+'%';}
+    );
+  },0);
+}
+function _renderReportCenterExport(model){
+  document.getElementById('rc_export_meta').innerHTML=
+    '<div class="rc-meta-grid">'
+    + _reportCenterMetaItem('Month',model.m.en+' '+DATA_YEAR)
+    + _reportCenterMetaItem('Role',model.meta.role)
+    + _reportCenterMetaItem('Scope',model.meta.scope)
+    + _reportCenterMetaItem('Exported By',model.meta.user)
+    + _reportCenterMetaItem('Generated At',model.meta.generatedAt)
+    + _reportCenterMetaItem('Visibility','Uses current dashboard filters and role scope only')
+    + '</div>';
+}
+function _reportCenterKpi(label,value,sub,trendHtml){
+  return '<div class="rc-kpi">'
+    + '<div class="rc-kpi-label">'+_esc(label)+'</div>'
+    + '<div class="rc-kpi-value">'+_esc(value)+'</div>'
+    + '<div class="rc-kpi-sub">'+_esc(sub||'')+'</div>'
+    + (trendHtml||'<div class="rc-kpi-trend flat">-</div>')
+    + '</div>';
+}
+function _reportCenterTrendText(value,suffix,forceState){
+  if(value===null || value===undefined || value==='')return '<div class="rc-kpi-trend flat">-</div>';
+  var state=forceState || (N(value)>0?'up':(N(value)<0?'down':'flat'));
+  var num=typeof value==='number'?Math.abs(value).toFixed(1):String(value);
+  var prefix=state==='up'?'▲ ':(state==='down'?'▼ ':'');
+  return '<div class="rc-kpi-trend '+state+'">'+prefix+_esc(num+(suffix||''))+'</div>';
+}
+function _reportCenterDeltaFmt(diff,fmt,pct){
+  if(diff===null || diff===undefined)return '<div class="rc-kpi-trend flat">-</div>';
+  var state=diff>0?'up':(diff<0?'down':'flat');
+  var prefix=state==='up'?'▲ ':(state==='down'?'▼ ':'');
+  var pctText=(pct===null || pct===undefined)?'':(' ('+Math.abs(pct).toFixed(1)+'%)');
+  return '<div class="rc-kpi-trend '+state+'">'+prefix+_esc(fmt(Math.abs(diff))+pctText)+'</div>';
+}
+function _reportCenterGrowthSeries(values){
+  return (values||[]).map(function(v,i){
+    if(i===0 || !values[i-1])return null;
+    return ((v-values[i-1])/Math.abs(values[i-1]))*100;
+  });
+}
+function _reportCenterBarLineChart(id,labels,barValues,lineValues,barLabel,lineLabel,color,barFmt,lineFmt){
+  var el=document.getElementById(id);
+  if(!el)return;
+  dc(id);
+  var chartColor=_cssColor(color||'#003F5C');
+  CH[id]=new Chart(el.getContext('2d'),{
+    data:{
+      labels:labels,
+      datasets:[
+        {type:'bar',label:barLabel,data:barValues,backgroundColor:chartColor,borderRadius:6,borderSkipped:false,yAxisID:'y',barPercentage:.72,categoryPercentage:.72},
+        {type:'line',label:lineLabel,data:lineValues,borderColor:chartColor,backgroundColor:chartColor,tension:.35,yAxisID:'y1',pointRadius:3,pointHoverRadius:4,borderWidth:2}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top',labels:{font:{size:10},boxWidth:10}},
+        tooltip:{callbacks:{
+          label:function(ctx){
+            if(ctx.dataset.type==='line')return ctx.dataset.label+': '+(lineFmt?lineFmt(ctx.raw):ctx.raw);
+            return ctx.dataset.label+': '+(barFmt?barFmt(ctx.raw):ctx.raw);
+          }
+        }}
+      },
+      scales:{
+        x:{ticks:{font:{size:10}},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return barFmt?barFmt(v):v;}},grid:{color:'#eef2f7'}},
+        y1:{beginAtZero:false,position:'right',ticks:{font:{size:10},callback:function(v){return lineFmt?lineFmt(v):v;}},grid:{display:false}}
+      }
+    }
+  });
+}
+function _reportCenterCarrierTable(rows){
+  if(!rows.length)return '<div class="rc-empty">No carrier data in current scope.</div>';
+  return '<table class="rc-table"><thead><tr><th>Carrier</th><th>Volume</th><th>Share</th><th>Rev/Vol</th></tr></thead><tbody>'
+    + rows.map(function(r){
+      return '<tr><td>'+_esc(r.name)+'</td><td>'+_esc(fmtS(Math.round(r.vol)))+'</td><td>'+_reportCenterBadge(r.share,'flat')+'</td><td>'+_esc(fmtF(r.arv))+'</td></tr>';
+    }).join('')
+    + '</tbody></table>';
+}
+function _reportCenterZoneTable(rows){
+  if(!rows.length)return '<div class="rc-empty">No tracking workload for this month.</div>';
+  return '<table class="rc-table"><thead><tr><th>Zone</th><th>Risk</th><th>Growth</th><th>Follow-up</th><th>Success</th></tr></thead><tbody>'
+    + rows.map(function(r){
+      return '<tr><td>'+_esc(r.zone)+'</td><td>'+r.risk+'</td><td>'+r.growth+'</td><td>'
+        + '<div class="rc-meter"><div class="rc-meter-bar"><div class="rc-meter-fill" style="width:'+Math.max(0,Math.min(100,r.followPct))+'%"></div></div><div class="rc-meter-val">'+r.followPct.toFixed(0)+'%</div></div>'
+        + '</td><td>'+r.success+'</td></tr>';
+    }).join('')
+    + '</tbody></table>';
+}
+function _reportCenterBdTable(rows){
+  if(!rows.length)return '<div class="rc-empty">No BD performance rows in current scope.</div>';
+  return '<table class="rc-table"><thead><tr><th>#</th><th>BD</th><th>Revenue</th><th>MoM</th><th>Follow-up</th><th>Success</th><th>Risk Saved</th></tr></thead><tbody>'
+    + rows.map(function(r,idx){
+      return '<tr><td><span class="rc-rank">'+(idx+1)+'</span></td><td>'+_esc(r.bd)+'</td><td>'+_esc(fmtS(Math.round(r.rev)))+'</td><td>'+_reportCenterPctBadge(r.momPct)+'</td><td>'+_esc(r.followPct.toFixed(1))+'%</td><td>'+_esc(r.successPct.toFixed(1))+'%</td><td>'+_esc(r.riskSavedPct.toFixed(1))+'%</td></tr>';
+    }).join('')
+    + '</tbody></table>';
+}
+function _reportCenterNotesHtml(notes){
+  if(!notes.length)return '<div class="rc-empty">No summary notes.</div>';
+  return '<div class="rc-note-list">'+notes.map(function(n){
+    return '<div class="rc-note"><div class="rc-note-title">'+_esc(n.title)+'</div><div class="rc-note-text">'+_esc(n.text)+'</div></div>';
+  }).join('')+'</div>';
+}
+function _reportCenterMetaItem(label,value){
+  return '<div class="rc-meta-item"><div class="rc-meta-label">'+_esc(label)+'</div><div class="rc-meta-value">'+_esc(value||'-')+'</div></div>';
+}
+function _reportCenterPctBadge(value){
+  if(value===null || value===undefined || value==='')return _reportCenterBadge('N/A','flat');
+  var state=value>0?'up':(value<0?'down':'flat');
+  var sign=value>0?'+':'';
+  return _reportCenterBadge(sign+value.toFixed(1)+'%',state);
+}
+function _reportCenterBadge(text,state){
+  return '<span class="rc-badge '+(state||'flat')+'">'+_esc(text)+'</span>';
+}
+
 
 // ============================================================
 //  🚚 CARRIER SECTION
