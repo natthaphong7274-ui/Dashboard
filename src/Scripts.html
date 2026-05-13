@@ -8932,6 +8932,7 @@ function _renderHomeDirector(m, mp) {
   html += '</div>'; // close KPI row
 
   html += _homeVizSection('home_dir', FR, DIR_TARGET, dirHasTarget, 'Revenue / Volume Trend ประเทศ');
+  html += _renderPhase4BDRanking(m, mp, FR, 'Director');
 
   // ══════════════════════════════════════════════════════
   // ROW 2: แผนที่ FULL WIDTH (ย้ายขึ้นมาก่อน Zone Performance)
@@ -9576,6 +9577,67 @@ function _renderHomeDirector(m, mp) {
 }
 
 // ── BD LEADERBOARD helpers ────────────────────────────────────────
+function _phase4BdName(r){
+  var v=r['BD Name']||r['BD']||r['BD Username']||r['BD User']||r['Sales Name']||r['Owner']||r[COL.zoneName]||'Unknown';
+  return String(v||'Unknown').trim()||'Unknown';
+}
+function _phase4TaskStatus(key){
+  var trk=(_trkData&&_trkData[key])||{};
+  return String(trk.status||'');
+}
+function _phase4Pct(n,d,emptyVal){
+  if(!d)return emptyVal==null?0:emptyVal;
+  return Math.max(0,Math.min(100,n/d*100));
+}
+function _phase4BdRows(rows,m,mp){
+  var map={};
+  rows.forEach(function(r){
+    var bd=_phase4BdName(r), code=String(r[COL.agentCode]||'').trim(), zone=String(r[COL.zoneName]||'');
+    if(!map[bd])map[bd]={name:bd,zone:zone,total:0,rev:0,prevRev:0,complete:0,followTotal:0,followDone:0,success:0,riskTotal:0,riskSaved:0};
+    var d=map[bd];
+    d.total++; d.rev+=N(r[m.colRev]); if(mp)d.prevRev+=N(r[mp.colRev]);
+    if(String(r[COL.agentCode]||'').trim()&&String(r[COL.agentName]||'').trim()&&String(r[COL.zoneName]||'').trim()&&String(r[COL.phone]||r['phone']||r['Tel']||'').trim())d.complete++;
+    if(zone&&String(d.zone).indexOf(zone)<0)d.zone=d.zone?d.zone+','+zone:zone;
+    var risk=false,growth=false;
+    if(mp){risk=(N(r[mp.colAvg])-N(r[m.colAvg]))>(_riskThreshold||0);growth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);}
+    var rs=code?_phase4TaskStatus('risk_'+code+'_'+m.key):'', gs=code?_phase4TaskStatus('growth_'+code+'_'+m.key):'';
+    if(risk){d.riskTotal++;d.followTotal++;if(['contact','solving','success','fail'].indexOf(rs)>=0)d.followDone++;if(rs==='success'){d.riskSaved++;d.success++;}}
+    if(growth){d.followTotal++;if(['contacted','data_collected','rewarded','upsold','unreachable'].indexOf(gs)>=0)d.followDone++;if(['rewarded','upsold'].indexOf(gs)>=0)d.success++;}
+  });
+  return Object.keys(map).map(function(k){
+    var d=map[k], target=d.prevRev>0?d.prevRev*1.05:0;
+    d.targetPct=target>0?_phase4Pct(d.rev,target,0):0;
+    d.followPct=_phase4Pct(d.followDone,d.followTotal,100);
+    d.successPct=_phase4Pct(d.success,d.followDone,d.followTotal?0:100);
+    d.riskPct=_phase4Pct(d.riskSaved,d.riskTotal,100);
+    d.dataPct=_phase4Pct(d.complete,d.total,0);
+    d.momPct=d.prevRev>0?((d.rev-d.prevRev)/Math.abs(d.prevRev)*100):null;
+    d.score=Math.round(d.targetPct*.35+d.followPct*.25+d.successPct*.15+d.riskPct*.15+d.dataPct*.10);
+    return d;
+  }).sort(function(a,b){return b.score-a.score;});
+}
+function _phase4Bar(pct,label){
+  pct=Math.max(0,Math.min(100,N(pct)));
+  var clr=pct>=80?'#16a34a':pct>=55?'#f59e0b':'#dc2626';
+  return '<div style="display:flex;align-items:center;justify-content:flex-end;gap:6px"><div style="width:50px;height:5px;background:#e5e7eb;border-radius:6px;overflow:hidden"><div style="width:'+pct+'%;height:5px;background:'+clr+'"></div></div><span style="font-size:10px;font-weight:800;color:'+clr+';min-width:34px">'+_esc(label)+'</span></div>';
+}
+function _renderPhase4BDRanking(m,mp,rows,scopeLabel){
+  var list=_phase4BdRows(rows,m,mp);
+  var html='<div class="ccard" style="margin-bottom:12px"><div class="chdr"><div><div class="ctitle">BD Ranking - Phase 4</div><div class="csub">Score = Target 35% + Follow-up 25% + Success 15% + Risk saved 15% + Data 10% · '+_esc(scopeLabel)+'</div></div><span class="cbadge">D3</span></div>';
+  if(!list.length)return html+'<div style="padding:16px;text-align:center;color:var(--t2)">ไม่มีข้อมูล BD ใน scope นี้</div></div>';
+  html+='<div style="overflow-x:auto"><table class="mt" style="font-size:11px;min-width:850px"><thead><tr><th>#</th><th>BD / Zone</th><th class="tdr">Score</th><th class="tdr">%Target</th><th class="tdr">Follow-up</th><th class="tdr">Success</th><th class="tdr">Risk saved</th><th class="tdr">Revenue</th><th class="tdr">MoM</th><th class="tdr">Data</th></tr></thead><tbody>';
+  list.forEach(function(d,i){
+    var medal=i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'', scoreClr=d.score>=80?'#16a34a':d.score>=60?'#f59e0b':'#dc2626';
+    var mom=d.momPct==null?'-':(d.momPct>=0?'<span class="tup">▲':'<span class="tdn">▼')+Math.abs(d.momPct).toFixed(1)+'%</span>';
+    html+='<tr><td style="color:var(--t2);font-weight:700">'+(i+1)+'</td><td><b>'+medal+_esc(d.name)+'</b><div style="font-size:10px;color:var(--t2)">Zone '+_esc(d.zone)+' · '+d.total+' agents</div></td>'
+      +'<td class="tdr"><span style="font-weight:900;color:'+scoreClr+';background:'+scoreClr+'18;border:1px solid '+scoreClr+'55;border-radius:20px;padding:3px 9px">'+d.score+'</span></td>'
+      +'<td class="tdr">'+_phase4Bar(d.targetPct,Math.round(d.targetPct)+'%')+'</td><td class="tdr">'+_phase4Bar(d.followPct,d.followDone+'/'+d.followTotal)+'</td>'
+      +'<td class="tdr">'+_phase4Bar(d.successPct,d.success+'/'+Math.max(d.followDone,1))+'</td><td class="tdr">'+_phase4Bar(d.riskPct,d.riskSaved+'/'+d.riskTotal)+'</td>'
+      +'<td class="tdr" style="font-weight:800">'+fmtS(Math.round(d.rev))+'</td><td class="tdr">'+mom+'</td><td class="tdr">'+_phase4Bar(d.dataPct,Math.round(d.dataPct)+'%')+'</td></tr>';
+  });
+  return html+'</tbody></table></div><div style="font-size:10px;color:var(--t2);margin-top:8px">* %Target ใช้ prev month +5% เมื่อยังไม่มี target ราย BD ในระบบเดิม</div></div>';
+}
+
 var _bdSortCol = 'growth';
 var _bdSortDir = 'desc';
 
@@ -10104,6 +10166,7 @@ function _renderHomeAM(m, mp) {
   html += '</div>'; // close KPI row
 
   html += _homeVizSection('home_am', myRows, zoneTarget, zoneHasTarget, 'Revenue / Volume Trend ของ Zone');
+  html += _renderPhase4BDRanking(m, mp, myRows, 'AM');
 
   // ════════════════════════════════════════════════════
   // ROW 2 — แผนที่ Full Width
