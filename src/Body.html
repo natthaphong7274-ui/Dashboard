@@ -856,8 +856,8 @@
 
       <div id="rc_bd_panel" class="rc-panel">
         <div class="rc-krow" id="rc_bd_kpis"></div>
-        <div class="rc-grid rc-grid-2">
-          <div class="rc-card">
+        <div class="rc-grid rc-grid-2" id="rc_bd_grid">
+          <div class="rc-card" id="rc_bd_chart_card">
             <div class="rc-card-head">
               <div>
                 <div class="rc-card-title" id="rc_bd_chart_title">Top BD Revenue</div>
@@ -867,6 +867,16 @@
                 <button class="rc-view-btn active" id="rc_bd_view_ranking" onclick="switchReportCenterBdView('ranking',this)">Ranking</button>
                 <button class="rc-view-btn" id="rc_bd_view_trend" onclick="switchReportCenterBdView('trend',this)">Monthly Trend</button>
               </div>
+            </div>
+            <div class="rc-trend-filter" id="rc_bd_trend_filter" style="display:none">
+              <input id="rc_bd_trend_search" class="rc-trend-search" type="search" placeholder="Filter BD" oninput="setReportCenterBdTrendFilter('search',this.value)">
+              <select id="rc_bd_trend_limit" class="rc-trend-select" onchange="setReportCenterBdTrendFilter('limit',this.value)">
+                <option value="all">All BD</option>
+                <option value="5">Top 5</option>
+                <option value="10">Top 10</option>
+                <option value="15">Top 15</option>
+              </select>
+              <span class="rc-trend-count" id="rc_bd_trend_count"></span>
             </div>
             <div class="rc-chart-wrap" id="rc_bd_chart_host"><canvas id="rc_bd_chart"></canvas></div>
             <div class="rc-bd-trend-charts" id="rc_bd_trend_charts" style="display:none">
@@ -880,7 +890,7 @@
               </div>
             </div>
           </div>
-          <div class="rc-card">
+          <div class="rc-card" id="rc_bd_leaderboard_card">
             <div class="rc-card-head">
               <div>
                 <div class="rc-card-title">BD Leaderboard</div>

@@ -3066,6 +3066,8 @@ function exportWeeklySummary(){
 var _reportCenterTab='summary';
 var _reportCenterModel=null;
 var _reportCenterBdView='ranking';
+var _reportCenterBdTrendSearch='';
+var _reportCenterBdTrendLimit='all';
 function openReportCenter(){
   var meta=_exportGuard('Report Center'); if(!meta)return;
   var overlay=document.getElementById('rcOverlay');
@@ -3095,6 +3097,11 @@ function switchReportCenterBdView(view,btn){
     btn.classList.add('active');
   }
   if(_reportCenterTab==='bd' && _reportCenterModel)_renderReportCenterBD(_reportCenterModel);
+}
+function setReportCenterBdTrendFilter(type,value){
+  if(type==='search')_reportCenterBdTrendSearch=String(value||'').trim().toLowerCase();
+  if(type==='limit')_reportCenterBdTrendLimit=String(value||'all');
+  if(_reportCenterTab==='bd' && _reportCenterModel && _reportCenterBdView==='trend')_renderReportCenterBD(_reportCenterModel);
 }
 function switchReportCenterTab(tab,btn){
   _reportCenterTab=tab||'summary';
@@ -3363,12 +3370,22 @@ function _renderReportCenterBD(model){
   var subEl=document.getElementById('rc_bd_chart_sub');
   var chartHost=document.getElementById('rc_bd_chart_host');
   var trendHost=document.getElementById('rc_bd_trend_charts');
+  var filterHost=document.getElementById('rc_bd_trend_filter');
+  var trendCount=document.getElementById('rc_bd_trend_count');
+  var gridEl=document.getElementById('rc_bd_grid');
+  var leaderboardCard=document.getElementById('rc_bd_leaderboard_card');
   setTimeout(function(){
     if(_reportCenterBdView==='trend'){
+      var filteredRows=_reportCenterFilteredBdMonthlyRows(model.bdMonthly);
       if(titleEl)titleEl.textContent='BD Monthly Trend';
-      if(subEl)subEl.textContent='Revenue and Volume line charts for all visible BDs';
+      if(subEl)subEl.textContent='Revenue and Volume trend for all visible BDs';
       if(chartHost)chartHost.style.display='none';
       if(trendHost)trendHost.style.display='grid';
+      if(filterHost)filterHost.style.display='flex';
+      if(gridEl)gridEl.classList.add('rc-bd-grid-trend');
+      if(leaderboardCard)leaderboardCard.style.display='none';
+      if(trendCount)trendCount.textContent=filteredRows.length+' / '+(((model.bdMonthly||{}).rows||[]).length)+' BD';
+      if(trendHost)trendHost.style.setProperty('--rc-bd-count',String(filteredRows.length || 1));
       _reportCenterBdTrendLineChart('rc_bd_rev_trend_chart',model.bdMonthly,'rev','Revenue',fmtS);
       _reportCenterBdTrendLineChart('rc_bd_vol_trend_chart',model.bdMonthly,'vol','Volume',fmtS);
     }else{
@@ -3376,6 +3393,9 @@ function _renderReportCenterBD(model){
       if(subEl)subEl.textContent='Bar = current revenue, line = MoM growth';
       if(chartHost)chartHost.style.display='block';
       if(trendHost)trendHost.style.display='none';
+      if(filterHost)filterHost.style.display='none';
+      if(gridEl)gridEl.classList.remove('rc-bd-grid-trend');
+      if(leaderboardCard)leaderboardCard.style.display='';
       _reportCenterBarLineChart(
         'rc_bd_chart',
         top.map(function(r){return r.bd;}),
@@ -3389,6 +3409,18 @@ function _renderReportCenterBD(model){
       );
     }
   },0);
+}
+function _reportCenterFilteredBdMonthlyRows(data){
+  var rows=(data && data.rows) ? data.rows.slice() : [];
+  if(_reportCenterBdTrendSearch){
+    rows=rows.filter(function(row){
+      return String(row.bd||'').toLowerCase().indexOf(_reportCenterBdTrendSearch)!==-1;
+    });
+  }
+  if(_reportCenterBdTrendLimit!=='all'){
+    rows=rows.slice(0,Math.max(1,N(_reportCenterBdTrendLimit)));
+  }
+  return rows;
 }
 function _renderReportCenterExport(model){
   document.getElementById('rc_export_meta').innerHTML=
@@ -3504,7 +3536,7 @@ function _reportCenterBdTrendLineChart(id,data,metric,label,fmtFn){
   var el=document.getElementById(id);
   if(!el || !data)return;
   dc(id);
-  var rows=data.rows||[];
+  var rows=_reportCenterFilteredBdMonthlyRows(data);
   var count=Math.max(rows.length,1);
   CH[id]=new Chart(el.getContext('2d'),{
     type:'line',
@@ -3519,7 +3551,7 @@ function _reportCenterBdTrendLineChart(id,data,metric,label,fmtFn){
           backgroundColor:color,
           tension:.32,
           fill:false,
-          pointRadius:2,
+          pointRadius:3,
           pointHoverRadius:4,
           borderWidth:2
         };
@@ -3532,9 +3564,12 @@ function _reportCenterBdTrendLineChart(id,data,metric,label,fmtFn){
       plugins:{
         legend:{
           position:'bottom',
-          labels:{font:{size:9},boxWidth:9,usePointStyle:true}
+          labels:{font:{size:10},boxWidth:9,usePointStyle:true,padding:12}
         },
         tooltip:{callbacks:{
+          title:function(items){
+            return (items && items.length ? items[0].label : '')+' | '+label;
+          },
           label:function(ctx){
             return ctx.dataset.label+': '+(fmtFn?fmtFn(ctx.raw):ctx.raw);
           }
