@@ -860,8 +860,12 @@
           <div class="rc-card">
             <div class="rc-card-head">
               <div>
-                <div class="rc-card-title">Top BD Revenue</div>
-                <div class="rc-card-sub">Bar = current revenue, line = MoM growth</div>
+                <div class="rc-card-title" id="rc_bd_chart_title">Top BD Revenue</div>
+                <div class="rc-card-sub" id="rc_bd_chart_sub">Bar = current revenue, line = MoM growth</div>
+              </div>
+              <div class="rc-view-switch">
+                <button class="rc-view-btn active" id="rc_bd_view_ranking" onclick="switchReportCenterBdView('ranking',this)">Ranking</button>
+                <button class="rc-view-btn" id="rc_bd_view_trend" onclick="switchReportCenterBdView('trend',this)">Monthly Trend</button>
               </div>
             </div>
             <div class="rc-chart-wrap"><canvas id="rc_bd_chart"></canvas></div>

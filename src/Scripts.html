@@ -3065,6 +3065,7 @@ function exportWeeklySummary(){
 
 var _reportCenterTab='summary';
 var _reportCenterModel=null;
+var _reportCenterBdView='ranking';
 function openReportCenter(){
   var meta=_exportGuard('Report Center'); if(!meta)return;
   var overlay=document.getElementById('rcOverlay');
@@ -3081,6 +3082,19 @@ function openReportCenter(){
 function closeReportCenter(){
   var overlay=document.getElementById('rcOverlay');
   if(overlay)overlay.classList.remove('open');
+}
+function switchReportCenterBdView(view,btn){
+  _reportCenterBdView=view||'ranking';
+  var rankingBtn=document.getElementById('rc_bd_view_ranking');
+  var trendBtn=document.getElementById('rc_bd_view_trend');
+  if(rankingBtn)rankingBtn.classList.toggle('active',_reportCenterBdView==='ranking');
+  if(trendBtn)trendBtn.classList.toggle('active',_reportCenterBdView==='trend');
+  if(btn){
+    if(rankingBtn)rankingBtn.classList.remove('active');
+    if(trendBtn)trendBtn.classList.remove('active');
+    btn.classList.add('active');
+  }
+  if(_reportCenterTab==='bd' && _reportCenterModel)_renderReportCenterBD(_reportCenterModel);
 }
 function switchReportCenterTab(tab,btn){
   _reportCenterTab=tab||'summary';
@@ -3116,6 +3130,7 @@ function _buildReportCenterModel(meta){
   var tasks=mp?_buildReportTasks(FR,m,mp):[];
   var bdRows=_buildBDPerformanceRows(FR,m,mp).slice(0,12);
   var carriers=_reportCenterCarrierRows(m);
+  var bdTrend=_reportCenterBdTrendRows(m,bdRows);
   return {
     meta:meta,
     m:m,
@@ -3133,6 +3148,7 @@ function _buildReportCenterModel(meta){
     taskSeries:taskSeries,
     tasks:tasks,
     bdRows:bdRows,
+    bdTrend:bdTrend,
     carriers:carriers,
     zoneTracking:_reportCenterZoneTracking(tasks),
     notes:_reportCenterNotes(m,mp,totalRev,prevRev,totalVol,prevVol,tasks,bdRows,carriers)
@@ -3236,6 +3252,26 @@ function _reportCenterNotes(m,mp,totalRev,prevRev,totalVol,prevVol,tasks,bdRows,
   }
   return notes;
 }
+function _reportCenterBdTrendRows(m,bdRows){
+  var months=_recentMonths(m.key,6);
+  var topBds=bdRows.slice(0,5).map(function(r){return r.bd;});
+  var palette=['#003F5C','#009B9B','#E8622A','#16a34a','#7c3aed','#0f766e'];
+  var series=topBds.map(function(name,idx){
+    return {
+      label:name,
+      color:palette[idx%palette.length],
+      values:months.map(function(mm){
+        return FR.reduce(function(sum,row){
+          return _bdOwnerForReport(row)===name ? sum+N(row[mm.colRev]) : sum;
+        },0);
+      })
+    };
+  });
+  return {
+    labels:months.map(function(mm){return mm.en||mm.key;}),
+    series:series
+  };
+}
 function _renderReportCenterSummary(model){
   var revPct=model.mp&&model.prevRev?pctChg(model.prevRev,model.totalRev):null;
   var volPct=model.mp&&model.prevVol?pctChg(model.prevVol,model.totalVol):null;
@@ -3293,18 +3329,33 @@ function _renderReportCenterBD(model){
     _reportCenterKpi('Avg Success',avgSuccess.toFixed(2)+'%','ค่าเฉลี่ย success rate ของ BD',_reportCenterTrendText(null,''))
   ].join('');
   document.getElementById('rc_bd_table').innerHTML=_reportCenterBdTable(model.bdRows);
+  var titleEl=document.getElementById('rc_bd_chart_title');
+  var subEl=document.getElementById('rc_bd_chart_sub');
   setTimeout(function(){
-    _reportCenterBarLineChart(
-      'rc_bd_chart',
-      top.map(function(r){return r.bd;}),
-      top.map(function(r){return Math.round(r.rev);}),
-      top.map(function(r){return r.momPct;}),
-      'Revenue',
-      'MoM %',
-      '#005F7A',
-      fmtS,
-      function(v){return v==null?'-':v.toFixed(2)+'%';}
-    );
+    if(_reportCenterBdView==='trend'){
+      if(titleEl)titleEl.textContent='BD Monthly Trend';
+      if(subEl)subEl.textContent='Compare monthly revenue across top BDs in current scope';
+      _reportCenterMultiLineChart(
+        'rc_bd_chart',
+        model.bdTrend.labels,
+        model.bdTrend.series,
+        fmtS
+      );
+    }else{
+      if(titleEl)titleEl.textContent='Top BD Revenue';
+      if(subEl)subEl.textContent='Bar = current revenue, line = MoM growth';
+      _reportCenterBarLineChart(
+        'rc_bd_chart',
+        top.map(function(r){return r.bd;}),
+        top.map(function(r){return Math.round(r.rev);}),
+        top.map(function(r){return r.momPct;}),
+        'Revenue',
+        'MoM %',
+        '#005F7A',
+        fmtS,
+        function(v){return v==null?'-':v.toFixed(2)+'%';}
+      );
+    }
   },0);
 }
 function _renderReportCenterExport(model){
@@ -3374,6 +3425,45 @@ function _reportCenterBarLineChart(id,labels,barValues,lineValues,barLabel,lineL
         x:{ticks:{font:{size:10}},grid:{display:false}},
         y:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return barFmt?barFmt(v):v;}},grid:{color:'#eef2f7'}},
         y1:{beginAtZero:false,position:'right',ticks:{font:{size:10},callback:function(v){return lineFmt?lineFmt(v):v;}},grid:{display:false}}
+      }
+    }
+  });
+}
+function _reportCenterMultiLineChart(id,labels,series,fmtFn){
+  var el=document.getElementById(id);
+  if(!el)return;
+  dc(id);
+  CH[id]=new Chart(el.getContext('2d'),{
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:(series||[]).map(function(s){
+        return {
+          label:s.label,
+          data:s.values,
+          borderColor:s.color,
+          backgroundColor:s.color,
+          tension:.34,
+          fill:false,
+          pointRadius:3,
+          pointHoverRadius:5,
+          borderWidth:2
+        };
+      })
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top',labels:{font:{size:10},boxWidth:10}},
+        tooltip:{callbacks:{
+          label:function(ctx){
+            return ctx.dataset.label+': '+(fmtFn?fmtFn(ctx.raw):ctx.raw);
+          }
+        }}
+      },
+      scales:{
+        x:{ticks:{font:{size:10}},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return fmtFn?fmtFn(v):v;}},grid:{color:'#eef2f7'}}
       }
     }
   });
