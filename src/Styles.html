@@ -1640,6 +1640,13 @@ tr:hover td { background: #f8f9ff; }
 .home-kcard-val { font-size: 22px; font-weight: 800; color: var(--kc, var(--pr)); line-height: 1; }
 .home-kcard-mom { font-size: 11px; font-weight: 700; margin-top: 4px; }
 .home-kcard-sub { font-size: 10px; color: var(--t2); margin-top: 3px; }
+.home-viz-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.8fr);gap:12px;margin-bottom:12px;align-items:stretch;}
+.home-viz-card{min-width:0;}
+.home-pace-stack{display:grid;grid-template-columns:1fr;gap:8px;}
+.home-pace-stack>div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;}
+.home-pace-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--t2);margin-bottom:3px;}
+.home-pace-value{font-size:18px;font-weight:900;color:var(--pr);line-height:1.15;}
+@media(max-width:900px){.home-viz-grid{grid-template-columns:1fr;}.home-pace-stack{grid-template-columns:repeat(2,1fr);}}
 
 /* 2-col layout: main + sidebar */
 .home-layout { display: grid; grid-template-columns: 1fr 320px; gap: 12px; margin-bottom: 12px; }

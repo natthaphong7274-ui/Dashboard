@@ -2508,6 +2508,12 @@ function runMultiCompare(){
 
 // ===== TABLE =====
 var tRows=[];
+var _tableCompact = (localStorage.getItem('DASH_TABLE_COMPACT') || '1') !== '0';
+function toggleTableCompact(){
+  _tableCompact = !_tableCompact;
+  localStorage.setItem('DASH_TABLE_COMPACT', _tableCompact ? '1' : '0');
+  renderTable();
+}
 function renderTable(){
   // ★ T03-fix: ถ้า tmonthSel ยังไม่มีค่า ให้ force set ก่อน render
   var _ts=document.getElementById('tmonthSel');
@@ -2548,6 +2554,9 @@ function renderTable(){
   });
   tRows=sorted;
   var hasPhone=R.length&&R.some(function(r){return r['Phone']||r['phone']||r['เบอร์โทร']||r['Tel'];});
+  var compact = _tableCompact;
+  var compactBtn = document.getElementById('table_compact_btn');
+  if (compactBtn) compactBtn.textContent = compact ? 'มุมมองเต็ม' : 'มุมมองกระชับ';
   // helper: แสดงลูกศร sort จริง
   function thS(field,label,extraStyle){
     var isActive=tSortF===field;
@@ -2565,24 +2574,25 @@ function renderTable(){
     +thSL('name','Agent Name')
     +'<th>Code</th>'
     +(hasPhone?'<th>📱 เบอร์</th>':'')
-    +'<th>Zone</th><th>Pkg</th><th>Province</th>'
+    +'<th>Zone</th><th>Pkg</th>'
+    +(compact?'':'<th>Province</th>')
     // ── 💰 Revenue ──
-    +(mp?thS('revP','💰 Rev<br>['+mp.en+']','color:var(--t2);'):'')
+    +(!compact&&mp?thS('revP','💰 Rev<br>['+mp.en+']','color:var(--t2);'):'')
     +thS('rev','💰 Rev<br>['+m.en+']','color:var(--ac);')
     // ── 📦 Volume ──
-    +(mp?thS('volP','📦 Vol<br>['+mp.en+']','color:var(--t2);'):'')
+    +(!compact&&mp?thS('volP','📦 Vol<br>['+mp.en+']','color:var(--t2);'):'')
     +thS('vol','📦 Vol<br>['+m.en+']','color:var(--or);')
     // ── 📦 Vol/วัน ──
-    +thS('avd','📦 Vol/วัน<br>['+m.en+'] (÷'+getDAY1ForMonth(m.key)+'วัน)','color:var(--c-avd);')
-    +(mp?thS('avdP','📦 Vol/วัน<br>['+mp.en+']','color:var(--t2);')+thS('avdDiff','Diff<br>Vol/วัน','color:var(--c-avd);'):'')
+    +(!compact?thS('avd','📦 Vol/วัน<br>['+m.en+'] (÷'+getDAY1ForMonth(m.key)+'วัน)','color:var(--c-avd);'):'')
+    +(!compact&&mp?thS('avdP','📦 Vol/วัน<br>['+mp.en+']','color:var(--t2);')+thS('avdDiff','Diff<br>Vol/วัน','color:var(--c-avd);'):'')
     // ── 📐 Avg Rev ──
-    +thS('avg','📐 Avg Rev<br>['+m.en+']','color:var(--pr);')
+    +(!compact?thS('avg','📐 Avg Rev<br>['+m.en+']','color:var(--pr);'):'')
     // ── 🔸 Avg Rev/วัน ──
     +thS('ard','🔸 Avg Rev/วัน<br>['+m.en+'] (÷'+getDAY1ForMonth(m.key)+'วัน)','color:var(--c-ard);')
     +(mp?thS('ardP','🔸 Avg Rev/วัน<br>['+mp.en+']','color:var(--t2);')+thS('ardDiff','Diff Rev/วัน','color:var(--c-ard);')+'<th>%</th>':'')
     // ── 🏷️ Avg Rev/ชิ้น ──
-    +thS('ap','🏷️ Avg/ชิ้น<br>['+m.en+']','color:var(--c-apc);')
-    +(mp?thS('apP','🏷️ Avg/ชิ้น<br>['+mp.en+']','color:var(--c-apc);')+thS('apDiff','Diff/ชิ้น','color:var(--c-apc);')+'<th>%</th>':'')
+    +(!compact?thS('ap','🏷️ Avg/ชิ้น<br>['+m.en+']','color:var(--c-apc);'):'')
+    +(!compact&&mp?thS('apP','🏷️ Avg/ชิ้น<br>['+mp.en+']','color:var(--c-apc);')+thS('apDiff','Diff/ชิ้น','color:var(--c-apc);')+'<th>%</th>':'')
     +'<th>Status</th></tr>';
   document.getElementById('thead').innerHTML=th;
   var start=(tPg-1)*pgPer,slice=tRows.slice(start,start+pgPer);
@@ -2608,26 +2618,27 @@ function renderTable(){
       +'<td style="font-weight:700">'+_esc(r['Agent Name']||'-')+'</td>'
       +'<td style="color:var(--t2);font-size:11px">'+_esc(r['Agent Code']||'-')+'</td>'
       +(hasPhone?'<td style="font-size:11px">'+_esc(r['Phone']||r['phone']||r['เบอร์โทร']||r['Tel']||'-')+'</td>':'')
-      +'<td>'+_esc(r['Zone Name']||'-')+'</td><td>'+_esc(r['Package']||'-')+'</td><td>'+_esc(r['Province']||'-')+'</td>'
+      +'<td>'+_esc(r['Zone Name']||'-')+'</td><td>'+_esc(r['Package']||'-')+'</td>'
+      +(compact?'':'<td>'+_esc(r['Province']||'-')+'</td>')
       // Revenue
-      +(mp?'<td class="tdr" style="color:var(--t2)">'+fmtInt(revP)+'</td>':'')
+      +(!compact&&mp?'<td class="tdr" style="color:var(--t2)">'+fmtInt(revP)+'</td>':'')
       +'<td class="tdr" style="font-weight:700;color:var(--ac)">'+fmtInt(revC)+'</td>'
       // Volume
-      +(mp?'<td class="tdr" style="color:var(--t2)">'+fmtInt(volP)+'</td>':'')
+      +(!compact&&mp?'<td class="tdr" style="color:var(--t2)">'+fmtInt(volP)+'</td>':'')
       +'<td class="tdr" style="font-weight:700;color:var(--or)">'+fmtInt(volC)+'</td>'
       // Vol/วัน ทั้ง 2 เดือน
-      +'<td class="tdr" style="color:var(--c-avd);font-weight:700">'+fmtF(avd)+'</td>'
-      +(mp?'<td class="tdr" style="color:var(--t2)">'+fmtF(avdP)+'</td>'+'<td class="tdr '+(diffAvd<0?'tdneg':diffAvd>0?'tdpos':'')+'">'+(diffAvd>0?'+':'')+fmtF(diffAvd)+'</td>':'')
+      +(!compact?'<td class="tdr" style="color:var(--c-avd);font-weight:700">'+fmtF(avd)+'</td>':'')
+      +(!compact&&mp?'<td class="tdr" style="color:var(--t2)">'+fmtF(avdP)+'</td>'+'<td class="tdr '+(diffAvd<0?'tdneg':diffAvd>0?'tdpos':'')+'">'+(diffAvd>0?'+':'')+fmtF(diffAvd)+'</td>':'')
       // Avg Rev (จาก Sheet) — เดือนปัจจุบันเท่านั้น
-      +'<td class="tdr" style="color:var(--pr)">'+fmtInt(aC)+'</td>'
+      +(!compact?'<td class="tdr" style="color:var(--pr)">'+fmtInt(aC)+'</td>':'')
       // Avg Rev/วัน = Rev ÷ DAY1
       +'<td class="tdr" style="color:var(--c-ard);font-weight:700">'+fmtF(ard)+'</td>'
       +(mp?'<td class="tdr" style="color:var(--t2)">'+fmtF(ardP)+'</td>'
           +'<td class="tdr '+(diffArd<0?'tdneg':diffArd>0?'tdpos':'')+'">'+(diffArd>0?'+':'')+fmtF(diffArd)+'</td>'
           +'<td>'+pill(ardP>0?pctChg(ardP,ard):null)+'</td>':'')
       // Avg Rev/ชิ้น = Rev ÷ Vol
-      +'<td class="tdr" style="color:var(--c-apc);font-weight:700">'+fmtF(ap)+'</td>'
-      +(mp?'<td class="tdr" style="color:var(--c-apc)">'+fmtF(apPrev)+'</td>'
+      +(!compact?'<td class="tdr" style="color:var(--c-apc);font-weight:700">'+fmtF(ap)+'</td>':'')
+      +(!compact&&mp?'<td class="tdr" style="color:var(--c-apc)">'+fmtF(apPrev)+'</td>'
           +'<td class="tdr '+(apDiff<0?'tdneg':apDiff>0?'tdpos':'')+'">'+(apDiff>0?'+':'')+fmtF(apDiff)+'</td>'
           +'<td>'+pill(apPct)+'</td>':'')
       +'<td><span class="sbadge sb-other">Active</span></td></tr>'; // T03: colGroup removed
@@ -8362,6 +8373,75 @@ function _homeMoM(cur, prev) {
   return ((cur - prev) / prev * 100).toFixed(1);
 }
 
+function _homeScopeTrend(rows, targetValue) {
+  rows = rows || [];
+  var months = (MONTHS || []).filter(function(mm){ return mm && mm.colRev && mm.colVol; }).slice(-6);
+  var labels = months.map(function(mm){ return mm.th || mm.en || mm.key; });
+  var rev = months.map(function(mm){ return Math.round(rows.reduce(function(s,r){ return s + N(r[mm.colRev]); }, 0)); });
+  var vol = months.map(function(mm){ return Math.round(rows.reduce(function(s,r){ return s + N(r[mm.colVol]); }, 0)); });
+  var avg = months.map(function(mm){
+    var totalRev = rows.reduce(function(s,r){ return s + N(r[mm.colRev]); }, 0);
+    var totalVol = rows.reduce(function(s,r){ return s + N(r[mm.colVol]); }, 0);
+    return totalVol > 0 ? Math.round(totalRev / totalVol) : 0;
+  });
+  var cur = months.length ? months[months.length - 1] : null;
+  var actual = rev.length ? rev[rev.length - 1] : 0;
+  var elapsed = cur && cur.currentMonth ? Math.max(1, getDAY1ForMonth(cur.key)) : 30;
+  var days = 30;
+  var forecast = cur && cur.currentMonth ? Math.round(actual / elapsed * days) : actual;
+  var requiredDaily = targetValue > actual ? Math.round((targetValue - actual) / Math.max(days - elapsed, 1)) : 0;
+  return { labels:labels, rev:rev, vol:vol, avg:avg, actual:actual, forecast:forecast, requiredDaily:requiredDaily };
+}
+
+function _homeVizSection(id, rows, targetValue, hasTarget, title) {
+  var trend = _homeScopeTrend(rows, hasTarget ? targetValue : 0);
+  var forecastColor = hasTarget && trend.forecast < targetValue ? '#dc2626' : '#16a34a';
+  return '<div class="home-viz-grid">'
+    + '<div class="ccard home-viz-card">'
+    + '<div class="chdr"><div><div class="ctitle">'+_esc(title || 'Monthly Trend')+'</div><div class="csub">Revenue / Volume / Avg Rev ต่อชิ้น ตาม scope ปัจจุบัน</div></div><span class="cbadge" style="font-size:10px">Phase 3.5</span></div>'
+    + '<div style="height:260px"><canvas id="'+id+'_trend"></canvas></div>'
+    + '</div>'
+    + '<div class="ccard home-viz-card">'
+    + '<div class="ctitle" style="margin-bottom:10px">Target Pace</div>'
+    + '<div class="home-pace-stack">'
+    + '<div><div class="home-pace-label">Actual MTD</div><div class="home-pace-value">฿'+fmtS(trend.actual)+'</div></div>'
+    + '<div><div class="home-pace-label">Forecast</div><div class="home-pace-value" style="color:'+forecastColor+'">฿'+fmtS(trend.forecast)+'</div></div>'
+    + '<div><div class="home-pace-label">Target</div><div class="home-pace-value">'+(hasTarget?'฿'+fmtS(targetValue):'ยังไม่ตั้งเป้า')+'</div></div>'
+    + '<div><div class="home-pace-label">Required / day</div><div class="home-pace-value">'+(hasTarget&&trend.requiredDaily>0?'฿'+fmtS(trend.requiredDaily):'OK')+'</div></div>'
+    + '</div>'
+    + '<div style="font-size:11px;color:var(--t2);line-height:1.6;margin-top:10px">Forecast ใช้ยอด MTD เทียบจำนวนวันที่ผ่านไป ถ้าเป็นเดือนย้อนหลังจะใช้ actual จริง ไม่คูณ pace เพิ่ม</div>'
+    + '</div>'
+    + '</div>';
+}
+
+function _homeRenderViz(id, rows, targetValue, hasTarget) {
+  var el = document.getElementById(id + '_trend');
+  if (!el) return;
+  var trend = _homeScopeTrend(rows, hasTarget ? targetValue : 0);
+  dc(id + '_trend');
+  var targetLine = trend.labels.map(function(){ return hasTarget ? Math.round(targetValue || 0) : null; });
+  CH[id + '_trend'] = new Chart(el.getContext('2d'), {
+    data: {
+      labels: trend.labels,
+      datasets: [
+        { type:'bar', label:'Revenue', data:trend.rev, backgroundColor:'rgba(0,63,92,.72)', borderRadius:6, yAxisID:'y' },
+        { type:'line', label:'Volume', data:trend.vol, borderColor:'#E8622A', backgroundColor:'rgba(232,98,42,.12)', tension:.35, yAxisID:'y1' },
+        { type:'line', label:'Avg Rev/Vol', data:trend.avg, borderColor:'#009B9B', borderDash:[5,4], tension:.35, yAxisID:'y' },
+        { type:'line', label:'Target', data:targetLine, borderColor:'rgba(220,38,38,.55)', borderDash:[8,5], pointRadius:0, tension:0, yAxisID:'y' }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}}, tooltip:{callbacks:{label:function(ctx){ return ctx.dataset.label + ': ' + fmtS(ctx.raw || 0); }}}},
+      scales:{
+        x:{ticks:{font:{size:10}},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return fmtS(v);}},grid:{color:'#f0f4f8'}},
+        y1:{beginAtZero:true,position:'right',ticks:{font:{size:10},callback:function(v){return fmtS(v);}},grid:{display:false}}
+      }
+    }
+  });
+}
+
 function _homeMiniBar(zoneData, colRev, maxVal) {
   var colors = ['#003F5C','#009B9B','#E8622A','#16a34a','#5C3D8F','#00788C'];
   var bars = zoneData.slice(0,6).map(function(z, i) {
@@ -8665,6 +8745,8 @@ function _renderHomeDirector(m, mp) {
     + '</div>';
 
   html += '</div>'; // close KPI row
+
+  html += _homeVizSection('home_dir', FR, DIR_TARGET, dirHasTarget, 'Revenue / Volume Trend ประเทศ');
 
   // ══════════════════════════════════════════════════════
   // ROW 2: แผนที่ FULL WIDTH (ย้ายขึ้นมาก่อน Zone Performance)
@@ -9292,6 +9374,7 @@ function _renderHomeDirector(m, mp) {
   html = bdlbCss + html;
 
   document.getElementById('home_content').innerHTML = html;
+  _homeRenderViz('home_dir', FR, DIR_TARGET, dirHasTarget);
   _homeInitMap(FR, m);
   _homePopulateTrkSummary();
   _initBDLeaderboard();
@@ -9834,6 +9917,8 @@ function _renderHomeAM(m, mp) {
     + '</div>';
 
   html += '</div>'; // close KPI row
+
+  html += _homeVizSection('home_am', myRows, zoneTarget, zoneHasTarget, 'Revenue / Volume Trend ของ Zone');
 
   // ════════════════════════════════════════════════════
   // ROW 2 — แผนที่ Full Width
@@ -10454,6 +10539,7 @@ function _renderHomeAM(m, mp) {
   html += '</div>'; // close ROW 4 grid
 
   document.getElementById('home_content').innerHTML = html;
+  _homeRenderViz('home_am', myRows, zoneTarget, zoneHasTarget);
   _homeInitMap(myRows, m);
   _homePopulateTrkSummary();
   } catch(err) {
@@ -10712,7 +10798,7 @@ function renderActionCenter(items, m) {
       + '<div style="font-size:10px;color:#64748b;margin-top:2px">'+_esc(code)+' · '+_esc(zone)+' · '+_esc(pkg)+' · Rev '+fmtS(Math.round(rev))+'</div>'
       + '<div style="font-size:10px;color:#334155;margin-top:3px">'+_esc(reason)+'</div>'
       + '</div>'
-      + '<div><div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase">Priority</div><div style="font-size:20px;font-weight:900;color:'+scoreColor+'">'+item.score+'</div></div>'
+      + '<div><div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase">Priority</div><div style="font-size:20px;font-weight:900;color:'+scoreColor+'">'+item.score+'</div><div style="height:5px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:4px"><span style="display:block;height:100%;width:'+item.score+'%;background:'+scoreColor+';border-radius:99px"></span></div></div>'
       + '<div><div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase">Next Follow-up</div><div style="font-size:11px;font-weight:800;color:#334155">'+_nextFollowUpLabel(trk)+'</div></div>'
       + '<div style="display:flex;flex-direction:column;gap:5px">'
       + '<select class="trk-status '+(item.type==='growth'?_growthStatusCls(trk.status):_trkStatusCls(trk.status))+'" data-trk="'+item.key+'" data-field="status" onchange="'+item.handler+'(this)" style="width:100%;font-size:10px;padding:4px 6px">'+item.statusOptions+'</select>'
@@ -10964,6 +11050,7 @@ function _renderHomeBD(m, mp) {
   html += '</div>'; // close home-kpi-grid
 
   html += renderActionCenter(actionList, m);
+  html += _homeVizSection('home_bd', myRows, bdTarget, bdHasTarget, 'Revenue / Volume Trend ของพอร์ต');
 
   // ── คำนวณมิติ Loss group ──
   var lossRows = []; // T03
@@ -11365,6 +11452,7 @@ function _renderHomeBD(m, mp) {
   html += '</div>'; // end grid (Risk only)
 
   document.getElementById('home_content').innerHTML = html;
+  _homeRenderViz('home_bd', myRows, bdTarget, bdHasTarget);
   _homeInitMap(myRows, m);
   _homePopulateTrkSummary();
   } catch(err) {
