@@ -64,3 +64,9 @@ Branch: `codex/phase-6`
 - ยังไม่แก้โครงสร้าง Google Sheet
 - ยังไม่เพิ่ม sheet ใหม่
 - Data quality เป็น warning/read-only เท่านั้น ยังไม่ auto repair ข้อมูล
+
+## เก็บงานเพิ่มเติมหลังเช็ค Phase 6
+
+- Monthly Target และ BD Monthly Target ใช้ปีจากข้อมูลจริงผ่าน `_targetDataYear()` แล้ว ไม่อิง `DATA_YEAR` default แบบค้างค่า
+- Batch save ของ Tracking/Risk และ Growth ตรวจ `lastKnownUpdatedAt` เทียบกับ `updatedAt` ล่าสุดก่อนเขียนข้อมูล ถ้ามีคนอื่นแก้ไว้จะคืน conflict และไม่เขียนทับเงียบ
+- เมื่อ session หมดอายุหรือ token หาย จะหยุด polling ของ Tracking, Risk และ Growth พร้อมกัน ไม่เหลือ polling ค้างหลัง logout/session expire

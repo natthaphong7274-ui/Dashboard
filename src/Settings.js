@@ -84,11 +84,23 @@ function setGrowthThreshold(token, value) {
 var MONTHLY_TARGET_PREFIX = 'MONTHLY_TARGET_';
 var BD_MONTHLY_TARGET_PREFIX = 'BD_MONTHLY_TARGET_';
 
+function _targetDataYear() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    buildMonthSheets(ss);
+  } catch(e) {}
+  return DATA_YEAR || '2026';
+}
+
+function _monthlyTargetKey(monthKey) {
+  return MONTHLY_TARGET_PREFIX + _targetDataYear() + '_' + String(monthKey || '').toLowerCase();
+}
+
 // getMonthlyTarget(token, monthKey) — ดึงเป้าของเดือนนั้น (ทุก role)
 function getMonthlyTarget(token, monthKey) {
   var session = _requireSession(token || '', 'GET_MONTHLY_TARGET');
   if (!session.ok) return session;
-  var key = MONTHLY_TARGET_PREFIX + DATA_YEAR + '_' + (monthKey || '').toLowerCase();
+  var key = _monthlyTargetKey(monthKey);
   var raw = PropertiesService.getScriptProperties().getProperty(key);
   if (!raw) return { ok: true, target: null };
   try { return { ok: true, target: JSON.parse(raw) }; }
@@ -107,7 +119,7 @@ function setMonthlyTarget(token, monthKey, type, value, note) {
   if (isNaN(v) || v <= 0) return { ok: false, error: 'ค่าไม่ถูกต้อง' };
   if (type === 'pct' && v > 1000) return { ok: false, error: '% ไม่ควรเกิน 1000' };
   var target = { type: type, value: v, note: note || '', setBy: session.username, setAt: _bkkTimestamp() };
-  var key = MONTHLY_TARGET_PREFIX + DATA_YEAR + '_' + monthKey.toLowerCase();
+  var key = _monthlyTargetKey(monthKey);
   PropertiesService.getScriptProperties().setProperty(key, JSON.stringify(target));
   var desc = type === 'pct'
     ? 'ตั้งเป้า ' + monthKey + ' = ' + v + '% ของเดือนก่อน'
@@ -124,7 +136,7 @@ function getAllMonthlyTargets(token) {
   var result = {};
   var ms = _getMonthSheets(); // auto-discover
   ms.forEach(function(m) {
-    var key = MONTHLY_TARGET_PREFIX + DATA_YEAR + '_' + m.monthKey;
+    var key = _monthlyTargetKey(m.monthKey);
     var raw = props.getProperty(key);
     if (raw) { try { result[m.monthKey] = JSON.parse(raw); } catch(e) {} }
   });
@@ -138,14 +150,14 @@ function clearMonthlyTarget(token, monthKey) {
   var roleCheck = _requireRole(session, 'Director', 'CLEAR_MONTHLY_TARGET');
   if (!roleCheck.ok) return roleCheck;
   if (!monthKey) return { ok: false, error: 'ไม่ระบุ monthKey' };
-  var key = MONTHLY_TARGET_PREFIX + DATA_YEAR + '_' + monthKey.toLowerCase();
+  var key = _monthlyTargetKey(monthKey);
   PropertiesService.getScriptProperties().deleteProperty(key);
   logActivity(session.username, session.role, 'CLEAR_MONTHLY_TARGET', 'ลบเป้าหมายเดือน ' + monthKey);
   return { ok: true };
 }
 
 function _bdTargetKey(monthKey, bdUsername) {
-  return BD_MONTHLY_TARGET_PREFIX + DATA_YEAR + '_' + String(monthKey || '').toLowerCase() + '_' + String(bdUsername || '').toLowerCase();
+  return BD_MONTHLY_TARGET_PREFIX + _targetDataYear() + '_' + String(monthKey || '').toLowerCase() + '_' + String(bdUsername || '').toLowerCase();
 }
 
 function getBdMonthlyTarget(token, monthKey, bdUsername) {
@@ -201,7 +213,7 @@ function getAllBdMonthlyTargets(token) {
   var props = PropertiesService.getScriptProperties();
   var all = props.getProperties();
   var result = {};
-  var prefix = BD_MONTHLY_TARGET_PREFIX + DATA_YEAR + '_';
+  var prefix = BD_MONTHLY_TARGET_PREFIX + _targetDataYear() + '_';
   Object.keys(all).forEach(function(k) {
     if (k.indexOf(prefix) !== 0) return;
     var rest = k.slice(prefix.length);

@@ -6615,15 +6615,18 @@ function saveAllTracking(tab){
       if(isGrowth){
         batch.push({key:key,status:e.status||'',key_success:e.key_success||'',note:e.note||'',
           v21:e.v21||'',agentCode:e.agentCode||'',package:e.package||'',
-          agentName:e.agentName||'',city:e.city||'',province:e.province||'',zoneName:e.zoneName||''});
+          agentName:e.agentName||'',city:e.city||'',province:e.province||'',zoneName:e.zoneName||'',
+          lastKnownUpdatedAt:e.updatedAt||''});
       } else if(false){
         batch.push({key:key,type:e.type||'',status:e.status||'',reason:e.reason||'',note:e.note||'',
           v21:e.v21||'',agentCode:e.agentCode||'',package:e.package||'',
-          agentName:e.agentName||'',city:e.city||'',province:e.province||'',zoneName:e.zoneName||''});
+          agentName:e.agentName||'',city:e.city||'',province:e.province||'',zoneName:e.zoneName||'',
+          lastKnownUpdatedAt:e.updatedAt||''});
       } else {
         batch.push({key:key,status:e.status||'',reason:e.reason||'',note:e.note||'',
           v21:e.v21||'',agentCode:e.agentCode||'',package:e.package||'',
-          agentName:e.agentName||'',city:e.city||'',province:e.province||'',zoneName:e.zoneName||''});
+          agentName:e.agentName||'',city:e.city||'',province:e.province||'',zoneName:e.zoneName||'',
+          lastKnownUpdatedAt:e.updatedAt||''});
       }
     }
   });
@@ -6637,6 +6640,11 @@ function saveAllTracking(tab){
                : 'saveTrackingBatch';
   google.script.run
     .withSuccessHandler(function(res){
+      if(res&&res.conflict){
+        _trkToast('Conflict: refresh before saving', true);
+        if(msgEl){msgEl.textContent='Conflict: refresh before saving';setTimeout(function(){msgEl.style.display='none';},4500);}
+        return;
+      }
       if(res&&res.ok){
         _trkToast('💾 บันทึก '+batch.length+' รายการสำเร็จ!');
         if(msgEl){msgEl.textContent='✅ บันทึก '+batch.length+' รายการแล้ว';setTimeout(function(){msgEl.style.display='none';},3000);}
@@ -6732,12 +6740,14 @@ function _startHeartbeat() {
   _hbInterval = setInterval(function() {
     try {
       var token = sessionStorage.getItem('DASH_TOKEN') || '';
-      if (!token) { _stopHeartbeat(); return; }
+      if (!token) { _stopHeartbeat(); _stopTrkPoll(); _stopRiskPoll(); _stopGrowthPoll(); return; }
       google.script.run
         .withSuccessHandler(function(res) {
           if (res && res.ok === false) {
             _stopHeartbeat();
             _stopTrkPoll();
+            _stopRiskPoll();
+            _stopGrowthPoll();
             sessionStorage.removeItem('DASH_TOKEN');
             _currentUser = null;
             _stopWatermark();

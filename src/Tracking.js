@@ -682,6 +682,7 @@ function saveTrackingBatch(token, batch) {
     var kIdx    = headers.indexOf('key');
     var cpIdx   = headers.indexOf('cutoffPeriod');
     var znIdx   = headers.indexOf('zoneName');
+    var uaIdx   = headers.indexOf('updatedAt');
     var cutoffPeriod = _trackingCutoffPeriodKey();
     var now     = _bkkTimestamp();
     var updater = session.username;
@@ -691,11 +692,17 @@ function saveTrackingBatch(token, batch) {
     for (var i = 1; i < data.length; i++) {
       var k = String(data[i][kIdx] || '').trim();
       var cp = cpIdx >= 0 ? String(data[i][cpIdx] || '').trim() : '';
-      if (k && cp === cutoffPeriod) existingMap[k] = { row: i + 1, zoneName: znIdx >= 0 ? String(data[i][znIdx] || '') : '' };
+      if (k && cp === cutoffPeriod) {
+        existingMap[k] = {
+          row: i + 1,
+          zoneName: znIdx >= 0 ? String(data[i][znIdx] || '') : '',
+          updatedAt: uaIdx >= 0 ? String(data[i][uaIdx] || '') : ''
+        };
+      }
     }
 
-    var toAppend  = [];
-    var savedCount = 0;
+    var writable = [];
+    var conflicts = [];
 
     batch.forEach(function(payload) {
       if (!payload.key) return;
@@ -704,6 +711,29 @@ function saveTrackingBatch(token, batch) {
         _auditDenied(session, 'SAVE_TRACKING_BATCH', 'key=' + payload.key + ' zone=' + ((existing && existing.zoneName) || payload.zoneName || '-'));
         return;
       }
+      if (existing && _hasTrackingConflict(payload, existing.updatedAt)) {
+        logActivity(session.username, session.role, 'TRACKING_BATCH_CONFLICT', 'key=' + payload.key + ' current=' + existing.updatedAt + ' known=' + (payload.lastKnownUpdatedAt || payload.updatedAt || ''));
+        conflicts.push(_trackingConflictResult('risk', payload, existing.updatedAt));
+        return;
+      }
+      writable.push({ payload: payload, existing: existing });
+    });
+
+    if (conflicts.length) {
+      return {
+        ok: false,
+        conflict: true,
+        conflicts: conflicts,
+        error: 'Some rows were updated by someone else. Please refresh before saving.'
+      };
+    }
+
+    var toAppend  = [];
+    var savedCount = 0;
+
+    writable.forEach(function(item) {
+      var payload = item.payload;
+      var existing = item.existing;
       var rowData = [
         payload.agentCode || '',
         payload.agentName || '',
@@ -952,6 +982,7 @@ function saveGrowthTrackingBatch(token, batch) {
     var kIdx    = headers.indexOf('key');
     var cpIdx   = headers.indexOf('cutoffPeriod');
     var znIdx   = headers.indexOf('zoneName');
+    var uaIdx   = headers.indexOf('updatedAt');
     var cutoffPeriod = _trackingCutoffPeriodKey();
     var now     = _bkkTimestamp();
     var updater = session.username;
@@ -960,11 +991,17 @@ function saveGrowthTrackingBatch(token, batch) {
     for (var i = 1; i < data.length; i++) {
       var k = String(data[i][kIdx] || '').trim();
       var cp = cpIdx >= 0 ? String(data[i][cpIdx] || '').trim() : '';
-      if (k && cp === cutoffPeriod) existingMap[k] = { row: i + 1, zoneName: znIdx >= 0 ? String(data[i][znIdx] || '') : '' };
+      if (k && cp === cutoffPeriod) {
+        existingMap[k] = {
+          row: i + 1,
+          zoneName: znIdx >= 0 ? String(data[i][znIdx] || '') : '',
+          updatedAt: uaIdx >= 0 ? String(data[i][uaIdx] || '') : ''
+        };
+      }
     }
 
-    var toAppend  = [];
-    var savedCount = 0;
+    var writable = [];
+    var conflicts = [];
 
     batch.forEach(function(payload) {
       if (!payload.key) return;
@@ -973,6 +1010,29 @@ function saveGrowthTrackingBatch(token, batch) {
         _auditDenied(session, 'SAVE_GROWTH_TRACKING_BATCH', 'key=' + payload.key + ' zone=' + ((existing && existing.zoneName) || payload.zoneName || '-'));
         return;
       }
+      if (existing && _hasTrackingConflict(payload, existing.updatedAt)) {
+        logActivity(session.username, session.role, 'GROWTH_TRACKING_BATCH_CONFLICT', 'key=' + payload.key + ' current=' + existing.updatedAt + ' known=' + (payload.lastKnownUpdatedAt || payload.updatedAt || ''));
+        conflicts.push(_trackingConflictResult('growth', payload, existing.updatedAt));
+        return;
+      }
+      writable.push({ payload: payload, existing: existing });
+    });
+
+    if (conflicts.length) {
+      return {
+        ok: false,
+        conflict: true,
+        conflicts: conflicts,
+        error: 'Some rows were updated by someone else. Please refresh before saving.'
+      };
+    }
+
+    var toAppend  = [];
+    var savedCount = 0;
+
+    writable.forEach(function(item) {
+      var payload = item.payload;
+      var existing = item.existing;
       var rowData = [
         payload.agentCode  || '',
         payload.agentName  || '',
