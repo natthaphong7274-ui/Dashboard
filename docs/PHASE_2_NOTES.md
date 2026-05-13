@@ -27,6 +27,13 @@ Branch: `codex/phase-2`
 - รวมจำนวนงานทั้งหมด, งานเสร็จ, งานกำลังทำ และงานที่ยังรอ
 - แสดง progress bar จากสถานะ tracking จริง โดยไม่เพิ่มชีตใหม่และไม่เปลี่ยน schema เดิม
 
+### 4. ลายน้ำกันแคปหน้าจอ
+
+- เพิ่ม overlay ลายน้ำซ้ำทั่วหน้าจอหลัง login/session ผ่าน
+- ลายน้ำแสดงชื่อผู้ใช้, role และเวลาปัจจุบัน เพื่อให้ trace ได้หากมีการแคปหรือถ่ายหน้าจอ
+- overlay ใช้ `pointer-events:none` เพื่อไม่รบกวนการคลิกและการใช้งาน dashboard
+- ซ่อน overlay อัตโนมัติเมื่อ logout หรือ session หมดอายุ
+
 ## จุดที่ควรเช็กบน dev
 
 1. Login เป็น Director, AM และ BD แล้วเข้า Home
@@ -34,6 +41,7 @@ Branch: `codex/phase-2`
 3. เดือนที่ตั้ง target แล้วต้องเห็น progress bar และเปอร์เซ็นต์จาก target config จริง
 4. Tracking summary ต้องแสดง Daily Task Progress เมื่อมี tracking status
 5. หน้า Home ต้องไม่แสดงร้านหรือตัวเลข mock จาก legacy role map
+6. หลัง login ต้องเห็นลายน้ำกันแคปกระจายบนหน้าจอ และยังคลิกใช้งาน dashboard ได้ตามปกติ
 
 ## ข้อจำกัดที่ยังคงไว้
 

@@ -80,16 +80,28 @@ function _formatWatermarkTime(d){
 }
 function _updateWatermark(){
   var el = document.getElementById('dashboard_watermark');
-  if(!el) return;
+  var captureEl = document.getElementById('dashboard_capture_watermark');
+  if(!el && !captureEl) return;
   if(!_currentUser){
-    el.classList.remove('on');
-    el.innerHTML = '';
+    if(el){ el.classList.remove('on'); el.innerHTML = ''; }
+    if(captureEl){ captureEl.classList.remove('on'); captureEl.innerHTML = ''; }
     return;
   }
   var name = _currentUser.displayName || _currentUser.username || '-';
   var role = _currentUser.role || '-';
-  el.innerHTML = '<strong>Internal Use Only</strong><br>' + _uiText(name) + ' | ' + _uiText(role) + ' | ' + _formatWatermarkTime(new Date());
-  el.classList.add('on');
+  var stamp = _formatWatermarkTime(new Date());
+  if(el){
+    el.innerHTML = '<strong>Internal Use Only</strong><br>' + _uiText(name) + ' | ' + _uiText(role) + ' | ' + stamp;
+    el.classList.add('on');
+  }
+  if(captureEl){
+    var captureText = 'CONFIDENTIAL · ' + name + ' · ' + role + ' · ' + stamp;
+    var safeText = _uiText(captureText);
+    var tiles = [];
+    for(var i=0;i<45;i++) tiles.push('<span>'+safeText+'</span>');
+    captureEl.innerHTML = tiles.join('');
+    captureEl.classList.add('on');
+  }
 }
 function _startWatermark(){
   _stopWatermark();
@@ -100,6 +112,8 @@ function _stopWatermark(){
   if(_watermarkTimer){ clearInterval(_watermarkTimer); _watermarkTimer = null; }
   var el = document.getElementById('dashboard_watermark');
   if(el){ el.classList.remove('on'); el.innerHTML = ''; }
+  var captureEl = document.getElementById('dashboard_capture_watermark');
+  if(captureEl){ captureEl.classList.remove('on'); captureEl.innerHTML = ''; }
 }
 // ── วันที่และ divisor ────────────────────────────────────────────────
 function daysInMonth(year, month){ return new Date(year, month, 0).getDate(); }
