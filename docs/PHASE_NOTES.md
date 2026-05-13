@@ -1,60 +1,37 @@
-# Dashboard Improvement Phase Notes
+# บันทึกการทำงาน Phase 1
 
-This file records what each implementation branch is intended to contain.
+Branch: `codex/phase-1`
 
-## codex/phase-0
+Phase นี้ต่อยอดจาก `codex/phase-0` โดยเน้นงาน Security และการกันระบบพังตามแผนงานหลัก
 
-Base stability work for the dashboard UI.
+## สิ่งที่ทำ
 
-- Adds shared UI state helpers for loading, empty, and error states.
-- Starts replacing ad hoc inline loading/error HTML in core dashboard flows.
-- Adds the dashboard watermark container.
-- Shows watermark details after login/session validation.
-- Updates watermark timestamp every minute.
-- Hides watermark on logout or session expiry.
-- Keeps business logic and Google Sheet structure unchanged.
-
-Primary files:
-
-- `src/Scripts.html`
-- `src/Body.html`
-- `src/Styles.html`
-
-Validation performed:
-
-- JavaScript syntax check for all script blocks in `src/Scripts.html`.
-- `git diff --check`.
-
-## codex/phase-1
-
-Security and resilience work built on top of `codex/phase-0`.
-
-- Adds central server-side permission helpers:
+- เพิ่ม helper กลางฝั่ง server สำหรับตรวจสิทธิ์:
   - `_requireSession`
   - `_requireRole`
   - `_canAccessZone`
   - `_canAccessRow`
   - `_requireRowAccess`
-- Requires a valid session for core data loading.
-- Filters Tracking and Growth Tracking data by role and zone.
-- Blocks Tracking and Growth Tracking saves outside the user's permitted zone.
-- Keeps Director access unrestricted where expected.
-- Adds `PERMISSION_DENIED` audit logging for blocked actions.
-- Converts Director-only Settings actions to use the shared guard helpers.
-- Strengthens frontend escaping for key dashboard table rendering.
-- Adds CSV export guard requiring an active session.
-- Adds CSV metadata watermark:
+- บังคับให้การโหลดข้อมูลหลักต้องมี session ที่ถูกต้อง
+- กรองข้อมูล Tracking และ Growth Tracking ตาม role/zone
+- กันไม่ให้ BD/AM บันทึก Tracking หรือ Growth Tracking นอก zone ที่มีสิทธิ์
+- คงสิทธิ์ Director ให้เห็นและจัดการข้อมูลได้ตามเดิม
+- เพิ่ม audit log สำหรับ action ที่ถูกปฏิเสธด้วย `PERMISSION_DENIED`
+- ปรับ action ฝั่ง Settings ที่เป็น Director-only ให้ใช้ permission guard กลาง
+- ปรับการ escape ข้อมูลในตารางสำคัญเพื่อลดความเสี่ยง XSS
+- เพิ่ม guard ตอน export CSV ให้ต้องมี session ก่อน export
+- เพิ่ม metadata ลงใน CSV export:
   - `Internal Use Only`
-  - exported by
+  - ผู้ export
   - role
   - scope
-  - generated time
-- Escapes CSV cells safely.
-- Replaces `Math.random()` token generation with `Utilities.getUuid()`.
-- Validates token format before reading session data.
-- Logs malformed token attempts as `INVALID_TOKEN_FORMAT`.
+  - เวลาที่สร้างไฟล์
+- escape ค่าใน CSV ให้ปลอดภัยกับเครื่องหมาย quote
+- เปลี่ยนการสร้าง token จาก `Math.random()` เป็น `Utilities.getUuid()`
+- ตรวจ format ของ token ก่อนอ่าน session จาก ScriptProperties
+- log token ที่รูปแบบผิดเป็น `INVALID_TOKEN_FORMAT`
 
-Primary files:
+## ไฟล์หลักที่แก้
 
 - `src/Auth.js`
 - `src/DataReader.js`
@@ -62,16 +39,26 @@ Primary files:
 - `src/Tracking.js`
 - `src/Scripts.html`
 
-Validation performed:
+## สิ่งที่ไม่ได้ทำใน Phase นี้
 
-- JavaScript syntax check for server-side files touched in Phase 1.
-- JavaScript syntax check for all script blocks in `src/Scripts.html`.
-- `git diff --check`.
+- ไม่แก้โครงสร้าง Google Sheet
+- ไม่สร้างระบบ Tracking, Target, Login หรือ New Agent ใหม่
+- ไม่ทำ AM/Director workspace
+- ไม่ทำ Action Center
+- ไม่ทำ report/export ชุดใหม่ นอกจากเสริม CSV export เดิม
 
-## Notes
+## การตรวจสอบที่ทำแล้ว
 
-- No Google Sheet structure changes are included.
-- No new Tracking, Target, Login, or New Agent system is introduced.
-- The detailed execution plan lives in:
-  - `docs/dashboard_improvement_execution_playbook.docx`
-  - `docs/dashboard_improvement_execution_playbook.pdf`
+- ตรวจ syntax ไฟล์ server-side ที่แก้
+- ตรวจ script blocks ทั้งหมดใน `src/Scripts.html`
+- รัน `git diff --check`
+- อัปขึ้น Apps Script dev แล้ว
+
+## จุดที่ควรทดสอบบน dev
+
+- Login ด้วย Director, AM และ BD
+- BD/AM เห็นข้อมูลเฉพาะ zone ตัวเอง
+- BD/AM บันทึก Tracking นอก zone ไม่ได้
+- Director ยังใช้งาน target, threshold และ user unlock ได้
+- Export CSV แล้วมี metadata ด้านบนไฟล์
+- ใส่ข้อความลักษณะ `<script>alert(1)</script>` ใน note แล้วไม่ execute
