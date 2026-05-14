@@ -9471,6 +9471,47 @@ function _homeHeroKpis(cards) {
   return '<div class="home-kpi-grid">' + cards.join('') + '</div>';
 }
 
+function _homeOpMetric(label, value, sub, tone) {
+  return '<div class="home-op-metric home-op-' + (tone || 'neutral') + '">'
+    + '<div class="home-op-label">' + _esc(label || '') + '</div>'
+    + '<div class="home-op-value">' + _esc(value || '-') + '</div>'
+    + (sub ? '<div class="home-op-sub">' + _esc(sub) + '</div>' : '')
+    + '</div>';
+}
+
+function _homeOpAction(label, value, sub, tone, onclick) {
+  return '<button class="home-op-action home-op-' + (tone || 'neutral') + '" onclick="' + onclick + '" type="button">'
+    + '<span class="home-op-action-main">' + _esc(label || '') + '</span>'
+    + '<span class="home-op-action-value">' + _esc(value || '') + '</span>'
+    + (sub ? '<span class="home-op-action-sub">' + _esc(sub) + '</span>' : '')
+    + '</button>';
+}
+
+function _homeOperationalPanel(cfg) {
+  cfg = cfg || {};
+  var metrics = (cfg.metrics || []).map(function(m) {
+    return _homeOpMetric(m.label, m.value, m.sub, m.tone);
+  }).join('');
+  var actions = (cfg.actions || []).map(function(a) {
+    return _homeOpAction(a.label, a.value, a.sub, a.tone, a.onclick);
+  }).join('');
+  return '<section class="home-op-panel home-op-role-' + _esc(String(cfg.role || 'ops').toLowerCase()) + '">'
+    + '<div class="home-op-head">'
+    + '<div>'
+    + '<div class="home-op-eyebrow">' + _esc(cfg.eyebrow || 'Operational view') + '</div>'
+    + '<div class="home-op-title">' + _esc(cfg.title || '') + '</div>'
+    + (cfg.sub ? '<div class="home-op-desc">' + _esc(cfg.sub) + '</div>' : '')
+    + '</div>'
+    + '<div class="home-op-status home-op-' + (cfg.statusTone || 'neutral') + '">' + _esc(cfg.status || '') + '</div>'
+    + '</div>'
+    + '<div class="home-op-body">'
+    + '<div class="home-op-metrics">' + metrics + '</div>'
+    + '<div class="home-op-actions">' + actions + '</div>'
+    + '</div>'
+    + (cfg.note ? '<div class="home-op-note">' + _esc(cfg.note) + '</div>' : '')
+    + '</section>';
+}
+
 // ── DIRECTOR HOME ────────────────────────────────────────────────
 function _renderHomeDirector(m, mp) {
   try {
@@ -9632,6 +9673,28 @@ function _renderHomeDirector(m, mp) {
     +   '</div>'
     + '</div>'
     + '</div>';
+
+  html += _homeOperationalPanel({
+    role:'director',
+    eyebrow:'Director command',
+    title:'สิ่งที่ต้องตัดสินใจเดือนนี้',
+    sub:'โฟกัสเฉพาะ progress, exception และทีมที่ต้องช่วยก่อนลงรายละเอียด',
+    status: dirHasTarget ? targetPct + '% เป้าประเทศ' : 'รอตั้งเป้าประเทศ',
+    statusTone: dirHasTarget ? (targetPct >= 80 ? 'good' : 'warn') : 'neutral',
+    metrics:[
+      {label:'Revenue MTD', value:'฿'+fmtS(Math.round(totRev)), sub:(momRev!==null ? (parseFloat(momRev)>=0?'+':'')+momRev+'% MoM' : 'เดือนปัจจุบัน'), tone:(momRev!==null && parseFloat(momRev)<0?'danger':'good')},
+      {label:'Volume MTD', value:fmtInt(totVol), sub:(momVol!==null ? (parseFloat(momVol)>=0?'+':'')+momVol+'% MoM' : 'ชิ้นรวม'), tone:(momVol!==null && parseFloat(momVol)<0?'danger':'neutral')},
+      {label:'Risk agents', value:fmtInt(dirRiskCount), sub:'Avg Rev ลดเกินเกณฑ์', tone:dirRiskCount>0?'warn':'good'},
+      {label:'Growth agents', value:fmtInt(dirGrowthRows.length), sub:dirGrowthRevGain>0?'+฿'+fmtS(Math.round(dirGrowthRevGain))+' gain':'พร้อมขยายยอด', tone:'good'}
+    ],
+    actions:[
+      {label:'ดู Zone ที่ต้องช่วย', value:dropZones.length+' zone', sub:'เรียงจาก MoM ลด', tone:dropZones.length?'warn':'good', onclick:"swMain('ov')"},
+      {label:'ดู BD Performance', value:amUsers.length+' ทีม', sub:'ranking และ workload', tone:'neutral', onclick:"openReportCenter()"},
+      {label:'เปิด Tracking', value:'follow-up', sub:'งานค้างและสถานะ', tone:'neutral', onclick:"openTrkSummary()"},
+      {label:'ตั้งเป้า', value:'target', sub:'ประเทศและ BD', tone:dirHasTarget?'neutral':'warn', onclick:"openTargetModal('"+m.key+"')"}
+    ],
+    note:'Director เห็นภาพรวมเพื่อเลือกจุด escalate ไม่ใช่ดูทุกตารางพร้อมกัน'
+  });
 
   // ══════════════════════════════════════════════════════
   // ROW 1: KPI Cards — 6 cards (like AM)
@@ -10853,6 +10916,28 @@ function _renderHomeAM(m, mp) {
   // ROW 1 — KPI Cards (6 cards, 3+3 dual layout)
   // ════════════════════════════════════════════════════
 
+  html += _homeOperationalPanel({
+    role:'am',
+    eyebrow:'AM command',
+    title:'จัดลำดับทีมที่ต้องเข้าไปช่วย',
+    sub:'ดู target pace, BD ที่ lag, risk และ growth ใน zone เดียวกันก่อนเปิดตาราง',
+    status: zoneHasTarget ? zonePct + '% เป้า Zone' : 'รอตั้งเป้า Zone',
+    statusTone: zoneHasTarget ? (zonePct >= 80 ? 'good' : 'warn') : 'neutral',
+    metrics:[
+      {label:'Revenue MTD', value:'฿'+fmtS(Math.round(totRev)), sub:(momRev!==null ? (parseFloat(momRev)>=0?'+':'')+momRev+'% MoM' : 'เดือนปัจจุบัน'), tone:(momRev!==null && parseFloat(momRev)<0?'danger':'good')},
+      {label:'Active agents', value:fmtInt(totActive)+'/'+fmtInt(totLeads), sub:'Conv '+convRate+'%', tone:parseFloat(convRate)>=80?'good':'warn'},
+      {label:'Risk agents', value:fmtInt(amRiskCount), sub:'ต้อง follow-up', tone:amRiskCount>0?'warn':'good'},
+      {label:'Growth agents', value:fmtInt(amGrowthRows.length), sub:amGrowthRevGain>0?'+฿'+fmtS(Math.round(amGrowthRevGain))+' gain':'upsell-ready', tone:'good'}
+    ],
+    actions:[
+      {label:'ช่วย BD ที่ lag', value:bdUsers.filter(function(b){return b.mom!==null && parseFloat(b.mom)<0;}).length+' คน', sub:'ดูอันดับและ MoM', tone:'warn', onclick:"swMain('ov')"},
+      {label:'เปิด Risk list', value:amRiskCount+' ราย', sub:'Avg ลดเกินเกณฑ์', tone:amRiskCount>0?'warn':'good', onclick:"swMain('risk')"},
+      {label:'เปิด Growth list', value:amGrowthRows.length+' ราย', sub:'โอกาสเพิ่มยอด', tone:'good', onclick:"swMain('growth')"},
+      {label:'Tracking summary', value:'status', sub:'งานค้างในทีม', tone:'neutral', onclick:"openTrkSummary()"}
+    ],
+    note:'AM เห็นภาพรวมเพื่อเลือกทีมและลูกค้าที่ควรเข้าไปช่วยวันนี้'
+  });
+
   // MoM Quick Overview Strip (ถ้ามี prev month)
   if (mp) {
     var momRevNum = momRev !== null ? parseFloat(momRev) : null;
@@ -11955,6 +12040,28 @@ function _renderHomeBD(m, mp) {
   var bdGrowthRows = mp ? myRows.filter(function(r){ return (N(r[m.colAvg])-N(r[mp.colAvg]))>_growthThreshold; }) : [];
   var bdGrowthRevGain = bdGrowthRows.reduce(function(s,r){ return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev])); },0);
   var bdRiskCount = mp ? myRows.filter(function(r){ return (N(r[mp.colAvg])-N(r[m.colAvg]))>_riskThreshold; }).length : 0;
+
+  html += _homeOperationalPanel({
+    role:'bd',
+    eyebrow:'BD command',
+    title:'งานที่ควรทำวันนี้',
+    sub:'เริ่มจากลูกค้าที่เสี่ยงและโอกาสเติบโต แทนการไล่อ่านทุกตาราง',
+    status: bdHasTarget ? bdTargetPct + '% เป้า BD' : 'รอตั้งเป้า BD',
+    statusTone: bdHasTarget ? (bdTargetPct >= 80 ? 'good' : 'warn') : 'neutral',
+    metrics:[
+      {label:'Revenue MTD', value:'฿'+fmtS(Math.round(totRev)), sub:(momRev!==null ? (parseFloat(momRev)>=0?'+':'')+momRev+'% MoM' : 'เดือนปัจจุบัน'), tone:(momRev!==null && parseFloat(momRev)<0?'danger':'good')},
+      {label:'Risk agents', value:fmtInt(bdRiskCount), sub:'ต้องกันยอดหาย', tone:bdRiskCount>0?'warn':'good'},
+      {label:'Growth agents', value:fmtInt(bdGrowthRows.length), sub:bdGrowthRevGain>0?'+฿'+fmtS(Math.round(bdGrowthRevGain))+' gain':'upsell-ready', tone:'good'},
+      {label:'Action queue', value:fmtInt(actionList.length), sub:'เรียงตาม priority', tone:actionList.length?'warn':'good'}
+    ],
+    actions:[
+      {label:'เปิดรายการลูกค้า', value:fmtInt(totLeads)+' ราย', sub:'ค้นหาและกรอง', tone:'neutral', onclick:"swMain('ls')"},
+      {label:'ทำ Risk follow-up', value:bdRiskCount+' ราย', sub:'Avg Rev ลด', tone:bdRiskCount>0?'warn':'good', onclick:"swMain('risk')"},
+      {label:'ทำ Growth follow-up', value:bdGrowthRows.length+' ราย', sub:'โอกาสเพิ่มยอด', tone:'good', onclick:"swMain('growth')"},
+      {label:'ดู Tracking', value:'status', sub:'งานค้าง/เสร็จ', tone:'neutral', onclick:"openTrkSummary()"}
+    ],
+    note:'BD เห็นเฉพาะพอร์ตและงานของตัวเอง ไม่ต้องอ่านตารางบริหารระดับ Zone'
+  });
 
   // ── Hero KPI — Redesigned with VOL dimension ──
   var runRate       = Math.round(totRev / Math.max(TODAY_DATE-1, 1));
