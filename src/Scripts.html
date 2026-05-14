@@ -9526,6 +9526,49 @@ function _homeSignalStrip(items) {
     + '</section>';
 }
 
+function _homeMapCommandView(cfg) {
+  cfg = cfg || {};
+  var stats = (cfg.stats || []).map(function(s) {
+    return '<div class="home-map-stat home-map-' + _esc(s.tone || 'neutral') + '">'
+      + '<div class="home-map-stat-label">' + _esc(s.label || '') + '</div>'
+      + '<div class="home-map-stat-value">' + _esc(s.value || '-') + '</div>'
+      + (s.sub ? '<div class="home-map-stat-sub">' + _esc(s.sub) + '</div>' : '')
+      + '</div>';
+  }).join('');
+  var actions = (cfg.actions || []).map(function(a) {
+    return '<button class="home-map-action home-map-' + _esc(a.tone || 'neutral') + '" type="button" onclick="' + (a.onclick || '') + '">'
+      + '<span>' + _esc(a.label || '') + '</span>'
+      + '<strong>' + _esc(a.value || '') + '</strong>'
+      + (a.sub ? '<small>' + _esc(a.sub) + '</small>' : '')
+      + '</button>';
+  }).join('');
+  return '<section class="home-map-command home-map-role-' + _esc(String(cfg.role || 'ops').toLowerCase()) + '">'
+    + '<div class="home-map-main">'
+    + '<div class="home-map-head">'
+    + '<div>'
+    + '<div class="home-map-eyebrow">' + _esc(cfg.eyebrow || 'Map command') + '</div>'
+    + '<div class="home-map-title">' + _esc(cfg.title || 'Operational map') + '</div>'
+    + (cfg.sub ? '<div class="home-map-sub">' + _esc(cfg.sub) + '</div>' : '')
+    + '</div>'
+    + '<div class="home-map-tools">'
+    + '<select id="mapZoneFilter" onchange="setMapZoneFilter(this.value)"><option value="">' + _esc(cfg.zoneLabel || 'All zones') + '</option></select>'
+    + '<button type="button" onclick="resetMapView()">Reset</button>'
+    + '</div>'
+    + '</div>'
+    + '<div id="map_container" class="home-map-canvas"><div class="map-legend" id="map_legend"></div></div>'
+    + '</div>'
+    + '<aside class="home-map-side">'
+    + '<div class="home-map-side-head">'
+    + '<div class="home-map-side-title">' + _esc(cfg.sideTitle || 'Today focus') + '</div>'
+    + (cfg.sideSub ? '<div class="home-map-side-sub">' + _esc(cfg.sideSub) + '</div>' : '')
+    + '</div>'
+    + '<div class="home-map-stats">' + stats + '</div>'
+    + '<div class="home-map-actions">' + actions + '</div>'
+    + '<div id="home_trk_summary" class="home-map-tracking"><div class="loading"><div class="spin"></div></div></div>'
+    + '</aside>'
+    + '</section>';
+}
+
 // ── DIRECTOR HOME ────────────────────────────────────────────────
 function _renderHomeDirector(m, mp) {
   try {
@@ -9730,6 +9773,34 @@ function _renderHomeDirector(m, mp) {
       tone:dropZones.length ? 'warn' : 'good'
     }
   ]);
+
+  html = '';
+  html += _homeMapCommandView({
+    role:'director',
+    eyebrow:'Director map command',
+    title:'แผนที่สถานการณ์ประเทศ',
+    sub:'ใช้แผนที่เป็นจุดเริ่มต้นเพื่อเลือก zone ที่ต้องช่วยก่อน แล้วค่อยเปิดรายงานหรือ tracking เมื่อจำเป็น',
+    zoneLabel:'ทุก Zone',
+    sideTitle:'Country focus',
+    sideSub:'สรุปเฉพาะจุดที่ควรตัดสินใจวันนี้',
+    stats:[
+      {label:'Revenue MTD', value:'฿'+fmtS(Math.round(totRev)), sub:(momRev!==null ? (parseFloat(momRev)>=0?'+':'')+momRev+'% MoM' : 'current month'), tone:(momRev!==null && parseFloat(momRev)<0?'danger':'good')},
+      {label:'Volume MTD', value:fmtInt(totVol), sub:(momVol!==null ? (parseFloat(momVol)>=0?'+':'')+momVol+'% MoM' : 'all carriers'), tone:(momVol!==null && parseFloat(momVol)<0?'warn':'neutral')},
+      {label:'Target pace', value:dirHasTarget ? targetPct+'%' : '-', sub:dirHasTarget ? ('Need ฿'+fmtS(Math.round(needAmt))) : 'target not set', tone:dirHasTarget ? (targetPct>=80?'good':'warn') : 'neutral'},
+      {label:'Escalation', value:dropZones.length+' zones', sub:dirRiskCount+' risk agents', tone:dropZones.length?'warn':'good'}
+    ],
+    actions:[
+      {label:'Open report center', value:'BD + carrier', sub:'monthly report view', tone:'neutral', onclick:'openReportCenter()'},
+      {label:'Review tracking', value:'Follow-up', sub:'risk and growth status', tone:'neutral', onclick:'openTrkSummary()'},
+      {label:'Set country target', value:'Target', sub:dirHasTarget?'adjust target':'missing target', tone:dirHasTarget?'neutral':'warn', onclick:"openTargetModal('"+m.key+"')"},
+      {label:'Go to growth', value:dirGrowthRows.length+' agents', sub:'upsell opportunity', tone:'good', onclick:"swMain('growth')"}
+    ]
+  });
+
+  document.getElementById('home_content').innerHTML = html;
+  _homeInitMap(FR, m);
+  _homePopulateTrkSummary();
+  return;
 
   // ══════════════════════════════════════════════════════
   // ROW 1: KPI Cards — 6 cards (like AM)
@@ -10994,6 +11065,34 @@ function _renderHomeAM(m, mp) {
     }
   ]);
 
+  html = '';
+  html += _homeMapCommandView({
+    role:'am',
+    eyebrow:'AM map command',
+    title:'แผนที่ Zone ที่ดูแล',
+    sub:'ดูพื้นที่ที่ต้องเข้าไปช่วยก่อน แล้วค่อยเปิดรายการ BD หรือ tracking ตามจุดที่เลือก',
+    zoneLabel:'ทุก Zone ในสิทธิ์',
+    sideTitle:'Zone focus',
+    sideSub:'สรุปทีมและงานที่ควรขยับวันนี้',
+    stats:[
+      {label:'Revenue MTD', value:'฿'+fmtS(Math.round(totRev)), sub:(momRev!==null ? (parseFloat(momRev)>=0?'+':'')+momRev+'% MoM' : 'current month'), tone:(momRev!==null && parseFloat(momRev)<0?'danger':'good')},
+      {label:'Active agents', value:fmtInt(totActive)+'/'+fmtInt(totLeads), sub:'Conv '+convRate+'%', tone:parseFloat(convRate)>=80?'good':'warn'},
+      {label:'Zone target', value:zoneHasTarget ? zonePct+'%' : '-', sub:zoneHasTarget ? ('Need ฿'+fmtS(Math.round(needAmt))) : 'target not set', tone:zoneHasTarget ? (zonePct>=80?'good':'warn') : 'neutral'},
+      {label:'BD support', value:bdUsers.filter(function(b){return b.mom!==null && parseFloat(b.mom)<0;}).length+' people', sub:amRiskCount+' risk agents', tone:amRiskCount?'warn':'good'}
+    ],
+    actions:[
+      {label:'Open BD ranking', value:bdUsers.length+' BDs', sub:'team performance', tone:'neutral', onclick:'openReportCenter()'},
+      {label:'Review risk list', value:amRiskCount+' agents', sub:'avg rev drop', tone:amRiskCount?'warn':'good', onclick:"swMain('risk')"},
+      {label:'Review growth list', value:amGrowthRows.length+' agents', sub:'upsell ready', tone:'good', onclick:"swMain('growth')"},
+      {label:'Tracking summary', value:'Status', sub:'team workload', tone:'neutral', onclick:'openTrkSummary()'}
+    ]
+  });
+
+  document.getElementById('home_content').innerHTML = html;
+  _homeInitMap(myRows, m);
+  _homePopulateTrkSummary();
+  return;
+
   // MoM Quick Overview Strip (ถ้ามี prev month)
   if (mp) {
     var momRevNum = momRev !== null ? parseFloat(momRev) : null;
@@ -12142,6 +12241,34 @@ function _renderHomeBD(m, mp) {
       tone:actionList.length ? 'warn' : 'good'
     }
   ]);
+
+  html = '';
+  html += _homeMapCommandView({
+    role:'bd',
+    eyebrow:'BD map command',
+    title:'แผนที่พอร์ตที่ต้องดูแล',
+    sub:'เริ่มจากพื้นที่และลูกค้าที่ต้องเข้าไปทำงานวันนี้ แล้วค่อยเปิดรายการ follow-up เฉพาะจุด',
+    zoneLabel:'ทุกพื้นที่ของคุณ',
+    sideTitle:'Today queue',
+    sideSub:'งานที่ควรเริ่มก่อนในพอร์ตของคุณ',
+    stats:[
+      {label:'Revenue MTD', value:'฿'+fmtS(Math.round(totRev)), sub:(momRev!==null ? (parseFloat(momRev)>=0?'+':'')+momRev+'% MoM' : 'current month'), tone:(momRev!==null && parseFloat(momRev)<0?'danger':'good')},
+      {label:'Volume MTD', value:fmtInt(totVol), sub:(momVol!==null ? (parseFloat(momVol)>=0?'+':'')+momVol+'% MoM' : 'all accounts'), tone:(momVol!==null && parseFloat(momVol)<0?'warn':'neutral')},
+      {label:'Target pace', value:bdHasTarget ? bdTargetPct+'%' : '-', sub:bdHasTarget ? ('Need ฿'+fmtS(Math.round(bdNeedAmt))) : 'target not set', tone:bdHasTarget ? (bdTargetPct>=80?'good':'warn') : 'neutral'},
+      {label:'Action queue', value:actionList.length+' tasks', sub:bdRiskCount+' risk, '+bdGrowthRows.length+' growth', tone:actionList.length?'warn':'good'}
+    ],
+    actions:[
+      {label:'Open customer list', value:fmtInt(totLeads)+' accounts', sub:'search and filter', tone:'neutral', onclick:"swMain('ls')"},
+      {label:'Do risk follow-up', value:bdRiskCount+' agents', sub:'protect revenue', tone:bdRiskCount?'warn':'good', onclick:"swMain('risk')"},
+      {label:'Do growth follow-up', value:bdGrowthRows.length+' agents', sub:'expand volume', tone:'good', onclick:"swMain('growth')"},
+      {label:'Tracking status', value:'Update', sub:'work queue', tone:'neutral', onclick:'openTrkSummary()'}
+    ]
+  });
+
+  document.getElementById('home_content').innerHTML = html;
+  _homeInitMap(myRows, m);
+  _homePopulateTrkSummary();
+  return;
 
   // ── Hero KPI — Redesigned with VOL dimension ──
   var runRate       = Math.round(totRev / Math.max(TODAY_DATE-1, 1));

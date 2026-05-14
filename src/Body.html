@@ -25,6 +25,7 @@
 
   <!-- Center branding -->
   <div class="splash-center">
+    <div class="splash-kicker">Operational Workspace</div>
     <div class="splash-title">Dashboard Realtime</div>
     <div class="splash-divider"></div>
     <div class="splash-sub">Initializing Workspace</div>
@@ -37,9 +38,20 @@
     <!-- Left: 3D Chart -->
     <div class="login-left" style="padding:0;overflow:hidden;position:relative;background:#0d1f2d;">
       <canvas id="login3d" style="width:100%;height:100%;display:block;cursor:grab;"></canvas>
+      <div class="parcel-stage" aria-hidden="true">
+        <div class="parcel-belt belt-a"></div>
+        <div class="parcel-belt belt-b"></div>
+        <div class="parcel-belt belt-c"></div>
+        <span class="parcel-box p1"></span><span class="parcel-box p2"></span><span class="parcel-box p3"></span>
+        <span class="parcel-box p4"></span><span class="parcel-box p5"></span><span class="parcel-box p6"></span>
+        <span class="parcel-box p7"></span><span class="parcel-box p8"></span><span class="parcel-box p9"></span>
+        <span class="parcel-box p10"></span><span class="parcel-box p11"></span><span class="parcel-box p12"></span>
+        <div class="parcel-scanner"></div>
+      </div>
       <!-- Overlay text -->
-      <div style="position:absolute;bottom:48px;left:52px;z-index:2;pointer-events:none;">
-        <div style="font-family:'Segoe UI',system-ui,sans-serif;font-size:42px;font-weight:900;color:#ffffff;line-height:1.1;letter-spacing:-1px;text-shadow:0 2px 24px rgba(0,0,0,0.4);">
+      <div class="login-scene-copy">
+        <div class="login-scene-kicker">Internal operations</div>
+        <div class="login-scene-title">
           Real-Time.<br>Every Sale.<br>Every Team.
         </div>
         <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:14px;max-width:280px;line-height:1.6;">ติดตามยอดขาย ทีมงาน และลูกค้าแบบ Real-time ครบในที่เดียว</p>
@@ -51,6 +63,7 @@
     <div class="login-right">
       <div class="login-card">
         <div class="login-card-icon">📊</div>
+        <div class="login-card-eyebrow">Dashboard access</div>
         <div class="login-card-title">Dashboard Realtime</div>
         <div class="login-card-sub">กรุณา Login เพื่อเข้าใช้งาน</div>
 
@@ -117,9 +130,9 @@
   <!-- Brand -->
   <div class="nav-brand">
     <span style="font-size:18px;line-height:1">📊</span>
-    <div style="display:flex;flex-direction:column;line-height:1.15">
-      <span style="font-size:13px;font-weight:800;color:var(--tx);letter-spacing:-.02em">Dashboard</span>
-      <span style="font-size:10px;font-weight:500;color:var(--t2);letter-spacing:.02em">Realtime</span>
+    <div class="nav-brand-copy">
+      <span class="nav-brand-title">Dashboard</span>
+      <span class="nav-brand-sub">Realtime</span>
     </div>
   </div>
 
@@ -164,8 +177,9 @@
   <!-- ===== HOME PANEL ===== -->
   <div id="mainHome" style="display:none">
     <!-- Loading state -->
-    <div id="home_loading" style="text-align:center;padding:60px 20px">
+    <div id="home_loading" class="home-loading">
       <div class="spin" style="margin:0 auto 12px"></div>
+      <div class="home-loading-title">Preparing workspace</div>
       <div style="font-size:13px;color:var(--t2)">กำลังเตรียมข้อมูล...</div>
     </div>
 
