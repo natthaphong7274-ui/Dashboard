@@ -137,15 +137,22 @@
   </div>
 
   <!-- Main tabs -->
-  <div class="nav-tabs">
-    <button class="ntab active" id="home_tab" onclick="swMain('home')">🏠 หน้าแรก</button>
-    <button class="ntab" onclick="swMain('ov')">📈 ภาพรวม</button>
-    <button class="ntab" onclick="swMain('cr')">🚚 ขนส่ง</button>
-    <button class="ntab" onclick="swMain('ls')">📋 รายการลูกค้า</button>
+  <div class="nav-tabs" aria-label="Dashboard navigation">
+    <div class="nav-group nav-group-main" aria-label="Main navigation">
+      <span class="nav-group-label">Main</span>
+      <button class="ntab active" id="home_tab" onclick="swMain('home')">🏠 หน้าแรก</button>
+      <button class="ntab" onclick="swMain('ov')">📈 ภาพรวม</button>
+      <button class="ntab" onclick="swMain('ls')">📋 รายการลูกค้า</button>
+      <button class="ntab" onclick="openTrkSummary()">📊 Tracking</button>
+    </div>
     <div class="nav-divider"></div>
-    <button class="ntab ntab-risk" onclick="swMain('risk')">⚠️ กลุ่มเสี่ยง</button>
-    <button class="ntab ntab-growth" onclick="swMain('growth')">📈 กลุ่มเติบโต</button>
-    <button class="ntab ntab-mgmt" id="usermgmt_tab" onclick="swMain('usermgmt')" style="display:none">🔐 จัดการผู้ใช้</button>
+    <div class="nav-group nav-group-work" aria-label="Work modules">
+      <span class="nav-group-label">Work</span>
+      <button class="ntab" onclick="swMain('cr')">🚚 ขนส่ง</button>
+      <button class="ntab ntab-risk" onclick="swMain('risk')">⚠️ กลุ่มเสี่ยง</button>
+      <button class="ntab ntab-growth" onclick="swMain('growth')">📈 กลุ่มเติบโต</button>
+      <button class="ntab" onclick="openReportCenter()">📄 Report Center</button>
+    </div>
   </div>
 
   <!-- Right side -->
@@ -154,8 +161,8 @@
     <div class="nav-divider-v"></div>
     <span class="lupd" id="lupd"></span>
     <button class="rbtn rbtn-refresh" onclick="loadData()">🔄 รีเฟรช</button>
-    <button class="rbtn rbtn-track" onclick="openTrkSummary()" title="สรุปการติดตาม">📊 สรุปติดตาม</button>
     <span id="trk_poll_badge" style="display:none;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700" title="อัปเดตสถานะจาก Sheet ทุก 30 วินาที">⟳ auto</span>
+    <button class="rbtn rbtn-admin" id="usermgmt_tab" onclick="swMain('usermgmt')" style="display:none">🔐 จัดการผู้ใช้</button>
     <button id="logout_btn" onclick="doLogout()" style="display:none;padding:6px 12px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">ออกจากระบบ</button>
   </div>
 </div>
@@ -255,7 +262,7 @@
 
     <!-- Avg Rev -->
     <div class="spanel" id="sp-avgrev">
-      <div class="sdiv"><h3>📐 SUM Avg Rev</h3></div>
+      <div class="sdiv"><h3>📐 Avg Rev/day <span class="metric-help" tabindex="0" title="Avg Rev from the source sheet. In grouped views, values are summed by the selected dimension." aria-label="Avg Rev from the source sheet. In grouped views, values are summed by the selected dimension.">?</span></h3></div>
       <div class="g2">
         <div class="ccard">
           <div class="chdr"><div class="ctitle" id="t_avg_zone">Avg Rev ราย Zone</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
@@ -323,7 +330,7 @@
         <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_vol">Volume ราย Zone</div></div><div class="ch300"><canvas id="c_bd_vol"></canvas></div></div>
       </div>
       <div class="g2">
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_avg">SUM Avg Rev ราย Zone</div></div><div class="ch260"><canvas id="c_bd_avg"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_avg">Avg Rev/day ราย Zone <span class="metric-help" tabindex="0" title="Avg Rev from the source sheet. In grouped views, values are summed by Zone." aria-label="Avg Rev from the source sheet. In grouped views, values are summed by Zone.">?</span></div></div><div class="ch260"><canvas id="c_bd_avg"></canvas></div></div>
         <div class="ccard gfull"><div class="chdr"><div class="ctitle">🏅 Zone Ranking</div></div><div id="bd_score"></div></div>
       </div>
     </div>

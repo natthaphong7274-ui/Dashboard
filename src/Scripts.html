@@ -619,6 +619,9 @@ function applyRoleVisualizationRules(){
 }
 function swMain(v){
   _ensureMainPanelsMounted();
+  if(v === 'usermgmt' && (!_currentUser || _currentUser.role !== 'Director')){
+    v = 'home';
+  }
   console.log('[swMain] switching to tab:', v, '| FR='+FR.length+' | MONTHS='+MONTHS.length+' | CUR_MONTH='+(CUR_MONTH&&CUR_MONTH.key||'null'));
   // ★ ถ้ากำลังออกจาก home → destroy _mapInstance ที่อยู่ใน home_content
   //    ใช้ typeof เพื่อป้องกัน ReferenceError กรณียังไม่ได้ declare
@@ -820,6 +823,25 @@ function _isActiveAgent(r, m){
 
 // ===== KPI =====
 
+function _metricHelpText(label){
+  var l=String(label||'').toLowerCase();
+  if(!l)return '';
+  if(l.indexOf('revenue mtd')>=0)return 'MTD: revenue accumulated from the start of the selected month through the latest available data date.';
+  if(l.indexOf('volume mtd')>=0)return 'MTD: total shipment volume accumulated from the start of the selected month through the latest available data date.';
+  if(l.indexOf('target pace')>=0)return 'Progress against the monthly target using current revenue, configured target, and days remaining in the month.';
+  if(l.indexOf('avg rev/agent')>=0 || l.indexOf('avg revenue/agent')>=0)return 'Revenue divided by active agents in the current scope.';
+  if(l.indexOf('avg rev/day')>=0 || l.indexOf('avg rev/วัน')>=0 || l.indexOf('avg revenue per day')>=0)return 'Revenue divided by the day divisor for the selected month.';
+  if(l.indexOf('avg vol/day')>=0 || l.indexOf('avg vol/วัน')>=0 || l.indexOf('avg volume')>=0)return 'Volume divided by the day divisor for the selected month.';
+  if(l.indexOf('avg rev/ชิ้น')>=0 || l.indexOf('avg rev/vol')>=0 || l.indexOf('avg revenue ต่อชิ้น')>=0)return 'Revenue divided by Volume. Use this to read average revenue per shipment piece.';
+  if(l.indexOf('avg rev')>=0)return 'Avg Rev from the source sheet. In grouped views, values are summed by the selected dimension.';
+  if(l.indexOf('mtd')>=0)return 'Month-to-date value for the selected month.';
+  return '';
+}
+function _metricLabelHtml(label){
+  var help=_metricHelpText(label);
+  return _uiText(label||'')+(help?'<span class="metric-help" tabindex="0" title="'+_uiText(help)+'" aria-label="'+_uiText(help)+'">?</span>':'');
+}
+
 function renderKPI(){
   var m=getMC();if(!m.colRev)return;
   var mp=getMP();
@@ -861,7 +883,7 @@ function renderKPI(){
     // Volume — แสดงยอดรวม ไม่เทียบเดือน
     {l:'VOLUME '+m.en,v:fmtS(volV),s:'จำนวน Volume รวม',c:'var(--c-vol)',i:'📦',series:volSeries,fmt:fmtS},
     // Avg Rev/Day — เทียบกับเดือนก่อน ✅
-    {l:'AVG REV/DAY '+m.en,v:fmtS(avgV),s:'SUM Avg Rev/Day (÷'+mDay+'วัน)',c:'var(--c-avg)',i:'📐',
+    {l:'AVG REV/DAY '+m.en,v:fmtS(avgV),s:'Revenue ÷ '+mDay+' วัน',c:'var(--c-avg)',i:'📐',
      series:avgSeries,fmt:fmtS,
      trend:mp?'<div class="ktrend '+(avgDiff>=0?'tup':'tdn')+'">'+(avgDiff>=0?'▲':'▼')+fmtS(Math.abs(avgDiff))+' '+pill(avgPct)+' vs '+mp.en+'</div>':''},
   ].map(function(k){
@@ -869,7 +891,7 @@ function renderKPI(){
       return _kpiTrendCard({label:k.l,value:k.v,sub:k.s,color:k.c,icon:k.i,trend:k.trend,series:k.series,fmt:k.fmt});
     }
     return '<div class="kcard" style="--kc:'+k.c+'"><div class="kico">'+k.i+'</div>'
-      +'<div class="klbl">'+k.l+'</div><div class="kval">'+k.v+'</div>'
+      +'<div class="klbl">'+_metricLabelHtml(k.l)+'</div><div class="kval">'+k.v+'</div>'
       +'<div class="ksub">'+k.s+'</div>'+(k.trend||'')+'</div>';
   }).join('');
   document.getElementById('kgrid').innerHTML=html;
@@ -900,7 +922,7 @@ function _kpiTrendCard(cfg){
     fmt:cfg.fmt||fmtS
   });
   return '<div class="'+cls+'" style="--kc:'+cfg.color+'"><div class="kico">'+(cfg.icon||'')+'</div>'
-    +'<div class="klbl">'+cfg.label+'</div>'
+    +'<div class="klbl">'+_metricLabelHtml(cfg.label)+'</div>'
     +'<div class="kval">'+cfg.value+'</div>'
     +'<div class="ksub">'+(cfg.sub||'')+'</div>'
     +(cfg.trend||'')
@@ -1628,25 +1650,25 @@ function renderAvgPieceSection(){
 
   // Render KPI cards for section
   var kHtml='<div class="kcard" style="--kc:var(--c-apc)"><div class="kico">🏷️</div>'
-    +'<div class="klbl">AVG REV/ชิ้น ภาพรวม '+m.en+'</div>'
+    +'<div class="klbl">'+_metricLabelHtml('AVG REV/ชิ้น ภาพรวม '+m.en)+'</div>'
     +'<div class="kval" style="color:var(--c-apc);font-size:17px;">'+fmtF(apV)+'</div>'
     +'<div class="ksub">Revenue ÷ Volume รวมทุกรายการ</div>'
     +(mp?'<div class="ktrend '+(apDiff>=0?'tup':'tdn')+'">'+(apDiff>=0?'▲':'▼')+fmtF(Math.abs(apDiff))+' vs '+mp.en+' '+pill(apPct)+'</div>':'')
     +'</div>'
     +'<div class="kcard" style="--kc:var(--c-apc)"><div class="kico">📊</div>'
-    +'<div class="klbl">TOP '+primaryLabel+' — Avg Rev/ชิ้น</div>'
+    +'<div class="klbl">'+_metricLabelHtml('TOP '+primaryLabel+' — Avg Rev/ชิ้น')+'</div>'
     +'<div class="kval" style="color:var(--c-apc);font-size:15px;">'+(apz.length?fmtF(apz[0][1]):'—')+'</div>'
     +'<div class="ksub">'+(apz.length?apz[0][0]:'')+'</div></div>';
   document.getElementById('avgpiece_kgrid').innerHTML=kHtml;
 
   // Avg Vol/day KPI
   var avdKHtml='<div class="kcard" style="--kc:var(--c-avd)"><div class="kico">📦</div>'
-    +'<div class="klbl">AVG VOL/วัน ภาพรวม '+m.en+'</div>'
+    +'<div class="klbl">'+_metricLabelHtml('AVG VOL/วัน ภาพรวม '+m.en)+'</div>'
     +'<div class="kval" style="color:var(--c-avd);font-size:17px;">'+fmtF(avdV)+'</div>'
     +'<div class="ksub">Volume ÷ '+getDAY1ForMonth(m.key)+' วัน (Day-1)</div>'
     +'</div>'
     +'<div class="kcard" style="--kc:var(--c-avd)"><div class="kico">🏆</div>'
-    +'<div class="klbl">TOP '+primaryLabel+' — Avg Vol/วัน</div>'
+    +'<div class="klbl">'+_metricLabelHtml('TOP '+primaryLabel+' — Avg Vol/วัน')+'</div>'
     +'<div class="kval" style="color:var(--c-avd);font-size:15px;">'+(avdz.length?fmtF(avdz[0][1]):'—')+'</div>'
     +'<div class="ksub">'+(avdz.length?avdz[0][0]:'')+'</div></div>';
   document.getElementById('avgvol_kgrid').innerHTML=avdKHtml;
@@ -5011,6 +5033,8 @@ function doLogout(){
       document.getElementById('kgrid').innerHTML='';
       document.getElementById('user_badge').innerHTML='';
       document.getElementById('logout_btn').style.display='none';
+      var umTab=document.getElementById('usermgmt_tab');
+      if(umTab)umTab.style.display='none';
       document.getElementById('login_user').value='';
       document.getElementById('login_pass').value='';
       document.getElementById('login_err').textContent='';
@@ -5020,6 +5044,8 @@ function doLogout(){
       sessionStorage.removeItem('DASH_TOKEN');
       _currentUser=null;
       _stopWatermark();
+      var umTab=document.getElementById('usermgmt_tab');
+      if(umTab)umTab.style.display='none';
       showLoginOverlay();
     })
     .logout(token);
@@ -5037,6 +5063,7 @@ function _showUserBadge(user){
   // แสดง tab จัดการผู้ใช้เฉพาะ Director
   var umTab = document.getElementById('usermgmt_tab');
   if(umTab) umTab.style.display = (user.role==='Director') ? 'inline-block' : 'none';
+  if(user.role !== 'Director' && _activeMainTab === 'usermgmt') swMain('home');
   _startWatermark();
 
   // ★ Role-based: ซ่อน BD Zone sub-tab สำหรับ BD/AM (ข้อมูล zone เดียว ไม่มีประโยชน์)
@@ -8347,7 +8374,7 @@ function renderMapLayers(){
         click: function(){
           if(layer._mapClickTimer) clearTimeout(layer._mapClickTimer);
           layer._mapClickTimer = setTimeout(function(){
-            showMapDrill(pvTH, pvEN, d);
+            _homeSelectMapCommand('province', (d && (d.pvEN || d.pvTH)) || pvEN || pvTH, pvTH);
             layer._mapClickTimer = null;
           }, 360);
         },
@@ -8619,6 +8646,7 @@ function renderMapLayers(){
   var oldZL = document.getElementById('map_zone_legend');
   if(oldZL) oldZL.remove();
   buildMapLegend(pvData);
+  _homeRenderMapCommandList(pvData);
 
   // ★ debug overlay ปิดใน production — ดูผลใน console แทน: debugProvMatch()
   setTimeout(function(){
@@ -9473,7 +9501,7 @@ function _homeHeroKpis(cards) {
 
 function _homeOpMetric(label, value, sub, tone) {
   return '<div class="home-op-metric home-op-' + (tone || 'neutral') + '">'
-    + '<div class="home-op-label">' + _esc(label || '') + '</div>'
+    + '<div class="home-op-label">' + _metricLabelHtml(label || '') + '</div>'
     + '<div class="home-op-value">' + _esc(value || '-') + '</div>'
     + (sub ? '<div class="home-op-sub">' + _esc(sub) + '</div>' : '')
     + '</div>';
@@ -9518,7 +9546,7 @@ function _homeSignalStrip(items) {
   return '<section class="home-signal-strip">'
     + items.map(function(item) {
       return '<article class="home-signal-card home-signal-' + _esc(item.tone || 'neutral') + '">'
-        + '<div class="home-signal-label">' + _esc(item.label || '') + '</div>'
+        + '<div class="home-signal-label">' + _metricLabelHtml(item.label || '') + '</div>'
         + '<div class="home-signal-value">' + _esc(item.value || '-') + '</div>'
         + (item.meta ? '<div class="home-signal-meta">' + _esc(item.meta) + '</div>' : '')
         + '</article>';
@@ -9528,9 +9556,17 @@ function _homeSignalStrip(items) {
 
 function _homeMapCommandView(cfg) {
   cfg = cfg || {};
+  var criteria = '<div class="home-map-map-criteria">'
+    + '<div class="home-map-list-title">เกณฑ์สีบนแผนที่</div>'
+    + '<div class="home-map-criteria-row"><span class="home-map-dot danger"></span><strong>Risk</strong><em>Avg Rev/day ลดลงตั้งแต่ 5% ขึ้นไป เทียบเดือนก่อน</em></div>'
+    + '<div class="home-map-criteria-row"><span class="home-map-dot warn"></span><strong>Watch</strong><em>Avg Rev/day ลดลง แต่ยังไม่ถึง 5%</em></div>'
+    + '<div class="home-map-criteria-row"><span class="home-map-dot good"></span><strong>Stable</strong><em>Avg Rev/day ทรงตัวหรือโต 0-5%</em></div>'
+    + '<div class="home-map-criteria-row"><span class="home-map-dot great"></span><strong>Growth</strong><em>Avg Rev/day โตมากกว่า 5%</em></div>'
+    + '<div class="home-map-criteria-note">สีพื้นที่อ่านจาก % เปลี่ยนแปลง Avg Rev/day ของจังหวัด/พื้นที่ใน scope ปัจจุบัน เส้น callout แสดง Zone และจำนวน agents ในพื้นที่นั้น</div>'
+    + '</div>';
   var stats = (cfg.stats || []).map(function(s) {
     return '<div class="home-map-stat home-map-' + _esc(s.tone || 'neutral') + '">'
-      + '<div class="home-map-stat-label">' + _esc(s.label || '') + '</div>'
+      + '<div class="home-map-stat-label">' + _metricLabelHtml(s.label || '') + '</div>'
       + '<div class="home-map-stat-value">' + _esc(s.value || '-') + '</div>'
       + (s.sub ? '<div class="home-map-stat-sub">' + _esc(s.sub) + '</div>' : '')
       + '</div>';
@@ -9555,7 +9591,11 @@ function _homeMapCommandView(cfg) {
     + '<button type="button" onclick="resetMapView()">Reset</button>'
     + '</div>'
     + '</div>'
-    + '<div id="map_container" class="home-map-canvas"><div class="map-legend" id="map_legend"></div></div>'
+    + '<div id="map_container" class="home-map-canvas"><div class="map-legend" id="map_legend"></div>' + criteria + '</div>'
+    + '<div id="home_map_action_card" class="home-map-action-card home-map-popup">'
+    + '<div class="home-map-action-empty">กดพื้นที่บนแผนที่เพื่อดู action card</div>'
+    + '</div>'
+    + '<div id="home_map_growth_panel" class="home-map-growth-panel"></div>'
     + '</div>'
     + '<aside class="home-map-side">'
     + '<div class="home-map-side-head">'
@@ -9564,9 +9604,223 @@ function _homeMapCommandView(cfg) {
     + '</div>'
     + '<div class="home-map-stats">' + stats + '</div>'
     + '<div class="home-map-actions">' + actions + '</div>'
+    + '<div id="home_map_focus_list" class="home-map-focus-list"></div>'
+    + '<div id="home_map_fallback_list" class="home-map-fallback-list"></div>'
     + '<div id="home_trk_summary" class="home-map-tracking"><div class="loading"><div class="spin"></div></div></div>'
     + '</aside>'
     + '</section>';
+}
+
+function _homeMapScopedRows(){
+  var userRole = _currentUser ? _currentUser.role : 'Director';
+  var userZones = _currentUser && _currentUser.zones ? _currentUser.zones : ['All'];
+  return FR.filter(function(r){
+    var rowZone = String(r[COL.zoneName] || '').trim();
+    if((userRole === 'AM' || userRole === 'BD') && userZones[0] !== 'All' && userZones.indexOf(rowZone) < 0) return false;
+    if(_mapZoneFilter && rowZone !== _mapZoneFilter) return false;
+    return true;
+  });
+}
+
+function _homeMapRowsForProvince(pvKey){
+  pvKey = String(pvKey || '').trim();
+  if(!pvKey) return [];
+  return _homeMapScopedRows().filter(function(r){
+    var pvTH = normProv(r[COL.province]);
+    var pvEN = pvTH ? sheetNameToGeo(pvTH) : '';
+    return pvTH === pvKey || pvEN === pvKey;
+  });
+}
+
+function _homeMapStatusForRows(rows, m, mp){
+  rows = rows || [];
+  var rev = 0, prevRev = 0, vol = 0, active = 0;
+  rows.forEach(function(r){
+    rev += N(r[m.colRev]);
+    vol += N(r[m.colVol]);
+    if(mp) prevRev += N(r[mp.colRev]);
+    if(_isActiveAgent(r, m)) active++;
+  });
+  var curDays = m && m.currentMonth ? Math.max(1, getDAY1ForMonth(m.key)) : 30;
+  var prevDays = mp && mp.currentMonth ? Math.max(1, getDAY1ForMonth(mp.key)) : 30;
+  var avgDay = rev / Math.max(curDays, 1);
+  var prevAvgDay = prevRev / Math.max(prevDays, 1);
+  var pct = mp && prevAvgDay > 0 ? ((avgDay - prevAvgDay) / Math.abs(prevAvgDay) * 100) : null;
+  var tone = pct === null ? 'neutral' : pct <= -5 ? 'danger' : pct < 0 ? 'warn' : 'good';
+  var label = pct === null ? 'Stable' : pct <= -5 ? 'Risk' : pct < 0 ? 'Watch' : pct > 5 ? 'Growth' : 'Stable';
+  return {rev:rev, prevRev:prevRev, vol:vol, active:active, avgDay:avgDay, prevAvgDay:prevAvgDay, pct:pct, tone:tone, label:label};
+}
+
+function _homeMapActionItems(rows, m, mp){
+  if(!mp) return [];
+  var trackingData = window._trkData || {};
+  return computeActionCenterRows(rows, trackingData, {
+    month:m,
+    prevMonth:mp,
+    daysLeft:Math.max(0, 30 - (TODAY_DATE || 1) + 1)
+  }).slice(0, 5);
+}
+
+function _homeRenderMapActionCard(title, rows){
+  var el = document.getElementById('home_map_action_card');
+  if(!el) return;
+  var m = getMC(), mp = getMP();
+  rows = rows || [];
+  el.classList.add('is-open');
+  if(!rows.length){
+    el.innerHTML = '<button class="home-map-popup-close" type="button" onclick="_homeCloseMapActionCard()">×</button><div class="home-map-action-empty">ยังไม่มีรายการในพื้นที่นี้จาก filter ปัจจุบัน</div>';
+    return;
+  }
+  var stat = _homeMapStatusForRows(rows, m, mp);
+  var actions = _homeMapActionItems(rows, m, mp);
+  var topRows = actions.length ? actions.map(function(a){ return a.row; }) : rows.slice(0, 4);
+  el.innerHTML = '<button class="home-map-popup-close" type="button" onclick="_homeCloseMapActionCard()">×</button>'
+    + '<div class="home-map-card-head">'
+    + '<div><div class="home-map-card-kicker">Selected area</div><div class="home-map-card-title">'+_esc(title || '-')+'</div></div>'
+    + '<span class="home-map-card-status home-map-'+stat.tone+'">'+_esc(stat.label)+(stat.pct!==null?' '+(stat.pct>=0?'+':'')+stat.pct.toFixed(1)+'%':'')+'</span>'
+    + '</div>'
+    + '<div class="home-map-card-metrics">'
+    + '<div><span>Revenue</span><strong>฿'+fmtS(Math.round(stat.rev))+'</strong></div>'
+    + '<div><span>Volume</span><strong>'+fmtInt(stat.vol)+'</strong></div>'
+    + '<div><span>Active</span><strong>'+fmtInt(stat.active)+'/'+fmtInt(rows.length)+'</strong></div>'
+    + '</div>'
+    + '<div class="home-map-card-list">'
+    + (actions.length
+      ? actions.map(function(item){
+          var r = item.row || {};
+          return '<button type="button" class="home-map-customer-row" onclick="swMain(\''+item.actionTab+'\')">'
+            + '<span class="home-map-customer-main">'+_esc(r[COL.agentName] || '-')+'</span>'
+            + '<span class="home-map-customer-meta">'+_esc(item.badge)+' · '+_esc(r[COL.agentCode] || '-')+' · Priority '+item.score+'</span>'
+            + '</button>';
+        }).join('')
+      : topRows.map(function(r){
+          return '<button type="button" class="home-map-customer-row" onclick="swMain(\'ls\')">'
+            + '<span class="home-map-customer-main">'+_esc(r[COL.agentName] || '-')+'</span>'
+            + '<span class="home-map-customer-meta">'+_esc(r[COL.agentCode] || '-')+' · '+_esc(r[COL.package] || '-')+'</span>'
+            + '</button>';
+        }).join(''))
+    + '</div>'
+    + '<div class="home-map-card-actions">'
+    + '<button type="button" onclick="swMain(\'ls\')">เปิดรายการลูกค้า</button>'
+    + '<button type="button" onclick="swMain(\'risk\')">Risk follow-up</button>'
+    + '<button type="button" onclick="swMain(\'growth\')">Growth follow-up</button>'
+    + '</div>';
+}
+
+function _homeCloseMapActionCard(){
+  var el = document.getElementById('home_map_action_card');
+  if(!el) return;
+  el.classList.remove('is-open');
+}
+
+function _homeSelectMapCommand(kind, key, label){
+  var rows = kind === 'province' ? _homeMapRowsForProvince(key) : _homeMapScopedRows();
+  _homeRenderMapActionCard(label || key || 'พื้นที่ที่เลือก', rows);
+  var list = document.getElementById('home_map_focus_list');
+  if(list){
+    list.querySelectorAll('.home-map-focus-item').forEach(function(btn){
+      btn.classList.toggle('active', btn.getAttribute('data-map-key') === String(key || ''));
+    });
+  }
+}
+
+function _homeRenderMapGrowthPanel(pvData){
+  var el = document.getElementById('home_map_growth_panel');
+  if(!el) return;
+  var m = getMC(), mp = getMP();
+  var rows = _homeMapScopedRows();
+  var trend = _homeScopeTrend(rows, 0);
+  var maxRev = Math.max.apply(null, (trend.rev || []).concat([1]));
+  var bars = (trend.rev || []).map(function(v, i){
+    var h = Math.max(8, Math.round(v / maxRev * 100));
+    return '<div class="home-map-growth-bar"><span style="height:'+h+'%"></span><strong>฿'+fmtS(v)+'</strong><em>'+_esc((trend.labels || [])[i] || '-')+'</em></div>';
+  }).join('');
+  var areas = Object.keys(pvData || {}).map(function(k){
+    var d = pvData[k] || {};
+    var itemRows = _homeMapRowsForProvince(d.pvEN || d.pvTH || k);
+    var stat = _homeMapStatusForRows(itemRows, m, mp);
+    return {
+      label:d.pvTH || PROV_EN2TH[k] || k,
+      zone:d.zone || '',
+      rows:itemRows.length,
+      status:stat.label,
+      tone:stat.tone,
+      pct:stat.pct,
+      avgDay:stat.avgDay
+    };
+  }).filter(function(item){ return item.rows > 0; });
+  var counts = {Risk:0, Watch:0, Stable:0, Growth:0};
+  areas.forEach(function(item){ counts[item.status] = (counts[item.status] || 0) + 1; });
+  var withPct = areas.filter(function(item){ return item.pct !== null; });
+  var topGrowth = withPct.slice().sort(function(a,b){ return b.pct - a.pct; })[0] || null;
+  var topRisk = withPct.slice().sort(function(a,b){ return a.pct - b.pct; })[0] || null;
+  var growthPct = topGrowth && topGrowth.pct !== null ? (topGrowth.pct >= 0 ? '+' : '') + topGrowth.pct.toFixed(1) + '% Avg Rev/day' : 'รอข้อมูลเดือนก่อน';
+  var riskPct = topRisk && topRisk.pct !== null ? (topRisk.pct >= 0 ? '+' : '') + topRisk.pct.toFixed(1) + '% Avg Rev/day' : 'รอข้อมูลเดือนก่อน';
+  el.innerHTML = '<div class="home-map-growth-head">'
+    + '<div><div class="home-map-list-title">แนวโน้มพื้นที่ใน scope นี้</div><div class="home-map-growth-sub">ใช้ Revenue รายเดือนและสถานะ Avg Rev/day เพื่ออ่านทิศทางหลังเลือกพื้นที่บนแผนที่</div></div>'
+    + '<div class="home-map-growth-counts">'
+    + '<span class="home-map-danger">Risk '+fmtInt(counts.Risk || 0)+'</span>'
+    + '<span class="home-map-warn">Watch '+fmtInt(counts.Watch || 0)+'</span>'
+    + '<span class="home-map-good">Growth '+fmtInt(counts.Growth || 0)+'</span>'
+    + '</div>'
+    + '</div>'
+    + '<div class="home-map-growth-grid">'
+    + '<div class="home-map-growth-chart">'+bars+'</div>'
+    + '<div class="home-map-growth-insights">'
+    + '<div><span>พื้นที่โตเด่น</span><strong>'+_esc(topGrowth ? topGrowth.label : '-')+'</strong><em>'+_esc(growthPct)+'</em></div>'
+    + '<div><span>พื้นที่ควรติดตาม</span><strong>'+_esc(topRisk ? topRisk.label : '-')+'</strong><em>'+_esc(riskPct)+'</em></div>'
+    + '</div>'
+    + '</div>';
+}
+
+function _homeRenderMapCommandList(pvData){
+  var listEl = document.getElementById('home_map_focus_list');
+  var fallbackEl = document.getElementById('home_map_fallback_list');
+  _homeRenderMapGrowthPanel(pvData);
+  if(!listEl && !fallbackEl) return;
+  var m = getMC(), mp = getMP();
+  var rows = _homeMapScopedRows();
+  var items = Object.keys(pvData || {}).map(function(k){
+    var d = pvData[k] || {};
+    var itemRows = _homeMapRowsForProvince(d.pvEN || d.pvTH || k);
+    var stat = _homeMapStatusForRows(itemRows, m, mp);
+    var actionCount = _homeMapActionItems(itemRows, m, mp).length;
+    return {
+      key:d.pvEN || d.pvTH || k,
+      label:d.pvTH || PROV_EN2TH[k] || k,
+      zone:d.zone || '',
+      rows:itemRows.length,
+      rev:stat.rev,
+      tone:stat.tone,
+      status:stat.label,
+      actionCount:actionCount
+    };
+  }).filter(function(item){ return item.rows > 0; }).sort(function(a,b){
+    if(a.actionCount !== b.actionCount) return b.actionCount - a.actionCount;
+    return b.rev - a.rev;
+  }).slice(0, 6);
+  if(listEl){
+    listEl.innerHTML = '<div class="home-map-list-title">พื้นที่ที่ควรเริ่มก่อน</div>'
+      + (items.length ? items.map(function(item){
+        return '<button type="button" class="home-map-focus-item home-map-'+item.tone+'" data-map-key="'+_esc(item.key)+'" onclick="_homeSelectMapCommand(\'province\',\''+_esc(item.key)+'\',\''+_esc(item.label)+'\')">'
+          + '<span><strong>'+_esc(item.label)+'</strong><small>'+_esc(item.zone || 'No zone')+' · '+fmtInt(item.rows)+' ราย</small></span>'
+          + '<em>'+_esc(item.status)+(item.actionCount?' · '+item.actionCount+' งาน':'')+'</em>'
+          + '</button>';
+      }).join('') : '<div class="home-map-list-empty">ไม่มีพื้นที่จาก filter ปัจจุบัน</div>');
+  }
+  var fallbackRows = rows.filter(function(r){ return !normProv(r[COL.province]); }).slice(0, 8);
+  if(fallbackEl){
+    fallbackEl.innerHTML = fallbackRows.length
+      ? '<div class="home-map-list-title">รายการที่ไม่มีพิกัดบนแผนที่</div>'
+        + fallbackRows.map(function(r){
+          return '<button type="button" class="home-map-fallback-item" onclick="swMain(\'ls\')">'
+            + '<strong>'+_esc(r[COL.agentName] || '-')+'</strong>'
+            + '<span>'+_esc(r[COL.agentCode] || '-')+' · '+_esc(r[COL.zoneName] || '-')+'</span>'
+            + '</button>';
+        }).join('')
+      : '';
+  }
+  _homeCloseMapActionCard();
 }
 
 // ── DIRECTOR HOME ────────────────────────────────────────────────

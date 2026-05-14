@@ -97,6 +97,16 @@ document.documentElement.classList.add('ui-v2');
   scrollbar-width:thin;
 }
 
+.ui-v2 .nav-group{
+  display:flex;
+  align-items:center;
+  gap:3px;
+}
+
+.ui-v2 .nav-group-label{
+  display:none;
+}
+
 .ui-v2 .ntab{
   min-height:34px;
   border-radius:6px;
@@ -184,6 +194,12 @@ document.documentElement.classList.add('ui-v2');
   color:#fff;
   background:var(--ac);
   border-color:var(--ac);
+}
+
+.ui-v2 .rbtn-admin{
+  color:#54448f;
+  background:#f3f0ff;
+  border-color:#d8cff6;
 }
 
 .ui-v2 #logout_btn{
@@ -376,6 +392,19 @@ document.documentElement.classList.add('ui-v2');
   letter-spacing:0;
   text-transform:none;
   font-size:11px;
+}
+
+.ui-v2 .metric-help{
+  border-color:#d7dde6;
+  background:#f8fafc;
+  color:#667085;
+}
+
+.ui-v2 .metric-help:hover,
+.ui-v2 .metric-help:focus{
+  border-color:var(--ac);
+  color:var(--ac);
+  background:#eef8f7;
 }
 
 .ui-v2 .kval{
@@ -655,6 +684,23 @@ document.documentElement.classList.add('ui-v2');
     background:transparent;
   }
 
+  .ui-v2 .nav-group{
+    width:100%;
+    flex-direction:column;
+    align-items:stretch;
+    gap:4px;
+  }
+
+  .ui-v2 .nav-group-label{
+    display:block;
+    padding:0 10px 3px;
+    color:#7f8da0;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+
   .ui-v2 .ntab{
     width:100%;
     min-height:38px;
@@ -749,6 +795,12 @@ document.documentElement.classList.add('ui-v2');
     color:#fff;
     background:#0f8f8c;
     border-color:#0f8f8c;
+  }
+
+  .ui-v2 .rbtn-admin{
+    color:#dcd6ff;
+    background:#221b37;
+    border-color:#40345f;
   }
 
   .ui-v2 .main{
