@@ -495,6 +495,73 @@ tr:hover td{background:#f8faff;}
 /* แผนที่ — dark mode */
 .leaflet-container{background:#0a0e1a!important;}
 .leaflet-tile-pane{filter:saturate(0.8) brightness(0.95);}
+/* Operational overview pass: make the role command surface the real first screen */
+#home_content .home-hero{
+  margin-bottom:10px!important;
+  border-radius:12px!important;
+  box-shadow:none!important;
+}
+#home_content .hero-top{
+  align-items:center!important;
+  padding:12px 16px 0!important;
+}
+#home_content .hero-bottom{
+  padding:10px 16px 12px!important;
+}
+#home_content .home-hero-title{
+  font-size:17px!important;
+  font-weight:900!important;
+}
+#home_content .home-hero-sub{
+  font-size:12px!important;
+  margin-top:3px!important;
+}
+#home_content .hero-msg{
+  margin-bottom:10px!important;
+  padding:8px 10px!important;
+  font-size:12px!important;
+}
+#home_content .hero-progress-wrap{
+  margin-bottom:10px!important;
+}
+#home_content .hero-countdown{
+  min-width:72px!important;
+  padding:7px 10px!important;
+}
+#home_content .hero-countdown-num{
+  font-size:22px!important;
+}
+#home_content .home-kpi-grid,
+#home_content [style*="grid-template-columns:repeat(6,1fr)"]:has(.home-kcard){
+  display:none!important;
+}
+#home_content .home-op-panel{
+  border-color:#b9c9ce!important;
+  box-shadow:var(--shadow-md)!important;
+  margin-bottom:16px!important;
+  padding:18px!important;
+}
+#home_content .home-op-title{
+  font-size:19px!important;
+}
+#home_content .home-op-metric,
+#home_content .home-op-action{
+  border-radius:10px!important;
+}
+#home_content .home-op-action-value{
+  font-size:20px!important;
+}
+#home_content .home-viz-grid{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#home_content .home-viz-grid .home-viz-card:nth-child(2){
+  display:none;
+}
+#home_content .am-sec,
+#home_content .ccard{
+  border-radius:12px!important;
+  box-shadow:var(--shadow-sm)!important;
+}
 </style>
 
 <!-- DESIGN SYSTEM OVERRIDE: Modern Professional Dashboard -->
