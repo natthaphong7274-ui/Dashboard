@@ -9891,21 +9891,6 @@ function _homeRenderMapGrowthPanel(pvData){
     return h;
   }).join('');
 
-  // ── Dual-Bar Chart (Avg Rev vs Avg Vol) ──
-  var maxRevAvg = Math.max.apply(null, trendRevAvg.concat([1]));
-  var maxVolAvg = Math.max.apply(null, trendVolAvg.concat([1]));
-  var bars = trendRevAvg.map(function(rAvg, i){
-    var vAvg = trendVolAvg[i] || 0;
-    var hr = Math.max(4, Math.round(rAvg / maxRevAvg * 100));
-    var hv = Math.max(4, Math.round(vAvg / maxVolAvg * 100));
-    return '<div class="home-map-growth-bar" style="position:relative;flex-direction:row;align-items:flex-end;gap:2px;justify-content:center;min-width:0">'
-         +   '<div style="width:40%;height:'+hr+'%;background:#0284c7;border-radius:3px 3px 0 0;opacity:0.9"></div>'
-         +   '<div style="width:40%;height:'+hv+'%;background:#ea580c;border-radius:3px 3px 0 0;opacity:0.8"></div>'
-         +   '<div style="position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
-         +     _esc((trend.labels || [])[i] || '-')
-         +   '</div>'
-         + '</div>';
-  }).join('');
 
   // ── areas สำหรับ status count ──
   var areas = Object.keys(pvData || {}).map(function(k){
@@ -9978,21 +9963,24 @@ function _homeRenderMapGrowthPanel(pvData){
     +   '</div>'
     + '</div>'
 
-    // ── Secondary Row (Bar chart + Insights) ──
-    + '<div class="below-map-trend-row" style="grid-template-columns: minmax(0,1.5fr) minmax(200px,1fr)">'
-
-    // Bar chart (Avg/Day)
-    + '<div class="below-map-bar-wrap" style="height:100%;display:flex;flex-direction:column">'
-    +   '<div class="below-map-sparkline-label">Avg/Day (6 เดือน)</div>'
-    +   '<div class="home-map-growth-chart" style="height:64px;margin-top:auto;margin-bottom:18px">'+bars+'</div>'
-    + '</div>'
-
-    // Insights
-    + '<div class="below-map-insights" style="height:100%">'
-    +   '<div style="flex:1"><span>🏆 โตเด่นสุด</span><strong>'+_esc(topGrowth?topGrowth.label:'-')+'</strong><em>'+_esc(growthPct)+'</em></div>'
-    +   '<div style="flex:1;background:'+(topRisk?'#fff5f5':'var(--surface-2)')+';border-color:'+(topRisk?'#fecaca':'#e2e8f0')+'"><span>⚠️ เสี่ยงสุด (ต้องติดตาม)</span><strong style="color:'+(topRisk?'#b91c1c':'var(--ink)')+'">'+_esc(topRisk?topRisk.label:'-')+'</strong><em style="color:'+(topRisk?'#ef4444':'var(--t2)')+'">'+_esc(riskPct)+'</em></div>'
-    + '</div>'
-
+    // ── Key Insights (Full Width) ──
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px">'
+    +   '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 2px rgba(22,163,74,0.05)">'
+    +     '<div style="width:44px;height:44px;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏆</div>'
+    +     '<div style="flex:1;min-width:0">'
+    +       '<div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:2px;letter-spacing:0.02em">พื้นที่โตเด่นสุด (Top Growth)</div>'
+    +       '<div style="font-size:16px;font-weight:800;color:#14532d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_esc(topGrowth?topGrowth.label:'ไม่มีข้อมูล')+'</div>'
+    +     '</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:#16a34a;text-align:right">'+_esc(growthPct)+'</div>'
+    +   '</div>'
+    +   '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 2px rgba(220,38,38,0.05)">'
+    +     '<div style="width:44px;height:44px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚠️</div>'
+    +     '<div style="flex:1;min-width:0">'
+    +       '<div style="font-size:11px;font-weight:700;color:#991b1b;margin-bottom:2px;letter-spacing:0.02em">พื้นที่เสี่ยงสุด (Top Risk)</div>'
+    +       '<div style="font-size:16px;font-weight:800;color:#7f1d1d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_esc(topRisk?topRisk.label:'ไม่มีข้อมูล')+'</div>'
+    +     '</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:#dc2626;text-align:right">'+_esc(riskPct)+'</div>'
+    +   '</div>'
     + '</div>';
 }
 
