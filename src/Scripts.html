@@ -9784,18 +9784,6 @@ function _homeRenderMapGrowthPanel(pvData){
   var momArd = prevAvgRevDay > 0 ? ((avgRevDay - prevAvgRevDay) / prevAvgRevDay * 100).toFixed(1) : null;
   var momAvd = prevAvgVolDay > 0 ? ((avgVolDay - prevAvgVolDay) / prevAvgVolDay * 100).toFixed(1) : null;
 
-  // ── Forecast EOM & Target ──
-  var daysInMonth = 30;
-  var elapsed = curDays;
-  var forecastRev = m && m.currentMonth ? Math.round(avgRevDay * daysInMonth) : Math.round(totRev);
-  var forecastVol = m && m.currentMonth ? Math.round(avgVolDay * daysInMonth) : Math.round(totVol);
-  var reqPerDay   = 0;
-  var tMeta = (typeof _targetFromConfig === 'function') ? _targetFromConfig(m && m.key, prevRev, (typeof _targetTotalPrevRev === 'function' ? _targetTotalPrevRev(m && m.key) : 0), null) : {};
-  var hasTarget = !!(tMeta && tMeta.hasTarget && tMeta.value > 0);
-  var targetVal  = hasTarget ? (tMeta.value || 0) : 0;
-  var daysLeft = Math.max(1, daysInMonth - elapsed);
-  if(hasTarget && targetVal > totRev) reqPerDay = Math.round((targetVal - totRev) / daysLeft);
-
   // ── Data for Charts ──
   var trend = _homeScopeTrend(rows, 0);
   
@@ -9808,6 +9796,42 @@ function _homeRenderMapGrowthPanel(pvData){
     var d = m && m.currentMonth && i === (trend.vol.length-1) ? Math.max(1,curDays) : 30;
     return Math.round(v / d);
   });
+
+  // ── Forecast EOM & Target (Weighted Time Series Blending Model) ──
+  var daysInMonth = 30;
+  var elapsed = Math.max(1, curDays);
+  
+  // หา Historical Run-rate จาก 3 เดือนย้อนหลัง (Weighted Moving Average)
+  var tsRevDay = avgRevDay, tsVolDay = avgVolDay, wmaDiv = 0, pastRev = 0, pastVol = 0;
+  for(var i=1; i<=3; i++){
+    var idx = trendRevAvg.length - 1 - i; // เริ่มจากเดือนที่แล้ว
+    if(idx >= 0 && trendRevAvg[idx] > 0){
+      var w = 4 - i; // น้ำหนัก (เดือนที่แล้ว=3, ก่อนหน้า=2, ก่อนหน้าอีก=1)
+      pastRev += trendRevAvg[idx] * w;
+      pastVol += trendVolAvg[idx] * w;
+      wmaDiv += w;
+    }
+  }
+  if(wmaDiv > 0){
+    tsRevDay = pastRev / wmaDiv;
+    tsVolDay = pastVol / wmaDiv;
+  }
+  
+  // Blending: ยิ่งผ่านไปหลายวัน ยิ่งเชื่อค่าเฉลี่ยของเดือนนี้มากขึ้น
+  var wCur = Math.min(elapsed / daysInMonth, 1);
+  var wHis = 1 - wCur;
+  var blendedRevDay = (avgRevDay * wCur) + (tsRevDay * wHis);
+  var blendedVolDay = (avgVolDay * wCur) + (tsVolDay * wHis);
+
+  var forecastRev = m && m.currentMonth ? Math.round(blendedRevDay * daysInMonth) : Math.round(totRev);
+  var forecastVol = m && m.currentMonth ? Math.round(blendedVolDay * daysInMonth) : Math.round(totVol);
+  
+  var reqPerDay   = 0;
+  var tMeta = (typeof _targetFromConfig === 'function') ? _targetFromConfig(m && m.key, prevRev, (typeof _targetTotalPrevRev === 'function' ? _targetTotalPrevRev(m && m.key) : 0), null) : {};
+  var hasTarget = !!(tMeta && tMeta.hasTarget && tMeta.value > 0);
+  var targetVal  = hasTarget ? (tMeta.value || 0) : 0;
+  var daysLeft = Math.max(1, daysInMonth - elapsed);
+  if(hasTarget && targetVal > totRev) reqPerDay = Math.round((targetVal - totRev) / daysLeft);
 
   // ใช้ Avg/day สำหรับกราฟเส้น (Hero Chart) ตามที่ตกลงกัน
   var trendRevGraph = trendRevAvg;
