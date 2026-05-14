@@ -9512,6 +9512,20 @@ function _homeOperationalPanel(cfg) {
     + '</section>';
 }
 
+function _homeSignalStrip(items) {
+  items = (items || []).filter(Boolean);
+  if (!items.length) return '';
+  return '<section class="home-signal-strip">'
+    + items.map(function(item) {
+      return '<article class="home-signal-card home-signal-' + _esc(item.tone || 'neutral') + '">'
+        + '<div class="home-signal-label">' + _esc(item.label || '') + '</div>'
+        + '<div class="home-signal-value">' + _esc(item.value || '-') + '</div>'
+        + (item.meta ? '<div class="home-signal-meta">' + _esc(item.meta) + '</div>' : '')
+        + '</article>';
+    }).join('')
+    + '</section>';
+}
+
 // ── DIRECTOR HOME ────────────────────────────────────────────────
 function _renderHomeDirector(m, mp) {
   try {
@@ -9695,6 +9709,27 @@ function _renderHomeDirector(m, mp) {
     ],
     note:'Director เห็นภาพรวมเพื่อเลือกจุด escalate ไม่ใช่ดูทุกตารางพร้อมกัน'
   });
+
+  html += _homeSignalStrip([
+    {
+      label:'Target pace',
+      value:dirHasTarget ? targetPct + '% of country target' : 'Target not set',
+      meta:dirHasTarget ? ('Need ฿' + fmtS(Math.round(needAmt)) + ' in ' + daysLeft + ' days') : 'Set national target to unlock pacing',
+      tone:dirHasTarget ? (targetPct >= 80 ? 'good' : 'warn') : 'neutral'
+    },
+    {
+      label:'MoM health',
+      value:(momRev!==null ? (parseFloat(momRev)>=0?'+':'') + momRev + '% revenue' : 'Current month only'),
+      meta:(momVol!==null ? (parseFloat(momVol)>=0?'+':'') + momVol + '% volume' : 'Volume comparison unavailable'),
+      tone:(momRev!==null && parseFloat(momRev) < 0) ? 'danger' : 'good'
+    },
+    {
+      label:'Needs escalation',
+      value:dropZones.length + ' zones',
+      meta:dirRiskCount + ' risk agents and ' + dirGrowthRows.length + ' growth opportunities',
+      tone:dropZones.length ? 'warn' : 'good'
+    }
+  ]);
 
   // ══════════════════════════════════════════════════════
   // ROW 1: KPI Cards — 6 cards (like AM)
@@ -10938,6 +10973,27 @@ function _renderHomeAM(m, mp) {
     note:'AM เห็นภาพรวมเพื่อเลือกทีมและลูกค้าที่ควรเข้าไปช่วยวันนี้'
   });
 
+  html += _homeSignalStrip([
+    {
+      label:'Zone pace',
+      value:zoneHasTarget ? zonePct + '% of zone target' : 'Target not set',
+      meta:zoneHasTarget ? ('Need ฿' + fmtS(Math.round(needAmt)) + ' in ' + daysLeft + ' days') : 'Set zone target first',
+      tone:zoneHasTarget ? (zonePct >= 80 ? 'good' : 'warn') : 'neutral'
+    },
+    {
+      label:'Team momentum',
+      value:(momRev!==null ? (parseFloat(momRev)>=0?'+':'') + momRev + '% revenue' : 'Current month only'),
+      meta:(momVol!==null ? (parseFloat(momVol)>=0?'+':'') + momVol + '% volume' : 'Volume comparison unavailable'),
+      tone:(momRev!==null && parseFloat(momRev) < 0) ? 'danger' : 'good'
+    },
+    {
+      label:'Focus today',
+      value:amRiskCount + ' risk, ' + amGrowthRows.length + ' growth',
+      meta:bdUsers.filter(function(b){ return b.mom!==null && parseFloat(b.mom) < 0; }).length + ' BDs need support',
+      tone:(amRiskCount > 0) ? 'warn' : 'good'
+    }
+  ]);
+
   // MoM Quick Overview Strip (ถ้ามี prev month)
   if (mp) {
     var momRevNum = momRev !== null ? parseFloat(momRev) : null;
@@ -11936,6 +11992,9 @@ function _renderHomeBD(m, mp) {
   var totLeads = myRows.length;
   var convRate = totLeads > 0 ? (totActive / totLeads * 100).toFixed(1) : '0.0';
   var momRev = _homeMoM(totRev, prevRev);
+  var prevTotRev = prevRev;
+  var prevTotVol = mp ? myRows.reduce(function(s,r){return s+N(r[mp.colVol]);},0) : 0;
+  var momVol = _homeMoM(totVol, prevTotVol);
 
   var actionList = [];
 
@@ -12063,12 +12122,30 @@ function _renderHomeBD(m, mp) {
     note:'BD เห็นเฉพาะพอร์ตและงานของตัวเอง ไม่ต้องอ่านตารางบริหารระดับ Zone'
   });
 
+  html += _homeSignalStrip([
+    {
+      label:'Target pace',
+      value:bdHasTarget ? bdTargetPct + '% of BD target' : 'Target not set',
+      meta:bdHasTarget ? ('Need ฿' + fmtS(Math.round(bdNeedAmt)) + ' in ' + daysLeft + ' days') : 'Set your target first',
+      tone:bdHasTarget ? (bdTargetPct >= 80 ? 'good' : 'warn') : 'neutral'
+    },
+    {
+      label:'Portfolio momentum',
+      value:(momRev!==null ? (parseFloat(momRev)>=0?'+':'') + momRev + '% revenue' : 'Current month only'),
+      meta:(momVol!==null ? (parseFloat(momVol)>=0?'+':'') + momVol + '% volume' : 'Volume comparison unavailable'),
+      tone:(momRev!==null && parseFloat(momRev) < 0) ? 'danger' : 'good'
+    },
+    {
+      label:'Action queue',
+      value:actionList.length + ' prioritized tasks',
+      meta:bdRiskCount + ' risk and ' + bdGrowthRows.length + ' growth accounts',
+      tone:actionList.length ? 'warn' : 'good'
+    }
+  ]);
+
   // ── Hero KPI — Redesigned with VOL dimension ──
   var runRate       = Math.round(totRev / Math.max(TODAY_DATE-1, 1));
   var lossPct = '0.0'; // T03
-  var prevTotRev    = mp ? myRows.reduce(function(s,r){return s+N(r[mp.colRev]);},0) : 0;
-  var prevTotVol    = mp ? myRows.reduce(function(s,r){return s+N(r[mp.colVol]);},0) : 0;
-  var momVol        = _homeMoM(totVol, prevTotVol);
   // Avg Rev/Vol (price per piece)
   var curAvgRevVol  = totVol > 0 ? (totRev / totVol).toFixed(1) : 0;
   var prevAvgRevVol = prevTotVol > 0 ? (prevTotRev / prevTotVol).toFixed(1) : null;
