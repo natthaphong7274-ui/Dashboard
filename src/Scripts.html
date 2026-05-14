@@ -9799,7 +9799,7 @@ function _homeRenderMapGrowthPanel(pvData){
   // ── Data for Charts ──
   var trend = _homeScopeTrend(rows, 0);
   
-  // Avg/day (for bar chart)
+  // Avg/day (for bar chart & line chart)
   var trendRevAvg = (trend.rev || []).map(function(v, i){
     var d = m && m.currentMonth && i === (trend.rev.length-1) ? Math.max(1,curDays) : 30;
     return Math.round(v / d);
@@ -9809,13 +9809,9 @@ function _homeRenderMapGrowthPanel(pvData){
     return Math.round(v / d);
   });
 
-  // Totals & Forecast (for line chart)
-  var trendRevGraph = (trend.rev || []).map(function(v, i){
-    return (m && m.currentMonth && i === trend.rev.length-1) ? forecastRev : v;
-  });
-  var trendVolGraph = (trend.vol || []).map(function(v, i){
-    return (m && m.currentMonth && i === trend.vol.length-1) ? forecastVol : v;
-  });
+  // ใช้ Avg/day สำหรับกราฟเส้น (Hero Chart) ตามที่ตกลงกัน
+  var trendRevGraph = trendRevAvg;
+  var trendVolGraph = trendVolAvg;
 
   // ── Hero Line Chart SVG + HTML Dots ──
   var H = 100, W = 800, padY = 10, useH = 80;
@@ -9859,7 +9855,7 @@ function _homeRenderMapGrowthPanel(pvData){
     var yV = padY + useH - ((trendVolGraph[i] - minVolG) / rangeVolG) * useH;
     var isFcast = isCur && i === trendRevGraph.length - 1;
     var h = '';
-    h += '<div style="position:absolute;left:'+xPct+'%;bottom:-24px;transform:translateX(-50%);font-size:10px;color:'+(isFcast?'var(--pr)':'var(--muted)')+';font-weight:'+(isFcast?800:600)+'">'+(isFcast?'Forecast':_esc((trend.labels||[])[i]||'-'))+'</div>';
+    h += '<div style="position:absolute;left:'+xPct+'%;bottom:-24px;transform:translateX(-50%);font-size:10px;color:'+(isFcast?'var(--pr)':'var(--muted)')+';font-weight:'+(isFcast?800:600)+'">'+_esc((trend.labels||[])[i]||'-')+'</div>';
     h += '<div style="position:absolute;left:'+xPct+'%;top:'+yR+'px;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:'+(isFcast?'#fff':'#0284c7')+';border:2px solid #0284c7;z-index:2;box-shadow:0 1px 2px rgba(0,0,0,0.1)"></div>';
     h += '<div style="position:absolute;left:'+xPct+'%;top:'+yV+'px;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:'+(isFcast?'#fff':'#ea580c')+';border:2px solid #ea580c;z-index:2;box-shadow:0 1px 2px rgba(0,0,0,0.1)"></div>';
     
@@ -9949,7 +9945,7 @@ function _homeRenderMapGrowthPanel(pvData){
     +     '<div style="display:flex;gap:12px;align-items:center;font-size:11px;font-weight:600;color:var(--t2);background:var(--surface-2);padding:6px 12px;border-radius:20px">'
     +       '<span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:3px;background:#0284c7;border-radius:2px"></span> Revenue</span>'
     +       '<span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:3px;background:#ea580c;border-radius:2px"></span> Volume</span>'
-    +       '<span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:0;border-top:2px dashed #94a3b8"></span> Forecast</span>'
+    +       '<span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:0;border-top:2px dashed #94a3b8"></span> เดือนปัจจุบัน</span>'
     +     '</div>'
     +   '</div>'
     +   '<div style="width:100%;height:'+H+'px;position:relative;margin-top:10px">'
