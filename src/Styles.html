@@ -1239,6 +1239,131 @@ tr:hover td{background:#f8faff;}
     gap:5px;
   }
 }
+/* ── Below-map panel new elements ── */
+.below-map-tab{
+  border:1.5px solid var(--line);
+  border-radius:20px;
+  background:#fff;
+  color:var(--ink);
+  cursor:pointer;
+  font-size:10px;
+  font-weight:800;
+  padding:3px 9px;
+  transition:background .15s,color .15s,border-color .15s;
+  white-space:nowrap;
+}
+.below-map-tab:hover{border-color:var(--pr);color:var(--pr);}
+.below-map-tab.active{background:var(--pr);color:#fff;border-color:var(--pr);}
+.below-map-kpi-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+.below-map-kpi-card{
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  padding:10px 12px;
+  min-width:0;
+}
+.below-map-kpi-card.below-map-kpi-warn{
+  border-color:#ffd993;
+  background:#fffbf0;
+}
+.below-map-kpi-label{
+  font-size:10px;
+  font-weight:800;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  margin-bottom:4px;
+}
+.below-map-kpi-value{
+  font-size:17px;
+  font-weight:900;
+  color:var(--ink);
+  line-height:1.1;
+  font-variant-numeric:tabular-nums;
+}
+.below-map-kpi-sub{
+  font-size:10px;
+  color:var(--muted);
+  margin-top:4px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.below-map-trend-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(180px,.7fr);
+  gap:10px;
+  align-items:start;
+}
+.below-map-sparkline-wrap,
+.below-map-bar-wrap,
+.below-map-insights{
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  padding:10px;
+  min-width:0;
+}
+.below-map-sparkline-label{
+  font-size:10px;
+  font-weight:800;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  margin-bottom:6px;
+}
+.below-map-sparkline-vals{
+  display:flex;
+  justify-content:space-between;
+  margin-top:4px;
+  font-size:10px;
+  color:var(--muted);
+}
+.below-map-insights{
+  display:grid;
+  gap:6px;
+}
+.below-map-insights div{
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:var(--surface-2);
+  padding:8px 10px;
+}
+.below-map-insights span{
+  display:block;
+  font-size:10px;
+  font-weight:900;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+.below-map-insights strong{
+  display:block;
+  font-size:14px;
+  font-weight:900;
+  color:var(--ink);
+  margin-top:2px;
+}
+.below-map-insights em{
+  display:block;
+  font-size:10px;
+  font-style:normal;
+  color:var(--muted);
+  margin-top:1px;
+}
+@media(max-width:900px){
+  .below-map-trend-row{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:600px){
+  .below-map-trend-row{grid-template-columns:1fr;}
+  .below-map-kpi-row{grid-template-columns:1fr 1fr;}
+}
 </style>
 
 <!-- DESIGN SYSTEM OVERRIDE: Modern Professional Dashboard -->
