@@ -9759,10 +9759,6 @@ function _belowMapSetMetric(key, el) {
 }
 
 function _homeRenderMapGrowthPanel(pvData){
-  // cache pvData for metric switching
-  window._lastPvData = pvData || window._lastPvData || {};
-  pvData = window._lastPvData;
-
   var el = document.getElementById('home_map_growth_panel');
   if(!el) return;
   var m = getMC(), mp = getMP();
@@ -9789,72 +9785,69 @@ function _homeRenderMapGrowthPanel(pvData){
   var elapsed = curDays;
   var forecastRev = m && m.currentMonth ? Math.round(avgRevDay * daysInMonth) : Math.round(totRev);
   var forecastVol = m && m.currentMonth ? Math.round(avgVolDay * daysInMonth) : Math.round(totVol);
-  var reqPerDay   = 0; // หาจาก target ถ้ามี
+  var reqPerDay   = 0;
   var tMeta = (typeof _targetFromConfig === 'function') ? _targetFromConfig(m && m.key, prevRev, (typeof _targetTotalPrevRev === 'function' ? _targetTotalPrevRev(m && m.key) : 0), null) : {};
   var hasTarget = !!(tMeta && tMeta.hasTarget && tMeta.value > 0);
   var targetVal  = hasTarget ? (tMeta.value || 0) : 0;
   var daysLeft = Math.max(1, daysInMonth - elapsed);
   if(hasTarget && targetVal > totRev) reqPerDay = Math.round((targetVal - totRev) / daysLeft);
 
-  // ── Trend (6 เดือน) — ข้อมูลตาม metric ที่เลือก ──
+  // ── Trend (6 เดือน) — Normalized Avg/day ──
   var trend = _homeScopeTrend(rows, 0);
-  var metric = _belowMapMetric || 'ard';
-  var trendData, trendLabel, trendColor, trendUnit;
-  if(metric === 'ard'){
-    trendData  = (trend.rev || []).map(function(v, i){
-      var d = m && m.currentMonth && i === (trend.rev.length-1) ? Math.max(1,curDays) : 30;
-      return Math.round(v / d);
-    });
-    trendLabel = 'Avg Rev/day'; trendColor = '#06b6d4'; trendUnit = '฿';
-  } else if(metric === 'avd'){
-    trendData  = (trend.vol || []).map(function(v, i){
-      var d = m && m.currentMonth && i === (trend.vol.length-1) ? Math.max(1,curDays) : 30;
-      return Math.round(v / d);
-    });
-    trendLabel = 'Avg Vol/day'; trendColor = '#e8622a'; trendUnit = '';
-  } else if(metric === 'rev'){
-    trendData  = trend.rev || [];
-    trendLabel = 'Revenue'; trendColor = '#003f5c'; trendUnit = '฿';
-  } else {
-    // forecast
-    trendData  = (trend.rev || []).map(function(v){ return Math.round(v * daysInMonth / 30); });
-    trendLabel = 'Forecast EOM'; trendColor = '#16a34a'; trendUnit = '฿';
-  }
-
-  // ── Sparkline SVG ──
-  var maxVal  = Math.max.apply(null, trendData.concat([1]));
-  var minVal  = Math.min.apply(null, trendData.concat([0]));
-  var range   = Math.max(maxVal - minVal, 1);
-  var W = 200, H = 54, pad = 6;
-  var pts = trendData.map(function(v, i){
-    var x = pad + (i / Math.max(trendData.length - 1, 1)) * (W - pad * 2);
-    var y = H - pad - ((v - minVal) / range) * (H - pad * 2);
-    return x.toFixed(1) + ',' + y.toFixed(1);
+  var trendRevAvg = (trend.rev || []).map(function(v, i){
+    var d = m && m.currentMonth && i === (trend.rev.length-1) ? Math.max(1,curDays) : 30;
+    return Math.round(v / d);
   });
-  var sparkSvg = '';
-  if(pts.length > 1){
-    // กราฟ area
-    var areaPath = 'M'+pts[0]+' '+pts.slice(1).map(function(p){ return 'L'+p; }).join(' ')
-      +' L'+(W-pad).toFixed(1)+','+(H-pad)+' L'+pad+','+(H-pad)+' Z';
-    var linePath = 'M'+pts[0]+' '+pts.slice(1).map(function(p){ return 'L'+p; }).join(' ');
-    var lastX = parseFloat(pts[pts.length-1].split(',')[0]);
-    var lastY = parseFloat(pts[pts.length-1].split(',')[1]);
-    var firstY = parseFloat(pts[0].split(',')[1]);
-    var isUp = lastY <= firstY; // SVG y ลงล่าง ดังนั้น lastY เล็กกว่า = ค่าสูงกว่า
-    var lineCol = isUp ? trendColor : '#ef4444';
-    sparkSvg = '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="overflow:visible">'
-      +'<defs><linearGradient id="spGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+lineCol+'" stop-opacity=".25"/><stop offset="100%" stop-color="'+lineCol+'" stop-opacity=".02"/></linearGradient></defs>'
-      +'<path d="'+areaPath+'" fill="url(#spGrad)"/>'
-      +'<path d="'+linePath+'" fill="none" stroke="'+lineCol+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
-      +'<circle cx="'+lastX+'" cy="'+lastY+'" r="3" fill="'+lineCol+'" stroke="white" stroke-width="1.5"/>'
-      +'</svg>';
-  }
+  var trendVolAvg = (trend.vol || []).map(function(v, i){
+    var d = m && m.currentMonth && i === (trend.vol.length-1) ? Math.max(1,curDays) : 30;
+    return Math.round(v / d);
+  });
 
-  // ── bar chart Revenue (mini) ──
-  var maxRev = Math.max.apply(null, (trend.rev || []).concat([1]));
-  var bars = (trend.rev || []).map(function(v, i){
-    var h = Math.max(8, Math.round(v / maxRev * 100));
-    return '<div class="home-map-growth-bar"><span style="height:'+h+'%"></span><strong>฿'+fmtS(v)+'</strong><em>'+_esc((trend.labels || [])[i] || '-')+'</em></div>';
+  // ── Dual-Line Sparkline SVG ──
+  var W = 200, H = 54, pad = 6;
+  function makePts(data, minV, range){
+    return data.map(function(v, i){
+      var x = pad + (i / Math.max(data.length - 1, 1)) * (W - pad * 2);
+      var y = H - pad - ((v - minV) / range) * (H - pad * 2);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    });
+  }
+  var maxRevAvg = Math.max.apply(null, trendRevAvg.concat([1]));
+  var minRevAvg = Math.min.apply(null, trendRevAvg.concat([0]));
+  var rangeRev  = Math.max(maxRevAvg - minRevAvg, 1);
+  var ptsRev    = makePts(trendRevAvg, minRevAvg, rangeRev);
+
+  var maxVolAvg = Math.max.apply(null, trendVolAvg.concat([1]));
+  var minVolAvg = Math.min.apply(null, trendVolAvg.concat([0]));
+  var rangeVol  = Math.max(maxVolAvg - minVolAvg, 1);
+  var ptsVol    = makePts(trendVolAvg, minVolAvg, rangeVol);
+
+  var sparkSvg = '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="overflow:visible">';
+  if(ptsRev.length > 1){
+    var pathRev = 'M'+ptsRev[0]+' '+ptsRev.slice(1).map(function(p){ return 'L'+p; }).join(' ');
+    var pathVol = 'M'+ptsVol[0]+' '+ptsVol.slice(1).map(function(p){ return 'L'+p; }).join(' ');
+    
+    // Rev: Solid Blue line
+    sparkSvg += '<path d="'+pathRev+'" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+             +  '<circle cx="'+ptsRev[ptsRev.length-1].split(',')[0]+'" cy="'+ptsRev[ptsRev.length-1].split(',')[1]+'" r="3.5" fill="#0284c7" stroke="#fff" stroke-width="1.5"/>';
+    // Vol: Dashed Orange line
+    sparkSvg += '<path d="'+pathVol+'" fill="none" stroke="#ea580c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="4 4"/>'
+             +  '<circle cx="'+ptsVol[ptsVol.length-1].split(',')[0]+'" cy="'+ptsVol[ptsVol.length-1].split(',')[1]+'" r="3.5" fill="#ea580c" stroke="#fff" stroke-width="1.5"/>';
+  }
+  sparkSvg += '</svg>';
+
+  // ── Dual-Bar Chart (Avg Rev vs Avg Vol) ──
+  var bars = trendRevAvg.map(function(rAvg, i){
+    var vAvg = trendVolAvg[i] || 0;
+    var hr = Math.max(4, Math.round(rAvg / maxRevAvg * 100));
+    var hv = Math.max(4, Math.round(vAvg / maxVolAvg * 100));
+    return '<div class="home-map-growth-bar" style="position:relative;flex-direction:row;align-items:flex-end;gap:2px;justify-content:center;min-width:0">'
+         +   '<div style="width:40%;height:'+hr+'%;background:#0284c7;border-radius:3px 3px 0 0;opacity:0.9"></div>'
+         +   '<div style="width:40%;height:'+hv+'%;background:#ea580c;border-radius:3px 3px 0 0;opacity:0.8"></div>'
+         +   '<div style="position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+         +     _esc((trend.labels || [])[i] || '-')
+         +   '</div>'
+         + '</div>';
   }).join('');
 
   // ── areas สำหรับ status count ──
@@ -9881,15 +9874,13 @@ function _homeRenderMapGrowthPanel(pvData){
   }
 
   el.innerHTML =
-    // ── ส่วนหัว + metric selector ──
+    // ── ส่วนหัว ──
     '<div class="home-map-growth-head" style="flex-wrap:wrap;gap:12px">'
     + '<div><div class="home-map-list-title">แนวโน้มพื้นที่ใน scope นี้</div>'
-    +   '<div class="home-map-growth-sub">เลือก metric เพื่อดูเส้นแนวโน้ม</div></div>'
-    + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">'
-    +   '<button class="below-map-tab'+(metric==='ard'?' active':'')+'" onclick="_belowMapSetMetric(\'ard\',this)">📈 Avg Rev/day</button>'
-    +   '<button class="below-map-tab'+(metric==='avd'?' active':'')+'" onclick="_belowMapSetMetric(\'avd\',this)">📦 Avg Vol/day</button>'
-    +   '<button class="below-map-tab'+(metric==='rev'?' active':'')+'" onclick="_belowMapSetMetric(\'rev\',this)">💰 Revenue</button>'
-    +   '<button class="below-map-tab'+(metric==='forecast'?' active':'')+'" onclick="_belowMapSetMetric(\'forecast\',this)">🎯 Forecast</button>'
+    +   '<div class="home-map-growth-sub" style="display:flex;gap:10px;align-items:center;margin-top:4px">'
+    +     '<span style="display:flex;align-items:center;gap:4px;color:var(--tx);font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:#0284c7"></span> Avg Rev/day</span>'
+    +     '<span style="display:flex;align-items:center;gap:4px;color:var(--tx);font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:#ea580c"></span> Avg Vol/day</span>'
+    +   '</div>'
     + '</div>'
     + '<div class="home-map-growth-counts">'
     +   '<span class="home-map-danger">Risk '+fmtInt(counts.Risk||0)+'</span>'
@@ -9900,28 +9891,24 @@ function _homeRenderMapGrowthPanel(pvData){
 
     // ── Metric KPI cards แถว ──
     + '<div class="below-map-kpi-row">'
-
     // Avg Rev/day
     + '<div class="below-map-kpi-card">'
     +   '<div class="below-map-kpi-label">📈 Avg Rev/day</div>'
     +   '<div class="below-map-kpi-value">฿'+fmtS(Math.round(avgRevDay))+'</div>'
     +   '<div class="below-map-kpi-sub">'+momPill(momArd)+(momArd!==null?' MoM':' รอข้อมูลเดือนก่อน')+'</div>'
     + '</div>'
-
     // Avg Vol/day
     + '<div class="below-map-kpi-card">'
     +   '<div class="below-map-kpi-label">📦 Avg Vol/day</div>'
     +   '<div class="below-map-kpi-value">'+fmtF(avgVolDay)+' ชิ้น</div>'
     +   '<div class="below-map-kpi-sub">'+momPill(momAvd)+(momAvd!==null?' MoM':' รอข้อมูลเดือนก่อน')+'</div>'
     + '</div>'
-
     // Forecast EOM
     + '<div class="below-map-kpi-card'+(hasTarget&&forecastRev<targetVal?' below-map-kpi-warn':'')+'"> '
     +   '<div class="below-map-kpi-label">🎯 Forecast EOM</div>'
     +   '<div class="below-map-kpi-value">฿'+fmtS(forecastRev)+'</div>'
     +   '<div class="below-map-kpi-sub">'+(hasTarget?'เป้า ฿'+fmtS(targetVal):'ยังไม่ตั้งเป้า')+'</div>'
     + '</div>'
-
     // Required Rev/day
     + (hasTarget && reqPerDay > 0
       ? '<div class="below-map-kpi-card below-map-kpi-warn">'
@@ -9931,26 +9918,25 @@ function _homeRenderMapGrowthPanel(pvData){
       + '</div>'
       : ''
     )
-
     + '</div>'
 
     // ── Sparkline + bar chart ──
     + '<div class="below-map-trend-row">'
 
-    // Sparkline metric ที่เลือก
+    // Sparkline (Dual-Line)
     + '<div class="below-map-sparkline-wrap">'
-    +   '<div class="below-map-sparkline-label">'+trendLabel+' (6 เดือน)</div>'
+    +   '<div class="below-map-sparkline-label">Rev vs Vol Trend (6 เดือน)</div>'
     +   (sparkSvg || '<div style="font-size:11px;color:var(--t2);padding:8px">รอข้อมูลหลายเดือน</div>')
     +   '<div class="below-map-sparkline-vals">'
-    +     (trendData.length ? '<span>'+trendUnit+fmtS(trendData[0])+'</span>' : '')
-    +     (trendData.length > 1 ? '<span style="font-weight:700;color:'+trendColor+'">'+trendUnit+fmtS(trendData[trendData.length-1])+'</span>' : '')
+    +     (trendRevAvg.length ? '<span>฿'+fmtS(trendRevAvg[0])+' / '+fmtInt(trendVolAvg[0])+'ชิ้น</span>' : '')
+    +     (trendRevAvg.length > 1 ? '<span>฿'+fmtS(trendRevAvg[trendRevAvg.length-1])+' / '+fmtInt(trendVolAvg[trendVolAvg.length-1])+'ชิ้น</span>' : '')
     +   '</div>'
     + '</div>'
 
-    // Bar chart Revenue
+    // Bar chart (Dual-Bar)
     + '<div class="below-map-bar-wrap">'
-    +   '<div class="below-map-sparkline-label">Revenue (6 เดือน)</div>'
-    +   '<div class="home-map-growth-chart" style="height:64px">'+bars+'</div>'
+    +   '<div class="below-map-sparkline-label">Avg/Day (6 เดือน)</div>'
+    +   '<div class="home-map-growth-chart" style="height:64px;margin-bottom:14px">'+bars+'</div>'
     + '</div>'
 
     // Insights
