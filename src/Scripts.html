@@ -14306,20 +14306,21 @@ function delBdMt() {
     if (ov && ov.style.display !== 'none' && !_3dInited) {
       init(); _3dInited = true;
     }
-  
-  // UX Sprint 9: Help / Onboarding Modal
-function openHelpModal() {
+  });
+
+// UX Sprint 9: Help / Onboarding Modal
+window.openHelpModal = function() {
   var overlay = document.getElementById('helpOverlay');
   if (overlay) overlay.classList.add('open');
-}
+};
 
-function closeHelpModal() {
+window.closeHelpModal = function() {
   var overlay = document.getElementById('helpOverlay');
   if (overlay) {
     overlay.classList.remove('open');
     localStorage.setItem('hasSeenOnboarding_v1', 'true');
   }
-}
+};
 
 // UX Sprint 8: Global Keyboard Shortcuts
   document.addEventListener('keydown', function(e) {
@@ -14357,6 +14358,5 @@ function closeHelpModal() {
     }
   });
 
-});
 })();
 </script>
