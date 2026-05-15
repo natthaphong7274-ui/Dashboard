@@ -13,7 +13,7 @@ Branch: `UX_Sprint-3`
 | UX Sprint 3 | ทำแล้ว, รอทดสอบกับข้อมูลจริง | [UX_SPRINT_3_NOTES.md](./UX_SPRINT_3_NOTES.md) | ทำ Home Map Command View และอัปเกรด Hero Chart: รวมการ์ด KPI, ปรับกราฟให้เป็น Apple-to-Apple (Avg/day), ใช้ Time Series Blending พยากรณ์ EOM, และลบ UI ที่ซ้ำซ้อน |
 | UX Sprint 4 | ทำแล้ว, รอทดสอบกับข้อมูลจริง | [UX_SPRINT_4_NOTES.md](./UX_SPRINT_4_NOTES.md) | ลดความแน่นของหน้า Overview โดยจัด tab เป็นกลุ่ม Performance, Breakdown และ Deep Dive พร้อมเพิ่มความสมบูรณ์ของข้อมูล KPI & Ranking ในทุกหน้าย่อย |
 | UX Sprint 5 | ทำแล้ว, รอทดสอบ | [UX_SPRINT_5_NOTES.md](./UX_SPRINT_5_NOTES.md) | เพิ่ม Empty, Positive และ Warning state ที่ใช้ซ้ำได้สำหรับ chart, table และ ranking |
-| UX Sprint 6 | วางแผนแล้ว | `TBD` | ปรับการแสดงผลตามสิทธิ์ของ BD, AM และ Director ทั้งในเมนู ข้อมูล และ action |
+| UX Sprint 6 | ทำแล้ว, รอทดสอบ | [UX_SPRINT_6_NOTES.md](./UX_SPRINT_6_NOTES.md) | เปิด Report Center และแท็บ Compare ให้ทุกคนใช้ แต่ทำ Muted Gray กับทุกปุ่ม Export ถ้าผู้ใช้ไม่ใช่ Director |
 | UX Sprint 7 | วางแผนแล้ว | `TBD` | ย้าย inline style ที่ซ้ำบ่อยไปเป็น class กลาง และลดปัญหา theme drift |
 | UX Sprint 8 | วางแผนแล้ว | `TBD` | ปรับ motion และ performance รวมถึง reduced motion และการควบคุม render/polling |
 | UX Sprint 9 | วางแผนแล้ว | `TBD` | วางแนวทางลดการใช้ Classic UI และกำหนดให้ V2 เป็นเป้าหมายหลักของ feature ใหม่ |
