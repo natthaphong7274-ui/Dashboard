@@ -11,7 +11,7 @@ Branch: `UX_Sprint-3`
 | UX Sprint 1 | ทำแล้ว, รอทดสอบตาม role | [UX_SPRINT_1_NOTES.md](./UX_SPRINT_1_NOTES.md) | จัด navigation ใหม่เป็นกลุ่ม Main, Work และ System; ย้าย Tracking, Report Center และ User Management ไปอยู่ตำแหน่งที่ชัดขึ้น; เพิ่ม guard ให้ User Management เปิดได้เฉพาะ Director |
 | UX Sprint 2 | ทำแล้ว, รอทดสอบภาพจริง | [UX_SPRINT_2_NOTES.md](./UX_SPRINT_2_NOTES.md) | ปรับ label ของ metric ให้ชัดขึ้น และเพิ่ม metric help ที่ใช้ซ้ำได้สำหรับ MTD, Avg Rev/day, Avg Vol/day, Avg Rev/ชิ้น, Avg Rev/Agent และ Target pace |
 | UX Sprint 3 | ทำแล้ว, รอทดสอบกับข้อมูลจริง | [UX_SPRINT_3_NOTES.md](./UX_SPRINT_3_NOTES.md) | ทำ Home Map Command View และอัปเกรด Hero Chart: รวมการ์ด KPI, ปรับกราฟให้เป็น Apple-to-Apple (Avg/day), ใช้ Time Series Blending พยากรณ์ EOM, และลบ UI ที่ซ้ำซ้อน |
-| UX Sprint 4 | วางแผนแล้ว | `TBD` | ลดความแน่นของหน้า Overview โดยจัด tab เป็นกลุ่ม Performance, Breakdown และ Deep Dive |
+| UX Sprint 4 | ทำแล้ว, รอทดสอบกับข้อมูลจริง | [UX_SPRINT_4_NOTES.md](./UX_SPRINT_4_NOTES.md) | ลดความแน่นของหน้า Overview โดยจัด tab เป็นกลุ่ม Performance, Breakdown และ Deep Dive พร้อมเพิ่มความสมบูรณ์ของข้อมูล KPI & Ranking ในทุกหน้าย่อย |
 | UX Sprint 5 | วางแผนแล้ว | `TBD` | เพิ่ม empty, warning และ error state ที่ใช้ซ้ำได้สำหรับ chart, table, map และ list |
 | UX Sprint 6 | วางแผนแล้ว | `TBD` | ปรับการแสดงผลตามสิทธิ์ของ BD, AM และ Director ทั้งในเมนู ข้อมูล และ action |
 | UX Sprint 7 | วางแผนแล้ว | `TBD` | ย้าย inline style ที่ซ้ำบ่อยไปเป็น class กลาง และลดปัญหา theme drift |
