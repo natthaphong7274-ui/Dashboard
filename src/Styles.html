@@ -97,6 +97,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .stab.active{background:var(--pr);color:white;border-color:var(--pr);}
 .stab:hover:not(.active){border-color:var(--ac);color:var(--ac);}
 .stab.cmp-tab.active{background:linear-gradient(135deg,var(--pr),var(--ac));border-color:transparent;}
+/* ── UX Sprint 4: Grouped Overview Tab Bar ── */
+.ov-tab-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:white;border:1px solid var(--bd);border-radius:12px;margin-bottom:12px;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.ov-tab-group{display:flex;flex-direction:column;gap:4px;}
+.ov-tab-group-label{font-size:9px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;padding:0 2px;opacity:.7;}
+.ov-tab-group-btns{display:flex;gap:4px;}
+.ov-tab-divider{width:1px;height:36px;background:var(--bd);align-self:center;flex-shrink:0;}
 .kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px;margin-bottom:12px;}
 .kcard{background:var(--cd);border-radius:12px;padding:12px 14px;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid var(--bd);position:relative;overflow:hidden;}
 .kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--ac));}

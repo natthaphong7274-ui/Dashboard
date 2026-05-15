@@ -197,17 +197,35 @@
   </div>
 
   <div id="mainOv" style="display:none">
-    <div class="stabs" id="secTabs">
-      <button class="stab active" onclick="swSec('revenue',this)">💰 Revenue</button>
-      <button class="stab" onclick="swSec('vol',this)">📦 Volume</button>
-      <button class="stab" onclick="swSec('avgrev',this)">📐 Avg Rev</button>
-      <button class="stab" onclick="swSec('avgpiece',this)">🏷️ Avg Rev/ชิ้น</button>
-      <button class="stab" onclick="swSec('bd',this)">👤 BD Zone</button>
-      <button class="stab" onclick="swSec('area',this)">🗺️ พื้นที่</button>
-      <button class="stab" onclick="swSec('acc',this)">🏷️ Account</button>
-      <button class="stab" onclick="swSec('pkg',this)">📦 Package</button>
-      <button class="stab cmp-tab" onclick="swSec('compare',this)">⚖️ เปรียบเทียบ</button>
-
+    <div class="ov-tab-bar" id="secTabs">
+      <!-- Group 1: Performance -->
+      <div class="ov-tab-group">
+        <span class="ov-tab-group-label">Performance</span>
+        <div class="ov-tab-group-btns">
+          <button class="stab active" id="stab_revenue" onclick="swSec('revenue',this)">Revenue</button>
+          <button class="stab" id="stab_vol" onclick="swSec('vol',this)">Volume</button>
+          <button class="stab" id="stab_avgrev" onclick="swSec('avgrev',this)">Avg Rev</button>
+          <button class="stab" id="stab_avgpiece" onclick="swSec('avgpiece',this)">Avg Rev/ชิ้น</button>
+        </div>
+      </div>
+      <div class="ov-tab-divider"></div>
+      <!-- Group 2: Breakdown -->
+      <div class="ov-tab-group">
+        <span class="ov-tab-group-label">Breakdown</span>
+        <div class="ov-tab-group-btns">
+          <button class="stab" id="stab_bd" onclick="swSec('bd',this)">BD Zone</button>
+          <button class="stab" id="stab_area" onclick="swSec('area',this)">พื้นที่</button>
+          <button class="stab" id="stab_acc" onclick="swSec('acc',this)">Account</button>
+          <button class="stab" id="stab_pkg" onclick="swSec('pkg',this)">Package</button>
+        </div>
+      </div>
+      <div class="ov-tab-divider"></div>
+      <!-- Group 3: Compare -->
+      <div class="ov-tab-group">
+        <div class="ov-tab-group-btns">
+          <button class="stab cmp-tab" id="stab_compare" onclick="swSec('compare',this)">⚖️ เปรียบเทียบ</button>
+        </div>
+      </div>
     </div>
 
     <!-- KPI Overview Cards -->
