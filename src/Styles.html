@@ -140,6 +140,29 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .empty-panel.warning .empty-text{color:#ea580c;}
 /* UX Sprint 6: Role-based Muted State */
 .disabled-role{opacity:0.4;cursor:not-allowed!important;pointer-events:none;filter:grayscale(100%);}
+/* UX Sprint 7: Reusable Utility Classes (extracted from inline styles) */
+/* ── Status Badges ── */
+.badge-risk{display:flex;align-items:center;gap:6px;background:#fff0f0;padding:5px 12px;border-radius:20px;border:1.5px solid #fca5a5;}
+.badge-risk-count{font-size:12px;font-weight:700;color:var(--rd);background:#fee2e2;padding:4px 12px;border-radius:20px;}
+.badge-growth{display:flex;align-items:center;gap:6px;background:#f0fdf4;padding:5px 12px;border-radius:20px;border:1.5px solid #86efac;}
+.badge-growth-count{font-size:12px;font-weight:700;color:var(--gn);background:#dcfce7;padding:4px 12px;border-radius:20px;}
+.cbadge-green{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:#dcfce7;color:var(--gn);}
+/* ── Days Bar ── */
+.days-bar-risk{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,#fff7ed,#fff0f0);border:1.5px solid #fca5a5;border-radius:12px;padding:10px 16px;margin-bottom:10px;}
+.days-bar-growth{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:12px;padding:10px 16px;margin-bottom:10px;}
+.projection-label-risk{font-size:11px;color:#9a3412;background:#ffedd5;padding:2px 10px;border-radius:20px;font-weight:700;}
+.projection-label-growth{font-size:11px;color:#14532d;background:#bbf7d0;padding:2px 10px;border-radius:20px;font-weight:700;}
+/* ── Threshold Input ── */
+.threshold-input-risk{width:70px;padding:2px 7px;border:1.5px solid #fca5a5;border-radius:7px;font-size:12px;font-weight:700;color:var(--rd);text-align:center;outline:none;background:white;}
+.threshold-input-growth{width:70px;padding:2px 7px;border:1.5px solid #86efac;border-radius:7px;font-size:12px;font-weight:700;color:var(--gn);text-align:center;outline:none;background:white;}
+/* ── Nav Utility ── */
+.trk-poll-badge{background:#f0fdf4;color:var(--gn);border:1px solid #86efac;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700;}
+.btn-logout{padding:6px 12px;background:#fee2e2;color:var(--rd);border:1px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;}
+/* ── Director Unlock Panel ── */
+.dir-unlock-panel{margin-top:10px;background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:12px;}
+.dir-unlock-title{font-size:11px;font-weight:700;color:#0077a8;margin-bottom:8px;}
+/* ── Card Panel ── */
+.card-panel{background:var(--cd);border-radius:14px;border:1px solid var(--bd);box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;}
 .drill-panel{background:#f0f8ff;border:1.5px solid var(--ac);border-radius:10px;padding:11px 13px;margin-top:9px;display:none;}
 .drill-panel.open{display:block;}
 .drill-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}

@@ -80,8 +80,8 @@
             onkeydown="if(event.key==='Enter')doLogin()">
         </div>
 
-        <div id="login_err" style="color:#dc2626;font-size:12px;margin-bottom:8px;min-height:16px;text-align:center"></div>
-        <div id="login_status_bar" style="display:none;margin-bottom:12px;border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.7;text-align:center"></div>
+        <div id="login_err" class="login-err"></div>
+        <div id="login_status_bar" class="login-status-bar"></div>
 
         <button onclick="doLogin()" id="login_btn" class="login-btn-main">
           เข้าสู่ระบบ →
@@ -91,22 +91,13 @@
         <div class="login-director-toggle" onclick="toggleDirectorUnlock()">
           👑 Director: ปลดล็อก account ผู้ใช้ ▾
         </div>
-        <div id="director_unlock_panel" style="display:none;margin-top:10px;background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:12px">
-          <div style="font-size:11px;font-weight:700;color:#0077a8;margin-bottom:8px">🔓 ปลดล็อก Account ผู้ใช้</div>
-          <div style="margin-bottom:8px">
-            <label style="font-size:10px;font-weight:700;color:#5a7280;display:block;margin-bottom:3px">Director Username</label>
-            <input id="dir_username" type="text" placeholder="Director username" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid #CDD8D8;border-radius:7px;font-size:12px;outline:none">
-          </div>
-          <div style="margin-bottom:8px">
-            <label style="font-size:10px;font-weight:700;color:#5a7280;display:block;margin-bottom:3px">Director Password</label>
-            <input id="dir_password" type="password" placeholder="Director password" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid #CDD8D8;border-radius:7px;font-size:12px;outline:none">
           </div>
           <div style="margin-bottom:10px">
-            <label style="font-size:10px;font-weight:700;color:#5a7280;display:block;margin-bottom:3px">Username ที่ต้องการปลดล็อก</label>
-            <input id="dir_target_user" type="text" placeholder="Username ที่ถูกล็อก" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid #CDD8D8;border-radius:7px;font-size:12px;outline:none">
+            <label style="font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px">Username ที่ต้องการปลดล็อก</label>
+            <input id="dir_target_user" type="text" placeholder="Username ที่ถูกล็อก" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:12px;outline:none">
           </div>
           <div id="dir_unlock_msg" style="min-height:14px;font-size:11px;margin-bottom:8px;text-align:center"></div>
-          <button onclick="doDirectorUnlock()" id="dir_unlock_btn" style="width:100%;padding:8px;background:#009B9B;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">
+          <button onclick="doDirectorUnlock()" id="dir_unlock_btn" style="width:100%;padding:8px;background:var(--ac);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">
             🔓 ปลดล็อก
           </button>
         </div>
@@ -161,9 +152,9 @@
     <div class="nav-divider-v"></div>
     <span class="lupd" id="lupd"></span>
     <button class="rbtn rbtn-refresh" onclick="loadData()">🔄 รีเฟรช</button>
-    <span id="trk_poll_badge" style="display:none;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700" title="อัปเดตสถานะจาก Sheet ทุก 30 วินาที">⟳ auto</span>
+    <span id="trk_poll_badge" class="trk-poll-badge" style="display:none;" title="อัปเดตสถานะจาก Sheet ทุก 30 วินาที">⟳ auto</span>
     <button class="rbtn rbtn-admin" id="usermgmt_tab" onclick="swMain('usermgmt')" style="display:none">🔐 จัดการผู้ใช้</button>
-    <button id="logout_btn" onclick="doLogout()" style="display:none;padding:6px 12px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">ออกจากระบบ</button>
+    <button id="logout_btn" onclick="doLogout()" class="btn-logout" style="display:none;">ออกจากระบบ</button>
   </div>
 </div>
 <div id="dashboard_watermark" class="dashboard-watermark" aria-hidden="true"></div>
@@ -614,16 +605,16 @@
 
       <!-- Header bar -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-        <h2 style="margin:0;color:#dc2626">⚠️ ลูกค้าเสี่ยง</h2>
+        <h2 style="margin:0;color:var(--rd)">⚠️ ลูกค้าเสี่ยง</h2>
         <!-- Threshold input -->
-        <div style="display:flex;align-items:center;gap:6px;background:#fff0f0;padding:5px 12px;border-radius:20px;border:1.5px solid #fca5a5">
+        <div class="badge-risk">
           <span style="font-size:11px;color:var(--t2);font-weight:700;white-space:nowrap">เกณฑ์ Avg/วัน ลดลง &gt;</span>
           <input id="risk_threshold_inp" type="number" value="200" min="0" step="50"
-            style="width:70px;padding:2px 7px;border:1.5px solid #fca5a5;border-radius:7px;font-size:12px;font-weight:700;color:#dc2626;text-align:center;outline:none;background:white"
+            class="threshold-input-risk"
             onchange="setRiskThreshold()" oninput="setRiskThreshold()">
           <span style="font-size:11px;color:var(--t2);font-weight:700">บาท/วัน</span>
         </div>
-        <span id="risk_count_badge" style="font-size:12px;font-weight:700;color:#dc2626;background:#fee2e2;padding:4px 12px;border-radius:20px"></span>
+        <span id="risk_count_badge" class="badge-risk-count"></span>
       </div>
 
       <!-- sub label -->
@@ -637,10 +628,10 @@
       <!-- ★ TREND COMPARISON SECTION -->
       <div id="risk_trend_section" style="margin-bottom:12px">
         <!-- Days remaining info bar -->
-        <div id="risk_days_bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,#fff7ed,#fff0f0);border:1.5px solid #fca5a5;border-radius:12px;padding:10px 16px;margin-bottom:10px">
+        <div id="risk_days_bar" class="days-bar-risk">
           <span style="font-size:13px">📅</span>
-          <span id="risk_days_remaining_label" style="font-size:12px;font-weight:700;color:#dc2626"></span>
-          <span id="risk_projection_label" style="font-size:11px;color:#9a3412;background:#ffedd5;padding:2px 10px;border-radius:20px;font-weight:700"></span>
+          <span id="risk_days_remaining_label" style="font-size:12px;font-weight:700;color:var(--rd)"></span>
+          <span id="risk_projection_label" class="projection-label-risk"></span>
         </div>
         <!-- Trend charts -->
         <div class="g2" style="margin-bottom:10px">
@@ -712,16 +703,16 @@
 
       <!-- Header bar -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-        <h2 style="margin:0;color:#16a34a">📈 ลูกค้าเติบโต</h2>
+        <h2 style="margin:0;color:var(--gn)">📈 ลูกค้าเติบโต</h2>
         <!-- Growth Threshold input -->
-        <div style="display:flex;align-items:center;gap:6px;background:#f0fdf4;padding:5px 12px;border-radius:20px;border:1.5px solid #86efac">
+        <div class="badge-growth">
           <span style="font-size:11px;color:var(--t2);font-weight:700;white-space:nowrap">เกณฑ์ Avg/วัน เพิ่มขึ้น &gt;</span>
           <input id="growth_threshold_inp" type="number" value="200" min="0" step="50"
-            style="width:70px;padding:2px 7px;border:1.5px solid #86efac;border-radius:7px;font-size:12px;font-weight:700;color:#16a34a;text-align:center;outline:none;background:white"
+            class="threshold-input-growth"
             onchange="setGrowthThreshold()" oninput="setGrowthThreshold()">
           <span style="font-size:11px;color:var(--t2);font-weight:700">บาท/วัน</span>
         </div>
-        <span id="growth_count_badge" style="font-size:12px;font-weight:700;color:#16a34a;background:#dcfce7;padding:4px 12px;border-radius:20px"></span>
+        <span id="growth_count_badge" class="badge-growth-count"></span>
       </div>
 
       <!-- sub label -->
@@ -735,10 +726,10 @@
       <!-- TREND COMPARISON SECTION -->
       <div id="growth_trend_section" style="margin-bottom:12px">
         <!-- Days info bar -->
-        <div id="growth_days_bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:12px;padding:10px 16px;margin-bottom:10px">
+        <div id="growth_days_bar" class="days-bar-growth">
           <span style="font-size:13px">📅</span>
-          <span id="growth_days_remaining_label" style="font-size:12px;font-weight:700;color:#16a34a"></span>
-          <span id="growth_projection_label" style="font-size:11px;color:#14532d;background:#bbf7d0;padding:2px 10px;border-radius:20px;font-weight:700"></span>
+          <span id="growth_days_remaining_label" style="font-size:12px;font-weight:700;color:var(--gn)"></span>
+          <span id="growth_projection_label" class="projection-label-growth"></span>
         </div>
         <!-- Trend charts -->
         <div class="g2" style="margin-bottom:10px">
@@ -748,7 +739,7 @@
                 <div class="ctitle">📊 แนวโน้มจำนวนกลุ่มเติบโต (เดือนต่อเดือน)</div>
                 <div class="csub" id="growth_trend_count_sub">เปรียบเทียบจำนวนลูกค้าเติบโตรายเดือน</div>
               </div>
-              <span class="cbadge-red" id="growth_trend_count_badge" style="background:#dcfce7;color:#16a34a"></span>
+              <span class="cbadge-green" id="growth_trend_count_badge"></span>
             </div>
             <div class="ch220"><canvas id="c_growth_trend_count"></canvas></div>
           </div>
@@ -758,7 +749,7 @@
                 <div class="ctitle">💚 แนวโน้ม Revenue เพิ่มขึ้น (MoM)</div>
                 <div class="csub" id="growth_trend_rev_sub">รวม Revenue ที่เพิ่มเทียบแต่ละเดือน</div>
               </div>
-              <span class="cbadge-red" id="growth_trend_rev_badge" style="background:#dcfce7;color:#16a34a"></span>
+              <span class="cbadge-green" id="growth_trend_rev_badge"></span>
             </div>
             <div class="ch220"><canvas id="c_growth_trend_rev"></canvas></div>
           </div>
@@ -787,7 +778,7 @@
       <div class="ccard gfull">
         <div class="chdr">
           <div class="ctitle" id="growth_tbl_title">📋 รายชื่อกลุ่มเติบโต</div>
-          <span class="cbadge-red" id="growth_tbl_label" style="background:#dcfce7;color:#16a34a">0 ราย</span>
+          <span class="cbadge-green" id="growth_tbl_label">0 ราย</span>
           <div class="trk-bar" style="margin-bottom:0;margin-left:auto;padding:5px 12px;">
             <span class="trk-bar-label">📋 บันทึกสถานะการติดตาม</span>
             <button class="trk-save-all-btn" id="growth_save_all_btn" onclick="saveAllTracking('growth')">💾 บันทึกทั้งหมด</button>
@@ -802,7 +793,7 @@
 <div id="mainUsermgmt" style="display:none">
   <div class="main" style="padding-top:10px">
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#003F5C,#005F7A);border-radius:14px;padding:16px 20px;margin-bottom:12px;color:white;display:flex;align-items:center;justify-content:space-between;">
+    <div style="background:linear-gradient(135deg,var(--pr),var(--pl));border-radius:14px;padding:16px 20px;margin-bottom:12px;color:white;display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:15px;font-weight:800">🔐 จัดการผู้ใช้งาน</div>
         <div style="font-size:11px;opacity:.65;margin-top:3px">ปลดล็อกบัญชี / ดูสถานะ Session</div>

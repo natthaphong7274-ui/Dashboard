@@ -39,7 +39,7 @@ var _chartsRendered = {};   // { tabKey: true } — ป้องกัน render
 var _savedFilterState = {}; // เก็บค่า filter ข้าม tab
 // Drill-down sort state — แยกต่างหากสำหรับแต่ละ panel
 var DRILL_SORT={}; // { panelId: {field:'rev', dir:'desc'} }
-var PAL=['#003F5C','#009B9B','#E8622A','#005F7A','#007A7A','#CDD8D8','#5C3D8F','#00788C','#CC4A1A','#004A6E','#33B8B8','#F0A080'];
+var PAL=['var(--pr)','var(--ac)','var(--or)','var(--pl)','#007A7A','var(--bd)','#5C3D8F','#00788C','#CC4A1A','#004A6E','#33B8B8','#F0A080'];
 var _watermarkTimer = null;
 
 // ===== UI STATE HELPERS =====
@@ -1869,7 +1869,7 @@ function _zoneBgStyle(band){
   if(band==='darkgreen') return 'background:linear-gradient(90deg,rgba(20,120,40,0.13) 0%,rgba(20,120,40,0.04) 100%);border-left:3px solid #15803d;';
   if(band==='green')     return 'background:linear-gradient(90deg,rgba(34,197,94,0.10) 0%,rgba(34,197,94,0.03) 100%);border-left:3px solid #22c55e;';
   if(band==='orange')    return 'background:linear-gradient(90deg,rgba(234,88,12,0.12) 0%,rgba(234,88,12,0.03) 100%);border-left:3px solid #ea580c;';
-  return 'background:linear-gradient(90deg,rgba(220,38,38,0.13) 0%,rgba(220,38,38,0.04) 100%);border-left:3px solid #dc2626;';
+  return 'background:linear-gradient(90deg,rgba(220,38,38,0.13) 0%,rgba(220,38,38,0.04) 100%);border-left:3px solid var(--rd);';
 }
 function _zoneBandIcon(band){
   if(band==='darkgreen') return '🟢';
@@ -1907,7 +1907,7 @@ function _avgPill(avgCur, avgPrev, branchCount){
   var diffAbs = Math.abs(Math.round(diff));
   var bg,color;
   if(diff>0){bg='rgba(22,163,74,0.15)';color='#15803d';}
-  else if(diff<0){bg='rgba(220,38,38,0.15)';color='#dc2626';}
+  else if(diff<0){bg='rgba(220,38,38,0.15)';color='var(--rd)';}
   else{bg='rgba(100,116,139,0.12)';color='#64748b';}
   return '<span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:800;background:'+bg+';color:'+color+';white-space:nowrap;vertical-align:middle;margin-left:4px">'+sign+'฿'+fmtS(diffAbs)+'/สาขา</span>';
 }
@@ -1969,9 +1969,9 @@ function rBDScore(m){
   var legendHtml='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f8fafc;border-radius:10px;border:1px solid var(--bd)">'
     +'<span style="font-size:10px;font-weight:700;color:var(--t2)">ทิศทาง Zone:</span>'
     +'<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(20,120,40,0.12);color:#15803d;border:1.5px solid #15803d">🟢 โตแข็งแกร่ง (Avg ↑≥5%)</span>'
-    +'<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(34,197,94,0.10);color:#16a34a;border:1.5px solid #22c55e">🟩 ทรงตัว / โตเล็กน้อย</span>'
+    +'<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(34,197,94,0.10);color:var(--gn);border:1.5px solid #22c55e">🟩 ทรงตัว / โตเล็กน้อย</span>'
     +'<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(234,88,12,0.12);color:#ea580c;border:1.5px solid #ea580c">🟠 ระวัง (Avg ↓5-20%)</span>'
-    +'<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(220,38,38,0.12);color:#dc2626;border:1.5px solid #dc2626">🔴 วิกฤต (Avg ↓&gt;20%)</span>'
+    +'<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(220,38,38,0.12);color:var(--rd);border:1.5px solid var(--rd)">🔴 วิกฤต (Avg ↓&gt;20%)</span>'
     +'<span style="font-size:10px;color:var(--t2);margin-left:6px">📊 Sparkbar = trend 3 เดือน | 💊 Pill = ±฿ avg/สาขา</span>'
     +'</div>';
 
@@ -2349,7 +2349,7 @@ function runCompare(){
           {type:'line',label:'Avg %Δ',
            data:topZ.map(function(z){var a=zones[z]['a'+mA.key]||0,b=zones[z]['a'+mB.key]||0;return a>0?parseFloat(((b-a)/a*100).toFixed(1)):null;}),
            borderColor:'#E91E63',backgroundColor:'rgba(233,30,99,0.1)',
-           pointBackgroundColor:topZ.map(function(z){var a=zones[z]['a'+mA.key]||0,b=zones[z]['a'+mB.key]||0;return(b-a)>=0?'#16a34a':'#dc2626';}),
+           pointBackgroundColor:topZ.map(function(z){var a=zones[z]['a'+mA.key]||0,b=zones[z]['a'+mB.key]||0;return(b-a)>=0?'var(--gn)':'var(--rd)';}),
            pointRadius:5,pointHoverRadius:7,borderWidth:2,tension:0.3,yAxisID:'y',order:1,spanGaps:false}
         ]},
         options:{responsive:true,maintainAspectRatio:false,
@@ -2718,7 +2718,7 @@ function runMultiCompare(){
             {type:'line',label:'Rev %Δ trend',
              data:pctRevData,
              borderColor:'#E91E63',backgroundColor:'rgba(233,30,99,0.1)',
-             pointBackgroundColor:pctRevData.map(function(v){return v===null?'#ccc':v>=0?'#16a34a':'#dc2626';}),
+             pointBackgroundColor:pctRevData.map(function(v){return v===null?'#ccc':v>=0?'var(--gn)':'var(--rd)';}),
              pointRadius:5,pointHoverRadius:7,borderWidth:2,tension:0.3,yAxisID:'y',order:1,spanGaps:false}
           ]},
           options:{responsive:true,maintainAspectRatio:false,
@@ -3230,7 +3230,7 @@ function exportWeeklySummary(){
   var totalRev=sumCol(FR,m.colRev),totalVol=sumCol(FR,m.colVol);
   var tasks=_buildReportTasks(FR,m,mp),done=tasks.filter(function(t){return t.done;}).length,success=tasks.filter(function(t){return t.success;}).length;
   var bdRows=_buildBDPerformanceRows(FR,m,mp).slice(0,10);
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>Weekly Summary</title><style>body{font-family:Arial,sans-serif;color:#0f172a;padding:24px}h1{color:#003F5C}.meta{font-size:12px;color:#64748b}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.card{border:1px solid #cbd5e1;border-radius:10px;padding:12px}.val{font-size:22px;font-weight:800;color:#003F5C}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left;font-size:12px}.wm{position:fixed;right:18px;bottom:14px;color:rgba(0,63,92,.45);font-size:11px;font-weight:700}</style></head><body>'
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>Weekly Summary</title><style>body{font-family:Arial,sans-serif;color:#0f172a;padding:24px}h1{color:var(--pr)}.meta{font-size:12px;color:#64748b}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.card{border:1px solid #cbd5e1;border-radius:10px;padding:12px}.val{font-size:22px;font-weight:800;color:var(--pr)}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left;font-size:12px}.wm{position:fixed;right:18px;bottom:14px;color:rgba(0,63,92,.45);font-size:11px;font-weight:700}</style></head><body>'
     +'<h1>Weekly Summary - '+_esc(m.en)+' '+_esc(DATA_YEAR)+'</h1>'
     +'<div class="meta">Internal Use Only · Exported by '+_esc(meta.user)+' · Role '+_esc(meta.role)+' · Scope '+_esc(meta.scope)+' · '+_esc(meta.generatedAt)+'</div>'
     +'<div class="grid"><div class="card"><div>Revenue</div><div class="val">'+fmtS(Math.round(totalRev))+'</div></div><div class="card"><div>Volume</div><div class="val">'+fmtS(Math.round(totalVol))+'</div></div><div class="card"><div>Tracking Done</div><div class="val">'+done+'/'+tasks.length+'</div></div><div class="card"><div>Success</div><div class="val">'+success+'</div></div></div>'
@@ -3442,7 +3442,7 @@ function _reportCenterNotes(m,mp,totalRev,prevRev,totalVol,prevVol,tasks,bdRows,
 function _reportCenterBdTrendRows(m,bdRows){
   var months=_recentMonths(m.key,6);
   var topBds=bdRows.slice(0,5).map(function(r){return r.bd;});
-  var palette=['#003F5C','#009B9B','#E8622A','#16a34a','#7c3aed','#0f766e'];
+  var palette=['var(--pr)','var(--ac)','var(--or)','var(--gn)','#7c3aed','#0f766e'];
   var series=topBds.map(function(name,idx){
     return {
       label:name,
@@ -3501,8 +3501,8 @@ function _renderReportCenterSummary(model){
   document.getElementById('rc_summary_carriers').innerHTML=_reportCenterCarrierTable(model.carriers);
   document.getElementById('rc_summary_notes').innerHTML=_reportCenterNotesHtml(model.notes);
   setTimeout(function(){
-    _reportCenterBarLineChart('rc_summary_rev_chart',model.revSeries.labels,model.revSeries.values,_reportCenterGrowthSeries(model.revSeries.values),'Revenue','Growth %','#003F5C',fmtS,function(v){return v==null?'-':v.toFixed(2)+'%';});
-    _reportCenterBarLineChart('rc_summary_vol_chart',model.volSeries.labels,model.volSeries.values,_reportCenterGrowthSeries(model.volSeries.values),'Volume','Growth %','#009B9B',fmtS,function(v){return v==null?'-':v.toFixed(2)+'%';});
+    _reportCenterBarLineChart('rc_summary_rev_chart',model.revSeries.labels,model.revSeries.values,_reportCenterGrowthSeries(model.revSeries.values),'Revenue','Growth %','var(--pr)',fmtS,function(v){return v==null?'-':v.toFixed(2)+'%';});
+    _reportCenterBarLineChart('rc_summary_vol_chart',model.volSeries.labels,model.volSeries.values,_reportCenterGrowthSeries(model.volSeries.values),'Volume','Growth %','var(--ac)',fmtS,function(v){return v==null?'-':v.toFixed(2)+'%';});
   },0);
 }
 function _renderReportCenterTracking(model){
@@ -3526,7 +3526,7 @@ function _renderReportCenterTracking(model){
       model.taskSeries.map(function(x){return x.followPct;}),
       'Tasks',
       'Follow-up %',
-      '#E8622A',
+      'var(--or)',
       fmtS,
       function(v){return v==null?'-':v.toFixed(2)+'%';}
     );
@@ -3581,7 +3581,7 @@ function _renderReportCenterBD(model){
         top.map(function(r){return r.momPct;}),
         'Revenue',
         'MoM %',
-        '#005F7A',
+        'var(--pl)',
         fmtS,
         function(v){return v==null?'-':v.toFixed(2)+'%';}
       );
@@ -3643,7 +3643,7 @@ function _reportCenterBarLineChart(id,labels,barValues,lineValues,barLabel,lineL
   var el=document.getElementById(id);
   if(!el)return;
   dc(id);
-  var chartColor=_cssColor(color||'#003F5C');
+  var chartColor=_cssColor(color||'var(--pr)');
   CH[id]=new Chart(el.getContext('2d'),{
     data:{
       labels:labels,
@@ -3848,10 +3848,10 @@ var CAR_COLOR_MAP={
   'THAIPOST':    '#E53935',  // แดง
   'KERRY_OFFLINE':'#FF6D00', // ส้ม
   'KERRY_ONLINE': '#FF8F00', // ส้มอ่อน
-  'MSBEST':      '#009B9B',  // teal
+  'MSBEST':      'var(--ac)',  // teal
   'MYSAVEFRUIT': '#00788C',  // dark teal
   'BEST':        '#5C3D8F',  // purple
-  'DHL':         '#E8622A',  // orange-red
+  'DHL':         'var(--or)',  // orange-red
   'EASYPOSTFRUIT':'#4CAF50', // green
   'ECO':         '#00BCD4',  // cyan
   'INTER':       '#2196F3',  // blue
@@ -3861,7 +3861,7 @@ var CAR_COLOR_MAP={
   'SHOPEE':      '#FF5722',  // deep-orange
   'SHOPEEOFFLINE':'#795548'  // brown
 };
-var CAR_COLORS_FALLBACK=['#003F5C','#009B9B','#E8622A','#5C3D8F','#007A7A','#CC4A1A','#00788C','#2196F3','#FF9800','#4CAF50','#E91E63','#9C27B0','#00BCD4','#FF5722','#795548','#607D8B','#F44336','#3F51B5'];
+var CAR_COLORS_FALLBACK=['var(--pr)','var(--ac)','var(--or)','#5C3D8F','#007A7A','#CC4A1A','#00788C','#2196F3','#FF9800','#4CAF50','#E91E63','#9C27B0','#00BCD4','#FF5722','#795548','#607D8B','#F44336','#3F51B5'];
 
 function getCarrierColor(nameOrIdx){
   if(typeof nameOrIdx==='string'&&CAR_COLOR_MAP[nameOrIdx]) return CAR_COLOR_MAP[nameOrIdx];
@@ -4100,7 +4100,7 @@ function renderGrowthChart(){
       {type:'line',label:'%Δ MoM',data:growthVals,
        borderColor:'#E91E63',backgroundColor:'rgba(233,30,99,0.1)',
        pointBackgroundColor:growthVals.map(function(v){
-         return v===null?'#ccc':v>=0?'#16a34a':'#dc2626';
+         return v===null?'#ccc':v>=0?'var(--gn)':'var(--rd)';
        }),
        pointRadius:5,pointHoverRadius:7,borderWidth:2,tension:0.3,
        yAxisID:'y2',order:1,spanGaps:false}
@@ -4278,9 +4278,9 @@ function renderCarrierComparison(){
         +'<td class="tdr">'+fmtS(cA2.r)+'</td><td class="tdr"><strong>'+fmtS(cB2.r)+'</strong></td>'
         +'<td class="tdr '+(rD<0?'tdneg':rD>0?'tdpos':'')+'">'+(rD>0?'+':'')+fmtS(rD)+'</td>'
         +'<td>'+(rDP?'<span class="'+(parseFloat(rDP)>=0?'tdpos':'tdneg')+'">'+(parseFloat(rDP)>=0?'▲':'▼')+Math.abs(rDP)+'%</span>':'—')+'</td>'
-        +'<td class="tdr" style="color:var(--c-avd)"><div>'+fmtF(cA2.avd)+'</div><div style="font-size:9px;color:'+(avdD>=0?'#16a34a':'#dc2626')+'">'+(avdD>=0?'▲':'▼')+fmtF(Math.abs(avdD))+'</div></td>'
-        +'<td class="tdr" style="color:var(--c-ard)"><div>'+fmtS(Math.round(cB2.ard))+'</div><div style="font-size:9px;color:'+(ardD>=0?'#16a34a':'#dc2626')+'">'+(ardD>=0?'▲':'▼')+fmtS(Math.round(Math.abs(ardD)))+'</div></td>'
-        +'<td class="tdr" style="color:var(--c-apc)"><div>'+fmtF(cB2.arv)+'</div><div style="font-size:9px;color:'+(arvD>=0?'#16a34a':'#dc2626')+'">'+(arvD>=0?'▲':'▼')+fmtF(Math.abs(arvD))+'</div></td>'
+        +'<td class="tdr" style="color:var(--c-avd)"><div>'+fmtF(cA2.avd)+'</div><div style="font-size:9px;color:'+(avdD>=0?'var(--gn)':'var(--rd)')+'">'+(avdD>=0?'▲':'▼')+fmtF(Math.abs(avdD))+'</div></td>'
+        +'<td class="tdr" style="color:var(--c-ard)"><div>'+fmtS(Math.round(cB2.ard))+'</div><div style="font-size:9px;color:'+(ardD>=0?'var(--gn)':'var(--rd)')+'">'+(ardD>=0?'▲':'▼')+fmtS(Math.round(Math.abs(ardD)))+'</div></td>'
+        +'<td class="tdr" style="color:var(--c-apc)"><div>'+fmtF(cB2.arv)+'</div><div style="font-size:9px;color:'+(arvD>=0?'var(--gn)':'var(--rd)')+'">'+(arvD>=0?'▲':'▼')+fmtF(Math.abs(arvD))+'</div></td>'
         +'</tr>';
     });
     tHtml+='</tbody></table></div>';
@@ -4304,7 +4304,7 @@ function renderCarrierComparison(){
       function pctBadge(cur,prv){
         if(!prev||prv===0)return'';
         var p=((cur-prv)/Math.abs(prv)*100).toFixed(1);
-        var cls=parseFloat(p)>=0?'color:#16a34a':'color:#dc2626';
+        var cls=parseFloat(p)>=0?'color:var(--gn)':'color:var(--rd)';
         return'<div style="font-size:9px;'+cls+';margin-top:1px">'+(parseFloat(p)>=0?'▲':'▼')+Math.abs(p)+'%</div>';
       }
       return'<div class="cmp-kcard" style="--kc:'+mc+'"><div class="cmp-klbl">📅 '+m.key.toUpperCase()+' (÷'+m.dd+'วัน)</div>'
@@ -5046,7 +5046,7 @@ function doLogin(){
             bar.style.background = '#fff0f0';
             bar.style.border = '1.5px solid #fca5a5';
             bar.style.color = '#991b1b';
-            bar.innerHTML = '⚠️ <b>Password ไม่ถูกต้อง</b><br>เหลือโอกาสอีกเพียง <b style="font-size:18px;color:#dc2626">' + left + '</b> ครั้ง ก่อนบัญชีจะถูกล็อก!';
+            bar.innerHTML = '⚠️ <b>Password ไม่ถูกต้อง</b><br>เหลือโอกาสอีกเพียง <b style="font-size:18px;color:var(--rd)">' + left + '</b> ครั้ง ก่อนบัญชีจะถูกล็อก!';
           } else {
             bar.style.background = '#fffbeb';
             bar.style.border = '1.5px solid #fcd34d';
@@ -5087,7 +5087,7 @@ function _startLockCountdown(minutes) {
       bar.style.background = '#fff0f0';
       bar.style.border   = '1.5px solid #fca5a5';
       bar.style.color    = '#991b1b';
-      bar.innerHTML = '?? <b>บัญชีถูกล็อกชั่วคราว</b><br>จะปลดล็อกใน &nbsp;<b style="font-size:20px;font-family:monospace;color:#dc2626">' + m + ':' + pad(s) + '</b>';
+      bar.innerHTML = '?? <b>บัญชีถูกล็อกชั่วคราว</b><br>จะปลดล็อกใน &nbsp;<b style="font-size:20px;font-family:monospace;color:var(--rd)">' + m + ':' + pad(s) + '</b>';
     }
     if (btn) { btn.disabled = (remaining > 0); btn.style.opacity = remaining > 0 ? '0.45' : '1'; }
     if (remaining <= 0) {
@@ -5113,7 +5113,7 @@ function doDirectorUnlock(){
   var msg=document.getElementById('dir_unlock_msg');
   var btn=document.getElementById('dir_unlock_btn');
   if(!dirU||!dirP||!target){
-    if(msg){msg.style.color='#dc2626';msg.textContent='กรุณากรอกข้อมูลให้ครบ';}return;
+    if(msg){msg.style.color='var(--rd)';msg.textContent='กรุณากรอกข้อมูลให้ครบ';}return;
   }
   if(btn){btn.textContent='กำลังดำเนินการ...';btn.disabled=true;}
   // Step 1: login as Director to get token
@@ -5121,7 +5121,7 @@ function doDirectorUnlock(){
     .withSuccessHandler(function(res){
       if(!res.ok){
         if(btn){btn.textContent='🔓 ปลดล็อก';btn.disabled=false;}
-        if(msg){msg.style.color='#dc2626';msg.textContent='❌ '+(res.error||'Login Director ไม่สำเร็จ');}
+        if(msg){msg.style.color='var(--rd)';msg.textContent='❌ '+(res.error||'Login Director ไม่สำเร็จ');}
         return;
       }
       // Step 2: use the token to unlock target user
@@ -5136,19 +5136,19 @@ function doDirectorUnlock(){
             document.getElementById('dir_target_user').value='';
             document.getElementById('dir_password').value='';
           } else {
-            if(msg){msg.style.color='#dc2626';msg.textContent='❌ '+(res2.error||'เกิดข้อผิดพลาด');}
+            if(msg){msg.style.color='var(--rd)';msg.textContent='❌ '+(res2.error||'เกิดข้อผิดพลาด');}
           }
         })
         .withFailureHandler(function(e){
           google.script.run.withSuccessHandler(function(){}).withFailureHandler(function(){}).logout(dirToken);
           if(btn){btn.textContent='🔓 ปลดล็อก';btn.disabled=false;}
-          if(msg){msg.style.color='#dc2626';msg.textContent='❌ '+e.message;}
+          if(msg){msg.style.color='var(--rd)';msg.textContent='❌ '+e.message;}
         })
         .unlockUser(dirToken, target);
     })
     .withFailureHandler(function(e){
       if(btn){btn.textContent='🔓 ปลดล็อก';btn.disabled=false;}
-      if(msg){msg.style.color='#dc2626';msg.textContent='❌ '+e.message;}
+      if(msg){msg.style.color='var(--rd)';msg.textContent='❌ '+e.message;}
     })
     .login(dirU, dirP, navigator.userAgent);
 }
@@ -5213,7 +5213,7 @@ function _showUserBadge(user){
     thInp.disabled = !isDirector;
     thInp.title    = isDirector ? '' : 'เฉพาะ Director เท่านั้นที่สามารถปรับเกณฑ์ได้';
     thInp.style.background  = isDirector ? 'white'   : '#f1f5f9';
-    thInp.style.color       = isDirector ? '#dc2626' : '#94a3b8';
+    thInp.style.color       = isDirector ? 'var(--rd)' : '#94a3b8';
     thInp.style.cursor      = isDirector ? 'text'    : 'not-allowed';
     thInp.style.borderColor = isDirector ? '#fca5a5' : '#cbd5e1';
   }
@@ -5224,7 +5224,7 @@ function _showUserBadge(user){
     gthInp.disabled = !isDirector;
     gthInp.title    = isDirector ? '' : 'เฉพาะ Director เท่านั้นที่สามารถปรับเกณฑ์ได้';
     gthInp.style.background  = isDirector ? 'white'   : '#f1f5f9';
-    gthInp.style.color       = isDirector ? '#16a34a' : '#94a3b8';
+    gthInp.style.color       = isDirector ? 'var(--gn)' : '#94a3b8';
     gthInp.style.cursor      = isDirector ? 'text'    : 'not-allowed';
     gthInp.style.borderColor = isDirector ? '#86efac' : '#cbd5e1';
   }
@@ -5343,7 +5343,7 @@ function renderRisk(){
         :'M8 14V2M8 14l-5-5M8 14l5-5';
       var arrowColor=worse?'#791F1F':'#085041';
       return '<div style="background:var(--color-background-primary,#fff);border:0.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;flex:1;min-width:180px;border-top:3px solid '+bc+'">'
-        +'<div style="font-size:11px;color:#5a7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">'+label+'</div>'
+        +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">'+label+'</div>'
         +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">'
           +'<div>'
             +'<div style="font-size:10px;color:#94a3b8">'+curLabel+'</div>'
@@ -5352,7 +5352,7 @@ function renderRisk(){
           +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
           +'<div style="padding-bottom:2px">'
             +'<div style="font-size:10px;color:#94a3b8">'+prevLabel+'</div>'
-            +'<div style="font-size:14px;font-weight:500;color:#5a7280">'+prevVal+unitSuffix+'</div>'
+            +'<div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevVal+unitSuffix+'</div>'
           +'</div>'
         +'</div>'
         +'<div style="display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border-radius:8px;background:'+vbg+';color:'+vtxt+';font-size:12px;line-height:1.5">'
@@ -5399,14 +5399,14 @@ function renderRisk(){
       ?'Rev หายมากกว่าเดือนก่อน <strong>+'+fmtS(Math.round(revDiff))+' (+'+revPct+'%)</strong>'
       :'Rev หายน้อยกว่าเดือนก่อน <strong>'+fmtS(Math.round(Math.abs(revDiff)))+' (-'+revPct+'%)</strong>';
     html+='<div style="background:var(--color-background-primary,#fff);border:0.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;flex:1;min-width:180px;border-top:3px solid '+rbc+'">'
-      +'<div style="font-size:11px;color:#5a7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Revenue หาย</div>'
+      +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Revenue หาย</div>'
       +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:4px">'
         +'<div><div style="font-size:10px;color:#94a3b8">'+m.en+'</div>'
         +'<div style="font-size:24px;font-weight:500;line-height:1;color:'+rcc+'">'+curRevStr+'</div>'
         +'<div style="font-size:10px;color:'+rcc+';margin-top:2px;font-weight:600">≈ '+rkAvgRevDayStr+'</div></div>'
         +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
         +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div>'
-        +'<div style="font-size:14px;font-weight:500;color:#5a7280">'+prevRevStr+'</div>'
+        +'<div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevRevStr+'</div>'
         +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">≈ '+rkAvgRevDayPStr+'</div></div>'
       +'</div>'
       +'<div style="display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border-radius:8px;background:'+rvbg+';color:'+rvtxt+';font-size:12px;line-height:1.5;margin-top:8px">'
@@ -5434,14 +5434,14 @@ function renderRisk(){
       ?'Vol หายมากกว่าเดือนก่อน <strong>+'+fmtInt(Math.round(volDiffC))+' ชิ้น (+'+volPctC+'%)</strong>'
       :'Vol หายน้อยกว่าเดือนก่อน <strong>'+fmtInt(Math.round(Math.abs(volDiffC)))+' ชิ้น (-'+volPctC+'%)</strong>';
     html+='<div style="background:var(--color-background-primary,#fff);border:0.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;flex:1;min-width:180px;border-top:3px solid '+vbc+'">'
-      +'<div style="font-size:11px;color:#5a7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Volume หาย</div>'
+      +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Volume หาย</div>'
       +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:4px">'
         +'<div><div style="font-size:10px;color:#94a3b8">'+m.en+'</div>'
         +'<div style="font-size:24px;font-weight:500;line-height:1;color:'+vcc+'">'+curVolStr+' ชิ้น</div>'
         +'<div style="font-size:10px;color:'+vcc+';margin-top:2px;font-weight:600">≈ '+rkAvgVolDayStr+'</div></div>'
         +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
         +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div>'
-        +'<div style="font-size:14px;font-weight:500;color:#5a7280">'+prevVolStr+' ชิ้น</div>'
+        +'<div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevVolStr+' ชิ้น</div>'
         +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">≈ '+rkAvgVolDayPStr+'</div></div>'
       +'</div>'
       +'<div style="display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border-radius:8px;background:'+vvbg+';color:'+vvtxt+';font-size:12px;line-height:1.5;margin-top:8px">'
@@ -5465,11 +5465,11 @@ function renderRisk(){
       ?'Avg drop/รายมากขึ้น <strong>+'+fmtF(Math.abs(avgDiff))+' บ/วัน (+'+avgPct+'%)</strong> จากเดือนก่อน'
       :'Avg drop/รายน้อยลง <strong>'+fmtF(Math.abs(avgDiff))+' บ/วัน (-'+avgPct+'%)</strong> จากเดือนก่อน';
     html+='<div style="background:var(--color-background-primary,#fff);border:0.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;flex:1;min-width:180px;border-top:3px solid '+abc+'">'
-      +'<div style="font-size:11px;color:#5a7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Avg drop / ราย</div>'
+      +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Avg drop / ราย</div>'
       +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">'
         +'<div><div style="font-size:10px;color:#94a3b8">'+m.en+'</div><div style="font-size:24px;font-weight:500;line-height:1;color:'+acc+'">'+curAvgStr+' บ/วัน</div></div>'
         +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
-        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div><div style="font-size:14px;font-weight:500;color:#5a7280">'+prevAvgStr+' บ/วัน</div></div>'
+        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div><div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevAvgStr+' บ/วัน</div></div>'
       +'</div>'
       +'<div style="display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border-radius:8px;background:'+avbg+';color:'+avtxt+';font-size:12px;line-height:1.5">'
         +'<svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:2px"><path d="'+aarrow+'" stroke="'+avtxt+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -5606,8 +5606,8 @@ function renderRisk(){
         +'<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b">'
         +'<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(100,116,139,0.45);border:1.5px solid rgba(100,116,139,0.75)"></span>'
         +'เดือนก่อนหน้า</span>'
-        +'<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#dc2626">'
-        +'<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(220,38,38,0.85);border:1.5px solid #dc2626"></span>'
+        +'<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--rd)">'
+        +'<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(220,38,38,0.85);border:1.5px solid var(--rd)"></span>'
         +'เดือนปัจจุบัน</span>'
         +(isWorseWhenBig
           ? '<span style="font-size:10px;color:#9a3412;background:#fff7ed;padding:1px 8px;border-radius:10px">แท่งสูง = แย่ลง | แท่งต่ำ = ดีขึ้น</span>'
@@ -5625,7 +5625,7 @@ function renderRisk(){
       if(tCountBadge){
         tCountBadge.textContent=(cDiff>0?'▲':'▼')+Math.abs(cDiff)+' ราย เทียบเดือนก่อน';
         tCountBadge.style.background=cDiff>0?'#fff0f0':'#f0fdf4';
-        tCountBadge.style.color=cDiff>0?'#dc2626':'#16a34a';
+        tCountBadge.style.color=cDiff>0?'var(--rd)':'var(--gn)';
         tCountBadge.style.border='1px solid '+(cDiff>0?'#fca5a5':'#86efac');
       }
       if(tCountSub)tCountSub.innerHTML='เปรียบเทียบจำนวนลูกค้าเสี่ยงรายเดือน'+_trendLegendHTML(true);
@@ -5637,7 +5637,7 @@ function renderRisk(){
         return i===trendCounts.length-1?COLOR_CURRENT:COLOR_PREV;
       });
       var bdColorsCount=trendCounts.map(function(v,i){
-        return i===trendCounts.length-1?'#dc2626':COLOR_PREV_BD;
+        return i===trendCounts.length-1?'var(--rd)':COLOR_PREV_BD;
       });
       CH['c_risk_trend_count']=new Chart(etc.getContext('2d'),{type:'bar',
         data:{labels:trendLabels,datasets:[{
@@ -5674,7 +5674,7 @@ function renderRisk(){
       if(tRevBadge){
         tRevBadge.textContent=(rDiff>0?'▲':'▼')+fmtS(Math.abs(rDiff))+' เทียบเดือนก่อน';
         tRevBadge.style.background=rDiff>0?'#fff0f0':'#f0fdf4';
-        tRevBadge.style.color=rDiff>0?'#dc2626':'#16a34a';
+        tRevBadge.style.color=rDiff>0?'var(--rd)':'var(--gn)';
         tRevBadge.style.border='1px solid '+(rDiff>0?'#fca5a5':'#86efac');
       }
       if(tRevSub)tRevSub.innerHTML='รวม Revenue ที่หายไปเทียบแต่ละเดือน'+_trendLegendHTML(true);
@@ -5686,7 +5686,7 @@ function renderRisk(){
         return i===trendRevLost.length-1?COLOR_CURRENT:COLOR_PREV;
       });
       var bdColorsRev=trendRevLost.map(function(v,i){
-        return i===trendRevLost.length-1?'#dc2626':COLOR_PREV_BD;
+        return i===trendRevLost.length-1?'var(--rd)':COLOR_PREV_BD;
       });
       CH['c_risk_trend_rev']=new Chart(etr.getContext('2d'),{type:'bar',
         data:{labels:trendLabels,datasets:[{
@@ -5722,7 +5722,7 @@ function renderRisk(){
       var improving=aDiff<0;
       tAvgBadge.textContent=improving?'📈 แนวโน้มดีขึ้น':'📉 แนวโน้มแย่ลง';
       tAvgBadge.style.background=improving?'#f0fdf4':'#fff0f0';
-      tAvgBadge.style.color=improving?'#16a34a':'#dc2626';
+      tAvgBadge.style.color=improving?'var(--gn)':'var(--rd)';
       tAvgBadge.style.border='1px solid '+(improving?'#86efac':'#fca5a5');
     }
     // เพิ่ม legend ใต้ subtitle ของ Avg chart
@@ -5740,7 +5740,7 @@ function renderRisk(){
           +'<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(100,116,139,0.45);border:1.5px solid rgba(100,116,139,0.75)"></span>'
           +'เดือนก่อนหน้า</span>'
           +'<span style="display:flex;align-items:center;gap:4px">'
-          +'<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(220,38,38,0.85);border:1.5px solid #dc2626"></span>'
+          +'<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(220,38,38,0.85);border:1.5px solid var(--rd)"></span>'
           +'เดือนปัจจุบัน</span>'
           +'<span style="display:flex;align-items:center;gap:4px">'
           +'<span style="display:inline-block;width:26px;height:2px;border-top:2px dashed rgba(99,102,241,0.8)"></span>'
@@ -5757,7 +5757,7 @@ function renderRisk(){
         return i===trendAvgDrop.length-1?COLOR_CURRENT:COLOR_PREV;
       });
       var bdColorsAvg=trendAvgDrop.map(function(v,i){
-        return i===trendAvgDrop.length-1?'#dc2626':COLOR_PREV_BD;
+        return i===trendAvgDrop.length-1?'var(--rd)':COLOR_PREV_BD;
       });
       CH['c_risk_trend_avg']=new Chart(eta.getContext('2d'),{
         type:'bar',
@@ -5806,7 +5806,7 @@ function renderRisk(){
     var zsHtml = '<table class="mt" style="width:100%"><thead><tr>'
       +'<th>Zone</th>'
       +'<th class="tdr">จำนวนเสี่ยง</th>'
-      +'<th class="tdr" style="color:#dc2626">Rev หาย</th>'
+      +'<th class="tdr" style="color:var(--rd)">Rev หาย</th>'
       +'<th class="tdr" style="color:var(--c-ard)">Avg Drop/ราย</th>'
       +'</tr></thead><tbody>';
     zoneSorted.forEach(function(e,i){
@@ -5814,7 +5814,7 @@ function renderRisk(){
       var avgDrop=d.count>0?Math.round(d.avgDrop/d.count):0;
       zsHtml+='<tr>'
         +'<td style="font-weight:700">'+z+'</td>'
-        +'<td class="tdr"><span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">'+d.count+' ราย</span></td>'
+        +'<td class="tdr"><span style="background:#fee2e2;color:var(--rd);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">'+d.count+' ราย</span></td>'
         +'<td class="tdr tdneg">▼ '+fmtS(Math.round(d.revLost))+'</td>'
         +'<td class="tdr" style="color:var(--c-ard)">'+fmtS(avgDrop)+' บ/วัน</td>'
         +'</tr>';
@@ -5831,12 +5831,12 @@ function renderRisk(){
     +'<th>#</th><th>Agent Name</th><th>Code</th><th>Zone</th><th>Pkg</th><th>Province</th>'
     +'<th class="tdr" style="color:var(--t2)">Avg Rev<br>'+mp.en+'</th>'
     +'<th class="tdr" style="color:var(--c-ard)">Avg Rev<br>'+m.en+'</th>'
-    +'<th class="tdr" style="color:#dc2626">Diff<br>Avg/วัน</th>'
-    +'<th class="tdr" style="color:#dc2626">%Δ</th>'
+    +'<th class="tdr" style="color:var(--rd)">Diff<br>Avg/วัน</th>'
+    +'<th class="tdr" style="color:var(--rd)">%Δ</th>'
     +'<th class="tdr" style="color:var(--t2)">Rev '+mp.en+'</th>'
     +'<th class="tdr" style="color:var(--c-rev)">Rev '+m.en+'</th>'
-    +'<th style="color:#005F7A;min-width:140px">สถานะติดตาม</th>'
-    +'<th style="color:#dc2626;min-width:140px">สาเหตุ</th>'
+    +'<th style="color:var(--pl);min-width:140px">สถานะติดตาม</th>'
+    +'<th style="color:var(--rd);min-width:140px">สาเหตุ</th>'
     +'<th style="min-width:150px">หมายเหตุ</th>'
     +'</tr></thead><tbody>'
     +rows.slice(0,300).map(function(r,i){
@@ -6138,7 +6138,7 @@ function renderGrowth(){
       var arrowPath=better?'M8 14V2M8 14l-5-5M8 14l5-5':'M8 2v12M8 2l-5 5M8 2l5 5';
       var arrowColor=vtxt;
       return '<div style="background:var(--color-background-primary,#fff);border:0.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;flex:1;min-width:180px;border-top:3px solid '+bc+'">'
-        +'<div style="font-size:11px;color:#5a7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">'+label+'</div>'
+        +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">'+label+'</div>'
         +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">'
           +'<div>'
             +'<div style="font-size:10px;color:#94a3b8">'+curLabel+'</div>'
@@ -6147,7 +6147,7 @@ function renderGrowth(){
           +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
           +'<div style="padding-bottom:2px">'
             +'<div style="font-size:10px;color:#94a3b8">'+prevLabel+'</div>'
-            +'<div style="font-size:14px;font-weight:500;color:#5a7280">'+prevVal+unitSuffix+'</div>'
+            +'<div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevVal+unitSuffix+'</div>'
           +'</div>'
         +'</div>'
         +'<div style="display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border-radius:8px;background:'+vbg+';color:'+vtxt+';font-size:12px;line-height:1.5">'
@@ -6194,14 +6194,14 @@ function renderGrowth(){
       ?'Rev เพิ่มมากกว่าเดือนก่อน <strong>+'+fmtS(Math.round(revDiff))+' (+'+revPct+'%)</strong>'
       :'Rev เพิ่มน้อยกว่าเดือนก่อน <strong>'+fmtS(Math.round(Math.abs(revDiff)))+' (-'+revPct+'%)</strong>';
     html+='<div style="background:var(--color-background-primary,#fff);border:0.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;flex:1;min-width:180px;border-top:3px solid '+rbc+'">'
-      +'<div style="font-size:11px;color:#5a7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Revenue เพิ่ม</div>'
+      +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Revenue เพิ่ม</div>'
       +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:4px">'
         +'<div><div style="font-size:10px;color:#94a3b8">'+m.en+'</div>'
         +'<div style="font-size:24px;font-weight:500;line-height:1;color:'+rcc+'">'+curRevStr+'</div>'
         +'<div style="font-size:10px;color:'+rcc+';margin-top:2px;font-weight:600">≈ '+grAvgRevDayStr+'</div></div>'
         +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
         +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div>'
-        +'<div style="font-size:14px;font-weight:500;color:#5a7280">'+prevRevStr+'</div>'
+        +'<div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevRevStr+'</div>'
         +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">≈ '+grAvgRevDayPStr+'</div></div>'
       +'</div>'
       +'<div style="display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border-radius:8px;background:'+rvbg+';color:'+rvtxt+';font-size:12px;line-height:1.5;margin-top:8px">'
@@ -6235,14 +6235,14 @@ function renderGrowth(){
       ?'Volume เพิ่มมากกว่าเดือนก่อน <strong>+'+fmtInt(Math.round(volGDiff))+' ชิ้น (+'+volGPct+'%)</strong>'
       :'Volume เพิ่มน้อยกว่าเดือนก่อน <strong>'+fmtInt(Math.round(Math.abs(volGDiff)))+' ชิ้น (-'+volGPct+'%)</strong>';
     html+='<div style="background:var(--color-background-primary,#fff);border:0.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;flex:1;min-width:180px;border-top:3px solid '+vgbc+'">'
-      +'<div style="font-size:11px;color:#5a7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Volume เพิ่ม</div>'
+      +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Volume เพิ่ม</div>'
       +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:4px">'
         +'<div><div style="font-size:10px;color:#94a3b8">'+m.en+'</div>'
         +'<div style="font-size:24px;font-weight:500;line-height:1;color:'+vgcc+'">'+curVolGStr+' ชิ้น</div>'
         +'<div style="font-size:10px;color:'+vgcc+';margin-top:2px;font-weight:600">≈ '+grAvgVolDayStr+'</div></div>'
         +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
         +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div>'
-        +'<div style="font-size:14px;font-weight:500;color:#5a7280">'+prevVolGStr+' ชิ้น</div>'
+        +'<div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevVolGStr+' ชิ้น</div>'
         +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">≈ '+grAvgVolDayPStr+'</div></div>'
       +'</div>'
       +'<div style="display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border-radius:8px;background:'+vgbg+';color:'+vgtxt+';font-size:12px;line-height:1.5;margin-top:8px">'
@@ -6266,11 +6266,11 @@ function renderGrowth(){
       ?'Avg rise/รายมากขึ้น <strong>+'+fmtF(Math.abs(avgDiff))+' บ/วัน (+'+avgPct+'%)</strong> จากเดือนก่อน'
       :'Avg rise/รายน้อยลง <strong>'+fmtF(Math.abs(avgDiff))+' บ/วัน (-'+avgPct+'%)</strong> จากเดือนก่อน';
     html+='<div style="background:var(--color-background-primary,#fff);border:0.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;flex:1;min-width:180px;border-top:3px solid '+abc2+'">'
-      +'<div style="font-size:11px;color:#5a7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Avg rise / ราย</div>'
+      +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Avg rise / ราย</div>'
       +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">'
         +'<div><div style="font-size:10px;color:#94a3b8">'+m.en+'</div><div style="font-size:24px;font-weight:500;line-height:1;color:'+acc2+'">'+curAvgStr+' บ/วัน</div></div>'
         +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
-        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div><div style="font-size:14px;font-weight:500;color:#5a7280">'+prevAvgStr+' บ/วัน</div></div>'
+        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div><div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevAvgStr+' บ/วัน</div></div>'
       +'</div>'
       +'<div style="display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border-radius:8px;background:'+avbg2+';color:'+avtxt2+';font-size:12px;line-height:1.5">'
         +'<svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:2px"><path d="'+aarrow2+'" stroke="'+avtxt2+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -6394,7 +6394,7 @@ function renderGrowth(){
       var diff=last-prev;
       badge.textContent=(diff>=0?'▲+':'▼')+diff+' ราย';
       badge.style.background=diff>=0?'#dcfce7':'#fee2e2';
-      badge.style.color=diff>=0?'#16a34a':'#dc2626';
+      badge.style.color=diff>=0?'var(--gn)':'var(--rd)';
     }
     dc('c_growth_trend_count');var ctc=document.getElementById('c_growth_trend_count');
     if(ctc&&tLabels.length){
@@ -6414,7 +6414,7 @@ function renderGrowth(){
       var rdiff=rlast-rprev;
       rbadge.textContent=(rdiff>=0?'▲+':'')+fmtS(rdiff)+' บาท';
       rbadge.style.background=rdiff>=0?'#dcfce7':'#fee2e2';
-      rbadge.style.color=rdiff>=0?'#16a34a':'#dc2626';
+      rbadge.style.color=rdiff>=0?'var(--gn)':'var(--rd)';
     }
     dc('c_growth_trend_rev');var ctr=document.getElementById('c_growth_trend_rev');
     if(ctr&&tLabels.length){
@@ -6433,7 +6433,7 @@ function renderGrowth(){
       var adiff=alast-aprev;
       abadge.textContent=(adiff>=0?'▲+':'')+fmtF(adiff)+' บ/วัน';
       abadge.style.background=adiff>=0?'#dcfce7':'#fee2e2';
-      abadge.style.color=adiff>=0?'#16a34a':'#dc2626';
+      abadge.style.color=adiff>=0?'var(--gn)':'var(--rd)';
     }
     dc('c_growth_trend_avg');var cta=document.getElementById('c_growth_trend_avg');
     if(cta&&tLabels.length){
@@ -6454,13 +6454,13 @@ function renderGrowth(){
     tbl.innerHTML='<table class="mt"><thead><tr>'
       +'<th>#</th><th>Agent Name</th><th>Code</th><th>Zone</th><th>Pkg</th><th>Province</th>'
       +'<th class="tdr" style="color:var(--t2)">Avg Rev<br>'+mp.en+'</th>'
-      +'<th class="tdr" style="color:#16a34a">Avg Rev<br>'+m.en+'</th>'
-      +'<th class="tdr" style="color:#16a34a">Diff<br>Avg/วัน</th>'
-      +'<th class="tdr" style="color:#16a34a">%Δ</th>'
+      +'<th class="tdr" style="color:var(--gn)">Avg Rev<br>'+m.en+'</th>'
+      +'<th class="tdr" style="color:var(--gn)">Diff<br>Avg/วัน</th>'
+      +'<th class="tdr" style="color:var(--gn)">%Δ</th>'
       +'<th class="tdr" style="color:var(--t2)">Rev '+mp.en+'</th>'
       +'<th class="tdr" style="color:var(--c-rev)">Rev '+m.en+'</th>'
-      +'<th style="color:#005F7A;min-width:160px">สถานะติดตาม</th>'
-      +'<th style="color:#16a34a;min-width:180px">ปัจจัยที่เติบโต</th>'
+      +'<th style="color:var(--pl);min-width:160px">สถานะติดตาม</th>'
+      +'<th style="color:var(--gn);min-width:180px">ปัจจัยที่เติบโต</th>'
       +'<th style="min-width:150px">หมายเหตุ</th>'
       +'</tr></thead><tbody>'
       +rows.slice(0,300).map(function(r,i){
@@ -6484,9 +6484,9 @@ function renderGrowth(){
           +'<td style="font-size:11px">'+_esc(r['Package']||'-')+'</td>'
           +'<td style="font-size:11px">'+_esc(r['Province']||'-')+'</td>'
           +'<td class="tdr" style="color:var(--t2)">'+fmtS(Math.round(ardP))+'</td>'
-          +'<td class="tdr" style="color:#16a34a;font-weight:700">'+fmtS(Math.round(ardC))+'</td>'
-          +'<td class="tdr" style="color:#16a34a;font-weight:700">+'+fmtS(Math.round(diff))+'</td>'
-          +'<td class="tdr">'+(pct?'<span style="color:#16a34a;font-weight:700">▲'+Math.abs(pct)+'%</span>':'—')+'</td>'
+          +'<td class="tdr" style="color:var(--gn);font-weight:700">'+fmtS(Math.round(ardC))+'</td>'
+          +'<td class="tdr" style="color:var(--gn);font-weight:700">+'+fmtS(Math.round(diff))+'</td>'
+          +'<td class="tdr">'+(pct?'<span style="color:var(--gn);font-weight:700">▲'+Math.abs(pct)+'%</span>':'—')+'</td>'
           +'<td class="tdr" style="color:var(--t2)">'+fmtS(Math.round(revP))+'</td>'
           +'<td class="tdr" style="color:var(--c-rev);font-weight:700">'+fmtS(Math.round(revC))+'</td>'
           +'<td><select class="trk-status '+sCls+'" data-trk="'+trkKey+'" data-field="status" onchange="_growthTrkChange(this)">'+_growthStatusOptions(trk.status)+'</select></td>'
@@ -6697,7 +6697,7 @@ function _growthTrkChange(el){
       }
     })
     .withFailureHandler(function(e){
-      el.style.border='1.5px solid #dc2626';
+      el.style.border='1.5px solid var(--rd)';
       _trkToast('❌ เกิดข้อผิดพลาด: '+(e&&e.message?e.message:'กรุณาลองใหม่'), true);
     })
     .saveGrowthTrackingRow(token, payload);
@@ -6756,7 +6756,7 @@ function _trkChange(el){
       }
     })
     .withFailureHandler(function(e){
-      el.style.border='1.5px solid #dc2626';
+      el.style.border='1.5px solid var(--rd)';
       _trkToast('❌ เกิดข้อผิดพลาด: '+(e&&e.message?e.message:'กรุณาลองใหม่'), true);
     })
     .saveTrackingRow(token, payload);
@@ -7089,7 +7089,7 @@ function openTrkSummary(){
     var krow = document.getElementById('tsm_krow');
     if (subEl) subEl.textContent = 'โหลดสรุปติดตามไม่สำเร็จ';
     if (krow) {
-      krow.innerHTML = '<div style="grid-column:1/-1;padding:18px;color:#dc2626;background:#fff0f0;border:1px solid #fca5a5;border-radius:8px;font-weight:700">❌ ' + (err && err.message ? err.message : err) + '</div>';
+      krow.innerHTML = '<div style="grid-column:1/-1;padding:18px;color:var(--rd);background:#fff0f0;border:1px solid #fca5a5;border-radius:8px;font-weight:700">❌ ' + (err && err.message ? err.message : err) + '</div>';
     }
     console.error('[openTrkSummary]', err);
   }
@@ -7165,11 +7165,11 @@ function renderTsmModal(){
       }).length;
       krow.innerHTML =
         _tsmCard('tsm-kc-total',   cnt.total,   '🏷️ ทั้งหมด','#3b4a6b') +
-        _tsmCard('tsm-kc-none',    cnt.none,    '📵 ยังไม่โทร','#dc2626') +
+        _tsmCard('tsm-kc-none',    cnt.none,    '📵 ยังไม่โทร','var(--rd)') +
         _tsmCard('tsm-kc-contact', urgentRows,  '🔥 ด่วนมาก','#b91c1c') +
         _tsmCard('tsm-kc-success', cnt.success, '✅ แก้แล้ว','#166534') +
         '<div class="tsm-kc" style="background:#f0fdf4;border-color:#86efac">'
-          +'<div class="tsm-knum" style="color:'+(pctDone>=80?'#16a34a':pctDone>=40?'#f59e0b':'#dc2626')+'">'+pctDone+'%</div>'
+          +'<div class="tsm-knum" style="color:'+(pctDone>=80?'var(--gn)':pctDone>=40?'#f59e0b':'var(--rd)')+'">'+pctDone+'%</div>'
           +'<div class="tsm-klbl">ความคืบหน้า</div></div>';
     } else {
       krow.innerHTML =
@@ -7212,21 +7212,21 @@ function renderTsmModal(){
         var zd = zoneMap[z];
         var done = zd.contact+zd.solving+zd.success+zd.fail;
         var pct = zd.total ? Math.round(done/zd.total*100) : 0;
-        var bc = pct>=80?'#16a34a':pct>=40?'#f59e0b':'#94a3b8';
+        var bc = pct>=80?'var(--gn)':pct>=40?'#f59e0b':'#94a3b8';
         return '<tr>'
           +'<td style="font-weight:700;color:var(--pr)">'+z+'</td>'
           +'<td style="text-align:center">'+zd.total+'</td>'
-          +'<td style="text-align:center;color:#dc2626;font-weight:700">'+zd.none+'</td>'
+          +'<td style="text-align:center;color:var(--rd);font-weight:700">'+zd.none+'</td>'
           +'<td style="text-align:center;color:#1d4ed8">'+zd.contact+'</td>'
-          +'<td style="text-align:center;color:#16a34a">'+zd.success+'</td>'
+          +'<td style="text-align:center;color:var(--gn)">'+zd.success+'</td>'
           +'<td style="min-width:90px"><div class="tsm-pbar-wrap">'
             +'<div class="tsm-pbar-bg"><div class="tsm-pbar-fill" style="width:'+pct+'%;background:'+bc+'"></div></div>'
             +'<span style="font-size:10px;font-weight:700;color:'+bc+';width:30px;text-align:right">'+pct+'%</span>'
           +'</div></td></tr>';
       }).join('');
       zTbl.innerHTML='<table class="tsm-zone-table"><thead><tr>'
-        +'<th>Zone</th><th>ทั้งหมด</th><th style="color:#dc2626">ค้าง</th>'
-        +'<th style="color:#1d4ed8">ติดต่อ</th><th style="color:#16a34a">สำเร็จ</th><th>Progress</th>'
+        +'<th>Zone</th><th>ทั้งหมด</th><th style="color:var(--rd)">ค้าง</th>'
+        +'<th style="color:#1d4ed8">ติดต่อ</th><th style="color:var(--gn)">สำเร็จ</th><th>Progress</th>'
         +'</tr></thead><tbody>'+zRows+'</tbody></table>';
     }
   }
@@ -7251,9 +7251,9 @@ function renderTsmModal(){
       } else {
         top5El.innerHTML = pendForBD.slice(0,5).map(function(r,i){
           var diff = Math.round(N(r[mp.colAvg])-N(r[m.colAvg]));
-          var urgColor = diff > _riskThreshold*2 ? '#dc2626' : '#f59e0b';
+          var urgColor = diff > _riskThreshold*2 ? 'var(--rd)' : '#f59e0b';
           var badge = diff > _riskThreshold*2
-            ? '<span style="font-size:9px;background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:20px;font-weight:700">🔥 ด่วนมาก</span>'
+            ? '<span style="font-size:9px;background:#fee2e2;color:var(--rd);padding:1px 6px;border-radius:20px;font-weight:700">🔥 ด่วนมาก</span>'
             : '<span style="font-size:9px;background:#fff7ed;color:#f59e0b;padding:1px 6px;border-radius:20px;font-weight:700">⚠️ ติดตาม</span>';
           return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f4f8">'
             +'<div style="width:22px;height:22px;border-radius:50%;background:'+urgColor+';color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(i+1)+'</div>'
@@ -7262,7 +7262,7 @@ function renderTsmModal(){
               +'<div style="font-size:10px;color:var(--t2)">'+r['Package']+'  •  '+r['Province']+'</div>'
             +'</div>'
             +'<div style="text-align:right;flex-shrink:0">'
-              +'<div style="color:#dc2626;font-weight:700;font-size:12px">▼'+diff+'</div>'
+              +'<div style="color:var(--rd);font-weight:700;font-size:12px">▼'+diff+'</div>'
               +'<div style="font-size:9px;color:var(--t2)">บาท/วัน</div>'
             +'</div>'
             +'</div>';
@@ -7283,17 +7283,17 @@ function renderTsmModal(){
         '<div style="margin-bottom:12px">'
           +'<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px">'
             +'<span style="color:var(--pr)">ความคืบหน้าโดยรวม</span>'
-            +'<span style="color:'+(pctDone2>=80?'#16a34a':pctDone2>=40?'#f59e0b':'#dc2626')+'">'+done+'/'+cnt.total+' ('+pctDone2+'%)</span>'
+            +'<span style="color:'+(pctDone2>=80?'var(--gn)':pctDone2>=40?'#f59e0b':'var(--rd)')+'">'+done+'/'+cnt.total+' ('+pctDone2+'%)</span>'
           +'</div>'
           +'<div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden">'
-            +'<div style="width:'+pctDone2+'%;height:100%;background:'+(pctDone2>=80?'#16a34a':pctDone2>=40?'#f59e0b':'#dc2626')+';border-radius:6px;transition:.5s"></div>'
+            +'<div style="width:'+pctDone2+'%;height:100%;background:'+(pctDone2>=80?'var(--gn)':pctDone2>=40?'#f59e0b':'var(--rd)')+';border-radius:6px;transition:.5s"></div>'
           +'</div>'
         +'</div>'
         // checklist
-        + _bdActionItem('🔥', 'ด่วนมาก — โทรหาเลยวันนี้', ultraUrgent + ' ราย', ultraUrgent>0?'#dc2626':'#16a34a', ultraUrgent===0)
-        + _bdActionItem('📞', 'ยังไม่ได้ติดต่อ — ทยอยโทรให้ครบ', normal + ' ราย', normal>0?'#f59e0b':'#16a34a', normal===0)
+        + _bdActionItem('🔥', 'ด่วนมาก — โทรหาเลยวันนี้', ultraUrgent + ' ราย', ultraUrgent>0?'var(--rd)':'var(--gn)', ultraUrgent===0)
+        + _bdActionItem('📞', 'ยังไม่ได้ติดต่อ — ทยอยโทรให้ครบ', normal + ' ราย', normal>0?'#f59e0b':'var(--gn)', normal===0)
         + _bdActionItem('🔧', 'อยู่ระหว่างแก้ไข — ติดตามผล', cnt.solving + ' ราย', '#1d4ed8', false)
-        + _bdActionItem('✅', 'แก้ไขสำเร็จแล้ว', cnt.success + ' ราย', '#16a34a', false)
+        + _bdActionItem('✅', 'แก้ไขสำเร็จแล้ว', cnt.success + ' ราย', 'var(--gn)', false)
         + '<div style="margin-top:10px;padding:8px 10px;background:#fffbeb;border-radius:8px;border-left:3px solid #f59e0b;font-size:11px;color:#92400e">'
           +'💡 <strong>เคล็ดลับ:</strong> เริ่มจากรายที่ Avg ลดมากที่สุด และมี Package ราคาสูง จะช่วยรักษา Revenue ได้สูงสุด'
         +'</div>';
@@ -7349,12 +7349,12 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
     var pctDoneG = gcnt.total ? Math.round((gcnt.contacted+gcnt.data_collected+gcnt.rewarded+gcnt.upsold+gcnt.unreachable)/gcnt.total*100) : 0;
     var totalRevGain = growthRows.reduce(function(s,r){ return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev])); },0);
     gkrow.innerHTML =
-      _tsmCard('tsm-kc-total',   gcnt.total,          '🟢 ทั้งหมด','#16a34a') +
+      _tsmCard('tsm-kc-total',   gcnt.total,          '🟢 ทั้งหมด','var(--gn)') +
       _tsmCard('tsm-kc-none',    gcnt.wait,            '⏳ รอ','#64748b') +
       _tsmCard('tsm-kc-contact', gcnt.contacted,       '📞 ติดต่อแล้ว','#1d4ed8') +
       _tsmCard('tsm-kc-solving', gcnt.data_collected,  '📋 เก็บข้อมูลแล้ว','#5b21b6') +
       _tsmCard('tsm-kc-success', gcnt.upsold,          '🏆 Upsold','#15803d') +
-      '<div class="tsm-kc" style="background:#f0fdf4;border-color:#86efac"><div class="tsm-knum" style="color:#16a34a;font-size:13px">▲'+fmtS(Math.round(totalRevGain))+'</div><div class="tsm-klbl">Rev เพิ่มรวม</div></div>';
+      '<div class="tsm-kc" style="background:#f0fdf4;border-color:#86efac"><div class="tsm-knum" style="color:var(--gn);font-size:13px">▲'+fmtS(Math.round(totalRevGain))+'</div><div class="tsm-klbl">Rev เพิ่มรวม</div></div>';
   }
 
   // ── Director/AM: Chart + Zone table + Reason distribution ──
@@ -7394,12 +7394,12 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
         var zd = gZoneMap[z];
         var done = zd.contacted+zd.data_collected+zd.rewarded+zd.upsold+zd.unreachable;
         var pct = zd.total ? Math.round(done/zd.total*100) : 0;
-        var bc = pct>=80?'#16a34a':pct>=40?'#f59e0b':'#94a3b8';
+        var bc = pct>=80?'var(--gn)':pct>=40?'#f59e0b':'#94a3b8';
         var medals = ['🥇','🥈','🥉'];
         return '<tr>'
           +'<td style="font-size:11px">'+(i<3?medals[i]:(i+1))+'</td>'
-          +'<td style="font-weight:700;color:#16a34a">'+z+'</td>'
-          +'<td style="text-align:center;font-weight:800;color:#16a34a">'+zd.total+'</td>'
+          +'<td style="font-weight:700;color:var(--gn)">'+z+'</td>'
+          +'<td style="text-align:center;font-weight:800;color:var(--gn)">'+zd.total+'</td>'
           +'<td style="text-align:center;color:#5b21b6">'+zd.data_collected+'</td>'
           +'<td style="text-align:center;color:#15803d;font-weight:700">'+zd.upsold+'</td>'
           +'<td style="min-width:80px"><div class="tsm-pbar-wrap">'
@@ -7408,7 +7408,7 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
           +'</div></td></tr>';
       }).join('');
       gZTbl.innerHTML='<table class="tsm-zone-table"><thead><tr>'
-        +'<th>#</th><th>Zone</th><th style="color:#16a34a">เติบโต</th><th style="color:#5b21b6">เก็บข้อมูล</th><th style="color:#15803d">Upsold</th><th>Progress</th>'
+        +'<th>#</th><th>Zone</th><th style="color:var(--gn)">เติบโต</th><th style="color:#5b21b6">เก็บข้อมูล</th><th style="color:#15803d">Upsold</th><th>Progress</th>'
         +'</tr></thead><tbody>'+gZRows+'</tbody></table>';
     }
     // Reason distribution
@@ -7430,8 +7430,8 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
           return '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 12px">'
             +'<div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:4px">'+(REASON_LABELS[k]||k)+'</div>'
             +'<div style="display:flex;align-items:center;gap:6px">'
-              +'<div style="flex:1;height:6px;background:#dcfce7;border-radius:3px;overflow:hidden"><div style="width:'+pct2+'%;height:100%;background:#16a34a;border-radius:3px"></div></div>'
-              +'<span style="font-size:11px;font-weight:800;color:#16a34a;white-space:nowrap">'+cnt2+' ราย ('+pct2+'%)</span>'
+              +'<div style="flex:1;height:6px;background:#dcfce7;border-radius:3px;overflow:hidden"><div style="width:'+pct2+'%;height:100%;background:var(--gn);border-radius:3px"></div></div>'
+              +'<span style="font-size:11px;font-weight:800;color:var(--gn);white-space:nowrap">'+cnt2+' ราย ('+pct2+'%)</span>'
             +'</div></div>';
         }).join('');
       }
@@ -7465,7 +7465,7 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
               +'<div style="font-size:10px;color:var(--t2)">'+r['Package']+'  •  '+r['Province']+'</div>'
             +'</div>'
             +'<div style="text-align:right;flex-shrink:0">'
-              +'<div style="color:#16a34a;font-weight:700;font-size:12px">▲'+diff+'</div>'
+              +'<div style="color:var(--gn);font-weight:700;font-size:12px">▲'+diff+'</div>'
               +'<div style="font-size:9px;color:var(--t2)">บาท/วัน</div>'
             +'</div></div>';
         }).join('');
@@ -7479,18 +7479,18 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
       gActEl.innerHTML =
         '<div style="margin-bottom:12px">'
           +'<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px">'
-            +'<span style="color:#16a34a">ความคืบหน้า</span>'
-            +'<span style="color:'+(pctG>=80?'#16a34a':pctG>=40?'#f59e0b':'#94a3b8')+'">'+doneG+'/'+gcnt.total+' ('+pctG+'%)</span>'
+            +'<span style="color:var(--gn)">ความคืบหน้า</span>'
+            +'<span style="color:'+(pctG>=80?'var(--gn)':pctG>=40?'#f59e0b':'#94a3b8')+'">'+doneG+'/'+gcnt.total+' ('+pctG+'%)</span>'
           +'</div>'
           +'<div style="background:#dcfce7;border-radius:6px;height:8px;overflow:hidden">'
-            +'<div style="width:'+pctG+'%;height:100%;background:#16a34a;border-radius:6px;transition:.5s"></div>'
+            +'<div style="width:'+pctG+'%;height:100%;background:var(--gn);border-radius:6px;transition:.5s"></div>'
           +'</div>'
         +'</div>'
-        + _bdActionItem('📞', 'ติดต่อแสดงความยินดีและสัมภาษณ์', pendGrowthForBD.length + ' ราย', pendGrowthForBD.length>0?'#f59e0b':'#16a34a', pendGrowthForBD.length===0)
+        + _bdActionItem('📞', 'ติดต่อแสดงความยินดีและสัมภาษณ์', pendGrowthForBD.length + ' ราย', pendGrowthForBD.length>0?'#f59e0b':'var(--gn)', pendGrowthForBD.length===0)
         + _bdActionItem('📋', 'เก็บข้อมูล / ถอดบทเรียนแล้ว', gcnt.data_collected + ' ราย', '#5b21b6', false)
         + _bdActionItem('🎁', 'มอบรางวัล / เสนอสิทธิพิเศษแล้ว', gcnt.rewarded + ' ราย', '#d97706', false)
-        + _bdActionItem('🏆', 'เสนอแพ็กเกจเพิ่ม (Upsold) สำเร็จ', gcnt.upsold + ' ราย', '#16a34a', false)
-        + '<div style="margin-top:10px;padding:8px 10px;background:#f0fdf4;border-radius:8px;border-left:3px solid #16a34a;font-size:11px;color:#166534">'
+        + _bdActionItem('🏆', 'เสนอแพ็กเกจเพิ่ม (Upsold) สำเร็จ', gcnt.upsold + ' ราย', 'var(--gn)', false)
+        + '<div style="margin-top:10px;padding:8px 10px;background:#f0fdf4;border-radius:8px;border-left:3px solid var(--gn);font-size:11px;color:#166534">'
           +'💡 <strong>เคล็ดลับ:</strong> ถอดบทเรียนว่าทำไมถึงเติบโต เพื่อนำไปปรับใช้กับ Agent อื่น'
         +'</div>';
     }
@@ -7508,7 +7508,7 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
     }).sort(function(a,b){ return (N(b[m.colAvg])-N(b[mp.colAvg]))-(N(a[m.colAvg])-N(a[mp.colAvg])); });
     if (gPendCnt) gPendCnt.textContent = gPendRows.length + ' ราย';
     if (!gPendRows.length) {
-      gPendEl.innerHTML = '<div style="padding:16px;text-align:center;color:#16a34a;font-weight:700">🎉 ติดต่อครบทุกรายแล้ว!</div>';
+      gPendEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--gn);font-weight:700">🎉 ติดต่อครบทุกรายแล้ว!</div>';
     } else {
       var gpRows = gPendRows.map(function(r, i) {
         var diff = Math.round(N(r[m.colAvg])-N(r[mp.colAvg]));
@@ -7520,14 +7520,14 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
           +'<td style="font-size:11px">'+r['Package']+'</td>'
           +'<td style="font-size:11px">'+r['Province']+'</td>'
           +'<td style="color:var(--c-ard);font-weight:700;text-align:right">'+(r['21.00']||'—')+'</td>'
-          +'<td style="color:#16a34a;font-weight:700;text-align:right;white-space:nowrap">▲'+diff+'<span style="font-size:9px;color:var(--t2);font-weight:400"> บ/วัน</span></td>'
+          +'<td style="color:var(--gn);font-weight:700;text-align:right;white-space:nowrap">▲'+diff+'<span style="font-size:9px;color:var(--t2);font-weight:400"> บ/วัน</span></td>'
           +'</tr>';
       }).join('');
       gPendEl.innerHTML = '<table class="tsm-zone-table">'
         +'<thead><tr>'
         +'<th>#</th><th>Agent Name</th><th>Code</th><th>Zone</th><th>Package</th><th>Province</th>'
         +'<th style="text-align:right">21.00</th>'
-        +'<th style="text-align:right;color:#16a34a">Avg เพิ่ม/วัน</th>'
+        +'<th style="text-align:right;color:var(--gn)">Avg เพิ่ม/วัน</th>'
         +'</tr></thead><tbody>'+gpRows+'</tbody></table>';
     }
   }
@@ -7567,14 +7567,14 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
           +'<td style="font-size:11px">'+r['Package']+'</td>'
           +'<td style="font-size:11px">'+r['Province']+'</td>'
           +'<td style="color:var(--c-ard);font-weight:700;text-align:right">'+(r['21.00']||'—')+'</td>'
-          +'<td style="color:#dc2626;font-weight:700;text-align:right;white-space:nowrap">▼'+diff+'<span style="font-size:9px;color:var(--t2);font-weight:400"> บ/วัน</span></td>'
+          +'<td style="color:var(--rd);font-weight:700;text-align:right;white-space:nowrap">▼'+diff+'<span style="font-size:9px;color:var(--t2);font-weight:400"> บ/วัน</span></td>'
           +'</tr>';
       }).join('');
       pendEl.innerHTML = '<table class="tsm-zone-table">'
         +'<thead><tr>'
         +'<th>#</th><th>Agent Name</th><th>Code</th><th>Zone</th><th>Package</th><th>Province</th>'
         +'<th style="text-align:right">21.00</th>'
-        +'<th style="text-align:right;color:#dc2626">Avg ลด/วัน</th>'
+        +'<th style="text-align:right;color:var(--rd)">Avg ลด/วัน</th>'
         +'</tr></thead><tbody>'+pRows+'</tbody></table>';
     }
   }
@@ -7585,7 +7585,7 @@ function _bdActionItem(icon, label, val, color, done){
   return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f4f8">'
     +'<span style="font-size:14px">'+icon+'</span>'
     +'<span style="flex:1;font-size:11px;color:var(--t2)">'+label+'</span>'
-    +'<span style="font-weight:700;font-size:12px;color:'+color+'">'+(done?'<span style="color:#16a34a">✓ </span>':'')+val+'</span>'
+    +'<span style="font-weight:700;font-size:12px;color:'+color+'">'+(done?'<span style="color:var(--gn)">✓ </span>':'')+val+'</span>'
     +'</div>';
 }
 
@@ -7613,7 +7613,7 @@ function _tsmCard(cls, num, lbl, color){
       <!-- Tabs -->
       <div class="tsm-tabs">
         <button class="tsm-tab active" id="tsm_tab_risk"     onclick="switchTsmTab('risk',this)">🔴 กลุ่มเสี่ยง</button>
-        <button class="tsm-tab"        id="tsm_tab_growth"   onclick="switchTsmTab('growth',this)"   style="color:#16a34a;border-color:#86efac">🟢 กลุ่มเติบโต</button>
+        <button class="tsm-tab"        id="tsm_tab_growth"   onclick="switchTsmTab('growth',this)"   style="color:var(--gn);border-color:#86efac">🟢 กลุ่มเติบโต</button>
       </div>
 
       <!-- ══════ RISK TAB content ══════ -->
@@ -7650,7 +7650,7 @@ function _tsmCard(cls, num, lbl, color){
         <div class="tsm-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div class="tsm-sec-title" style="margin-bottom:0">⏳ รายชื่อที่ยังไม่ได้ติดต่อ</div>
-            <span id="tsm_pending_count" style="font-size:11px;font-weight:700;color:#dc2626;background:#fee2e2;padding:2px 10px;border-radius:20px"></span>
+            <span id="tsm_pending_count" style="font-size:11px;font-weight:700;color:var(--rd);background:#fee2e2;padding:2px 10px;border-radius:20px"></span>
           </div>
           <div style="max-height:260px;overflow-y:auto" id="tsm_pending_tbl"></div>
         </div>
@@ -7694,8 +7694,8 @@ function _tsmCard(cls, num, lbl, color){
         <!-- Bottom: ตาราง growth ที่ยังไม่ได้ติดต่อ -->
         <div class="tsm-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <div class="tsm-sec-title" style="margin-bottom:0;color:#16a34a">🟢 รายชื่อกลุ่มเติบโตที่ยังไม่ได้ติดต่อ</div>
-            <span id="tsm_growth_pending_count" style="font-size:11px;font-weight:700;color:#16a34a;background:#dcfce7;padding:2px 10px;border-radius:20px"></span>
+            <div class="tsm-sec-title" style="margin-bottom:0;color:var(--gn)">🟢 รายชื่อกลุ่มเติบโตที่ยังไม่ได้ติดต่อ</div>
+            <span id="tsm_growth_pending_count" style="font-size:11px;font-weight:700;color:var(--gn);background:#dcfce7;padding:2px 10px;border-radius:20px"></span>
           </div>
           <div style="max-height:260px;overflow-y:auto" id="tsm_growth_pending_tbl"></div>
         </div>
@@ -8485,7 +8485,7 @@ function renderMapLayers(){
              + '<span class="map-tip-key">Revenue</span><span class="map-tip-val">฿'+fmtS(Math.round(d.rev))+'</span>';
         if(d.total > 0 && getMP()){
           var momPctPB = getMoMPctFromTotals(d.avgCur, d.avgPrev);
-          var diffColor = momPctPB === null ? '#64748b' : momPctPB > 5 ? '#14532d' : momPctPB >= 0 ? '#16a34a' : momPctPB > -5 ? '#ea580c' : '#dc2626';
+          var diffColor = momPctPB === null ? '#64748b' : momPctPB > 5 ? '#14532d' : momPctPB >= 0 ? 'var(--gn)' : momPctPB > -5 ? '#ea580c' : 'var(--rd)';
           tip += '<span class="map-tip-key">MoM Rev</span><span class="map-tip-val" style="color:'+diffColor+'">'+(momPctPB===null?'--':((momPctPB>=0?'+':'')+momPctPB.toFixed(1)+'%'))+'</span>';
         }
         tip += '</div></div>';
@@ -8872,10 +8872,10 @@ function getCityColor(d, mode){
   if(mode === 'loss'){
     // ใช้ logic เดียวกับ getLossColor แต่ city data ไม่มี avgCur/avgPrev
     // → ตรวจเฉพาะ loss/inactive
-    if(d.loss > 0 && d.inactive > 0) return {fill:'#dc2626', opacity:0.85};
+    if(d.loss > 0 && d.inactive > 0) return {fill:'var(--rd)', opacity:0.85};
     if(d.loss > 0) return {fill:'#ef4444', opacity:0.85};
     if(d.inactive > 0) return {fill:'#f97316', opacity:0.85};
-    return {fill:'#16a34a', opacity:0.85};
+    return {fill:'var(--gn)', opacity:0.85};
   }
   // zone mode
   if(d.zone) return {fill: getZoneColor(d.zone), opacity:0.85};
@@ -8941,7 +8941,7 @@ function renderCityMarkers(pvData){
       + '<br><span style="color:#64748b;font-size:10px">จังหวัด: <b>'+d.province+'</b>'+(d.zone?' | Zone: <b>'+d.zone+'</b>':'')+'</span>'
       + '<br>👥 ลูกค้า: <b>'+d.total+'</b> ราย'
       + '<br>💰 Revenue: <b>'+fmtS(Math.round(d.rev))+'</b>'
-      + '<br><span style="color:#16a34a">✅ Active: <b>'+(d.active||0)+'</b></span>'
+      + '<br><span style="color:var(--gn)">✅ Active: <b>'+(d.active||0)+'</b></span>'
       + '<br><span style="color:#94a3b8;font-size:10px">อัตราเสี่ยง: '+lossRate+'%</span>';
     marker.bindTooltip(tip, {sticky:true, className:'map-info-panel'});
 
@@ -8964,7 +8964,7 @@ function _mapStatusBadge(r, m){
 function _mapCompareCell(cur, prev, formatter){
   cur = Number(cur || 0); prev = Number(prev || 0);
   var diff = cur - prev;
-  var color = diff > 0 ? '#16a34a' : diff < 0 ? '#dc2626' : '#64748b';
+  var color = diff > 0 ? 'var(--gn)' : diff < 0 ? 'var(--rd)' : '#64748b';
   var arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
   return '<td style="padding:4px 8px;text-align:right">'
     + '<div style="font-weight:800;color:var(--pr)">'+formatter(cur)+'</div>'
@@ -9336,7 +9336,7 @@ function showMapDrill(pvTH, pvEN, d){
     var cLoss = 0, cIna = 0; // T03: always 0
     var cAct = rows.filter(function(r){return _isActiveAgent(r,m);}).length;
     var lossRate = 0; // T03
-    var statusColor = '#16a34a'; // T03
+    var statusColor = 'var(--gn)'; // T03
     var uid = 'cityDrill_'+ci;
 
     html +=
@@ -9535,7 +9535,7 @@ function _homeScopeTrend(rows, targetValue) {
 
 function _homeVizSection(id, rows, targetValue, hasTarget, title) {
   var trend = _homeScopeTrend(rows, hasTarget ? targetValue : 0);
-  var forecastColor = hasTarget && trend.forecast < targetValue ? '#dc2626' : '#16a34a';
+  var forecastColor = hasTarget && trend.forecast < targetValue ? 'var(--rd)' : 'var(--gn)';
   return '<div class="home-viz-grid">'
     + '<div class="ccard home-viz-card">'
     + '<div class="chdr"><div><div class="ctitle">'+_esc(title || 'Monthly Trend')+'</div><div class="csub">Revenue / Volume / Avg Rev ต่อชิ้น ตาม scope ปัจจุบัน</div></div><span class="cbadge" style="font-size:10px">Phase 3.5</span></div>'
@@ -9565,8 +9565,8 @@ function _homeRenderViz(id, rows, targetValue, hasTarget) {
       labels: trend.labels,
       datasets: [
         { type:'bar', label:'Revenue', data:trend.rev, backgroundColor:'rgba(0,63,92,.72)', borderRadius:6, yAxisID:'y' },
-        { type:'line', label:'Volume', data:trend.vol, borderColor:'#E8622A', backgroundColor:'rgba(232,98,42,.12)', tension:.35, yAxisID:'y1' },
-        { type:'line', label:'Avg Rev/Vol', data:trend.avg, borderColor:'#009B9B', borderDash:[5,4], tension:.35, yAxisID:'y' },
+        { type:'line', label:'Volume', data:trend.vol, borderColor:'var(--or)', backgroundColor:'rgba(232,98,42,.12)', tension:.35, yAxisID:'y1' },
+        { type:'line', label:'Avg Rev/Vol', data:trend.avg, borderColor:'var(--ac)', borderDash:[5,4], tension:.35, yAxisID:'y' },
         { type:'line', label:'Target', data:targetLine, borderColor:'rgba(220,38,38,.55)', borderDash:[8,5], pointRadius:0, tension:0, yAxisID:'y' }
       ]
     },
@@ -9583,7 +9583,7 @@ function _homeRenderViz(id, rows, targetValue, hasTarget) {
 }
 
 function _homeMiniBar(zoneData, colRev, maxVal) {
-  var colors = ['#003F5C','#009B9B','#E8622A','#16a34a','#5C3D8F','#00788C'];
+  var colors = ['var(--pr)','var(--ac)','var(--or)','var(--gn)','#5C3D8F','#00788C'];
   var bars = zoneData.slice(0,6).map(function(z, i) {
     var h = maxVal > 0 ? Math.max(4, Math.round(z.rev / maxVal * 28)) : 4;
     return '<div class="home-mini-bar-col" style="height:'+h+'px;background:'+colors[i%colors.length]+'"></div>';
@@ -10412,7 +10412,7 @@ function _renderHomeDirector(m, mp) {
     + '</div>';
 
   // Card 4: กลุ่มเสี่ยง (T03)
-  var followColor = (dirRiskCount > 0) ? '#f97316' : '#16a34a';
+  var followColor = (dirRiskCount > 0) ? '#f97316' : 'var(--gn)';
   html += '<div class="home-kcard" style="--kc:'+followColor+'">' 
     + '<div class="home-kcard-ico">⚠️</div>'
     + '<div class="home-kcard-lbl">กลุ่มเสี่ยง</div>'
@@ -10421,31 +10421,31 @@ function _renderHomeDirector(m, mp) {
     + '</div>';
 
   // Card 5: กลุ่มเติบโต
-  html += '<div class="home-kcard" style="--kc:#16a34a;border:1.5px solid #86efac">'
+  html += '<div class="home-kcard" style="--kc:var(--gn);border:1.5px solid #86efac">'
     + '<div class="home-kcard-ico">🌱</div>'
     + '<div class="home-kcard-lbl">กลุ่มเติบโต</div>'
-    + '<div class="home-kcard-val" style="color:#16a34a">'+dirGrowthRows.length+'<span style="font-size:12px;font-weight:600;color:var(--t2)"> ราย</span></div>'
+    + '<div class="home-kcard-val" style="color:var(--gn)">'+dirGrowthRows.length+'<span style="font-size:12px;font-weight:600;color:var(--t2)"> ราย</span></div>'
     + (mp && dirGrowthRevGain > 0
-        ? '<div class="home-kcard-sub" style="color:#16a34a;font-weight:700">+฿'+fmtS(Math.round(dirGrowthRevGain))+' Rev gain</div>'
+        ? '<div class="home-kcard-sub" style="color:var(--gn);font-weight:700">+฿'+fmtS(Math.round(dirGrowthRevGain))+' Rev gain</div>'
         : '<div class="home-kcard-sub">'+(mp?'vs '+mp.th:'เลือก 2 เดือน')+'</div>')
     + '</div>';
 
   // Card 6: % เป้าประเทศ
-  html += '<div class="home-kcard" style="--kc:'+(dirHasTarget?(targetPct>=100?'#16a34a':targetPct>=70?'#f59e0b':'#dc2626'):'#64748b')+'">'
+  html += '<div class="home-kcard" style="--kc:'+(dirHasTarget?(targetPct>=100?'var(--gn)':targetPct>=70?'#f59e0b':'var(--rd)'):'#64748b')+'">'
     + '<div class="home-kcard-ico">🎯</div>'
     + '<div class="home-kcard-lbl">% เป้าประเทศ</div>'
     + '<div style="display:flex;align-items:center;gap:8px;margin-top:3px">'
     +   '<div style="position:relative;width:46px;height:46px;flex-shrink:0">'
     +     '<svg viewBox="0 0 36 36" style="width:46px;height:46px;transform:rotate(-90deg)">'
     +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="3.5"/>'
-    +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+(dirHasTarget?(targetPct>=100?'#16a34a':targetPct>=70?'#f59e0b':'#dc2626'):'#94a3b8')+'" stroke-width="3.5" stroke-dasharray="'+targetPct+' '+(100-targetPct)+'" stroke-linecap="round"/>'
+    +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+(dirHasTarget?(targetPct>=100?'var(--gn)':targetPct>=70?'#f59e0b':'var(--rd)'):'#94a3b8')+'" stroke-width="3.5" stroke-dasharray="'+targetPct+' '+(100-targetPct)+'" stroke-linecap="round"/>'
     +     '</svg>'
-    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:'+(dirHasTarget?(targetPct>=100?'#16a34a':targetPct>=70?'#f59e0b':'#dc2626'):'#64748b')+'">'+(dirHasTarget?targetPct+'%':'-')+'</div>'
+    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:'+(dirHasTarget?(targetPct>=100?'var(--gn)':targetPct>=70?'#f59e0b':'var(--rd)'):'#64748b')+'">'+(dirHasTarget?targetPct+'%':'-')+'</div>'
     +   '</div>'
     +   '<div>'
     +     '<div style="font-size:12px;font-weight:800;color:var(--pr)">฿'+fmtS(Math.round(totRev))+'</div>'
     +     '<div style="font-size:10px;color:var(--t2)">'+(dirHasTarget?'เป้า ฿'+fmtS(DIR_TARGET):'ยังไม่ตั้งเป้า')+'</div>'
-    +     (dirHasTarget ? (needAmt > 0 ? '<div style="font-size:10px;color:#dc2626;font-weight:700">ขาด ฿'+fmtS(needAmt)+'</div>' : '<div style="font-size:10px;color:#16a34a;font-weight:700">✅ ถึงเป้า!</div>') : '<div style="font-size:10px;color:#64748b;font-weight:700">รอตั้งเป้า</div>')
+    +     (dirHasTarget ? (needAmt > 0 ? '<div style="font-size:10px;color:var(--rd);font-weight:700">ขาด ฿'+fmtS(needAmt)+'</div>' : '<div style="font-size:10px;color:var(--gn);font-weight:700">✅ ถึงเป้า!</div>') : '<div style="font-size:10px;color:#64748b;font-weight:700">รอตั้งเป้า</div>')
     +   '</div>'
     + '</div>'
     + '</div>';
@@ -10523,19 +10523,19 @@ function _renderHomeDirector(m, mp) {
     // เติบโต
     + '<div style="background:#f0fdf4;border-radius:10px;padding:10px 12px;border:1px solid #86efac;text-align:center">'
     +   '<div style="font-size:10px;color:#166534;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">เติบโต</div>'
-    +   '<div style="font-size:20px;font-weight:800;color:#16a34a;line-height:1">'+(mp?totGrowthAll:'—')+'</div>'
+    +   '<div style="font-size:20px;font-weight:800;color:var(--gn);line-height:1">'+(mp?totGrowthAll:'—')+'</div>'
     + '</div>'
     // Rev รวม
     + '<div style="background:#f0f9ff;border-radius:10px;padding:10px 12px;border:1px solid #bae6fd;text-align:center">'
     +   '<div style="font-size:10px;color:#0369a1;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Rev รวม</div>'
     +   '<div style="font-size:17px;font-weight:800;color:var(--pr);line-height:1">฿'+fmtS(Math.round(totRev))+'</div>'
-    +   (mp ? '<div style="font-size:10px;font-weight:700;margin-top:2px;color:'+(momRev!==null&&parseFloat(momRev)>=0?'#16a34a':'#dc2626')+'">'+(momRev!==null?(parseFloat(momRev)>=0?'▲':'▼')+Math.abs(parseFloat(momRev))+'% MoM':'—')+'</div>' : '')
+    +   (mp ? '<div style="font-size:10px;font-weight:700;margin-top:2px;color:'+(momRev!==null&&parseFloat(momRev)>=0?'var(--gn)':'var(--rd)')+'">'+(momRev!==null?(parseFloat(momRev)>=0?'▲':'▼')+Math.abs(parseFloat(momRev))+'% MoM':'—')+'</div>' : '')
     + '</div>'
     // Vol รวม ★ ใหม่
     + '<div style="background:#f0fdff;border-radius:10px;padding:10px 12px;border:1px solid #99f6e4;text-align:center">'
     +   '<div style="font-size:10px;color:#0f766e;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Vol รวม</div>'
     +   '<div style="font-size:17px;font-weight:800;color:#0f766e;line-height:1">'+fmtInt(Math.round(totVol))+'</div>'
-    +   (mp ? '<div style="font-size:10px;font-weight:700;margin-top:2px;color:'+(momVolAllVal!==null&&momVolAllVal>=0?'#16a34a':'#dc2626')+'">'+(momVolAllVal!==null?(momVolAllVal>=0?'▲':'▼')+Math.abs(momVolAllVal)+'% MoM':'—')+'</div>' : '')
+    +   (mp ? '<div style="font-size:10px;font-weight:700;margin-top:2px;color:'+(momVolAllVal!==null&&momVolAllVal>=0?'var(--gn)':'var(--rd)')+'">'+(momVolAllVal!==null?(momVolAllVal>=0?'▲':'▼')+Math.abs(momVolAllVal)+'% MoM':'—')+'</div>' : '')
     + '</div>'
     // Avg Rev/Agent
     + '<div style="background:#f5f0ff;border-radius:10px;padding:10px 12px;border:1px solid #d8b4fe;text-align:center">'
@@ -10552,7 +10552,7 @@ function _renderHomeDirector(m, mp) {
     // % เป้า
     + '<div style="background:'+(dirHasTarget?(targetPct>=100?'#f0fdf4':targetPct>=75?'#fefce8':'#fff0f0'):'#f8fafc')+';border-radius:10px;padding:10px 12px;border:1px solid '+(dirHasTarget?(targetPct>=100?'#86efac':targetPct>=75?'#fde68a':'#fca5a5'):'#cbd5e1')+';text-align:center">'
     +   '<div style="font-size:10px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">% เป้า</div>'
-    +   '<div style="font-size:20px;font-weight:800;color:'+(dirHasTarget?(targetPct>=100?'#16a34a':targetPct>=75?'#b45309':'#dc2626'):'#64748b')+';line-height:1">'+(dirHasTarget?targetPct+'%':'-')+'</div>'
+    +   '<div style="font-size:20px;font-weight:800;color:'+(dirHasTarget?(targetPct>=100?'var(--gn)':targetPct>=75?'#b45309':'var(--rd)'):'#64748b')+';line-height:1">'+(dirHasTarget?targetPct+'%':'-')+'</div>'
     + '</div>'
     + '</div>';
 
@@ -10576,21 +10576,21 @@ function _renderHomeDirector(m, mp) {
     var avgVolDiff = avgVolPrev !== null ? avgVol - avgVolPrev : null;
 
     // สี accent บนสุดของการ์ด ตามสถานะ
-    var accentClr = (z.loss > 0 && momVal !== null && momVal < -10) ? '#dc2626'
-                  : (z.loss > 0 || (momVal !== null && momVal < 0)) ? '#E8622A'
-                  : '#16a34a';
+    var accentClr = (z.loss > 0 && momVal !== null && momVal < -10) ? 'var(--rd)'
+                  : (z.loss > 0 || (momVal !== null && momVal < 0)) ? 'var(--or)'
+                  : 'var(--gn)';
     var statusLabel = (z.loss > 0 && momVal !== null && momVal < -10) ? '<span style="font-size:10px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:20px;font-weight:700">ต้องเร่งแก้ไข</span>'
                     : (z.loss > 0 || (momVal !== null && momVal < 0)) ? '<span style="font-size:10px;background:#fff7ed;color:#9a3412;padding:2px 8px;border-radius:20px;font-weight:700">ติดตาม</span>'
                     : '<span style="font-size:10px;background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:20px;font-weight:700">ปกติ</span>';
 
-    var momClr    = momVal === null ? 'var(--t2)' : momVal >= 0 ? '#16a34a' : '#dc2626';
+    var momClr    = momVal === null ? 'var(--t2)' : momVal >= 0 ? 'var(--gn)' : 'var(--rd)';
     var momTxt    = momVal === null ? '—' : (momVal >= 0 ? '▲' : '▼') + Math.abs(momVal) + '% MoM Rev';
-    var momVolClr = momVolVal === null ? 'var(--t2)' : momVolVal >= 0 ? '#0e7490' : '#dc2626';
+    var momVolClr = momVolVal === null ? 'var(--t2)' : momVolVal >= 0 ? '#0e7490' : 'var(--rd)';
     var momVolTxt = momVolVal === null ? '—' : (momVolVal >= 0 ? '▲' : '▼') + Math.abs(momVolVal) + '% MoM Vol';
     var tClr      = z.targetPct >= 100 ? '#166534' : z.targetPct >= 75 ? '#854d0e' : '#991b1b';
-    var tBarClr   = z.targetPct >= 100 ? '#16a34a'  : z.targetPct >= 75 ? '#f59e0b'  : '#dc2626';
-    var avgRevClr = avgRevDiff === null ? 'var(--pr)' : avgRevDiff >= 0 ? '#16a34a' : '#dc2626';
-    var avgVolClr = avgVolDiff === null ? '#0e7490'   : avgVolDiff >= 0 ? '#0e7490'  : '#dc2626';
+    var tBarClr   = z.targetPct >= 100 ? 'var(--gn)'  : z.targetPct >= 75 ? '#f59e0b'  : 'var(--rd)';
+    var avgRevClr = avgRevDiff === null ? 'var(--pr)' : avgRevDiff >= 0 ? 'var(--gn)' : 'var(--rd)';
+    var avgVolClr = avgVolDiff === null ? '#0e7490'   : avgVolDiff >= 0 ? '#0e7490'  : 'var(--rd)';
 
     html += '<div style="background:var(--cd);border-radius:14px;border:1px solid var(--bd);overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06)">'
 
@@ -10622,9 +10622,9 @@ function _renderHomeDirector(m, mp) {
           + '</div>'
           // เติบโต
           + '<div style="background:#f0fdf4;border-radius:9px;padding:7px 5px;text-align:center;border:1px solid #86efac">'
-          +   '<div style="font-size:16px;font-weight:800;color:#16a34a;line-height:1">'+(mp ? (growthCount||'—') : '—')+'</div>'
+          +   '<div style="font-size:16px;font-weight:800;color:var(--gn);line-height:1">'+(mp ? (growthCount||'—') : '—')+'</div>'
           +   '<div style="font-size:9px;color:#166534;margin-top:2px;font-weight:700">เติบโต</div>'
-          +   (mp && growthCount > 0 && z.leads > 0 ? '<div style="font-size:9px;color:#16a34a">'+(growthCount/z.leads*100).toFixed(0)+'%</div>' : '')
+          +   (mp && growthCount > 0 && z.leads > 0 ? '<div style="font-size:9px;color:var(--gn)">'+(growthCount/z.leads*100).toFixed(0)+'%</div>' : '')
           + '</div>'
         + '</div>'
 
@@ -10768,14 +10768,14 @@ function _renderHomeDirector(m, mp) {
       + '<tr style="background:#f0fdf4;border-bottom:1.5px solid #86efac">'
       + '<th style="text-align:left;padding:6px 8px;font-weight:700;color:#166534" rowspan="2">Zone</th>'
       + '<th style="text-align:right;padding:6px 8px;font-weight:700;color:#166534" rowspan="2">Agent</th>'
-      + '<th style="text-align:center;padding:6px 8px;font-weight:700;color:#003F5C" colspan="2">Avg Rev / ราย</th>'
-      + '<th style="text-align:center;padding:6px 8px;font-weight:700;color:#009B9B" colspan="2">Avg Vol / ราย</th>'
+      + '<th style="text-align:center;padding:6px 8px;font-weight:700;color:var(--pr)" colspan="2">Avg Rev / ราย</th>'
+      + '<th style="text-align:center;padding:6px 8px;font-weight:700;color:var(--ac)" colspan="2">Avg Vol / ราย</th>'
       + '<th style="text-align:right;padding:6px 8px;font-weight:700;color:#166534" rowspan="2">Rev เพิ่ม</th>'
       + '</tr>'
       + '<tr style="background:#f0fdf4;border-bottom:1.5px solid #86efac">'
-      + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:#003F5C;font-size:10px">' + m.en + '</th>'
+      + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:var(--pr);font-size:10px">' + m.en + '</th>'
       + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:#94a3b8;font-size:10px">' + mp.en + '</th>'
-      + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:#009B9B;font-size:10px">' + m.en + '</th>'
+      + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:var(--ac);font-size:10px">' + m.en + '</th>'
       + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:#94a3b8;font-size:10px">' + mp.en + '</th>'
       + '</tr>'
       + '</thead><tbody>';
@@ -10791,21 +10791,21 @@ function _renderHomeDirector(m, mp) {
       var volDiff = avgVolPrev !== null ? avgVolCur - avgVolPrev : null;
       var revArrow = revDiff !== null ? (revDiff > 0 ? '▲' : revDiff < 0 ? '▼' : '') : '';
       var volArrow = volDiff !== null ? (volDiff > 0 ? '▲' : volDiff < 0 ? '▼' : '') : '';
-      var revColor = revDiff !== null ? (revDiff >= 0 ? '#16a34a' : '#dc2626') : 'var(--t2)';
-      var volColor = volDiff !== null ? (volDiff >= 0 ? '#16a34a' : '#dc2626') : 'var(--t2)';
+      var revColor = revDiff !== null ? (revDiff >= 0 ? 'var(--gn)' : 'var(--rd)') : 'var(--t2)';
+      var volColor = volDiff !== null ? (volDiff >= 0 ? 'var(--gn)' : 'var(--rd)') : 'var(--t2)';
       var gain = d.curRev - d.prvRev;
       var gainSign = gain >= 0 ? '+฿' : '-฿';
-      var gainColor = gain >= 0 ? '#16a34a' : '#dc2626';
+      var gainColor = gain >= 0 ? 'var(--gn)' : 'var(--rd)';
       html += '<tr style="border-bottom:1px solid #f0fdf4;background:' + rowBg + '">'
         + '<td style="padding:7px 8px;font-weight:700;color:var(--pr)">' + item.zone + '</td>'
         + '<td style="padding:7px 8px;text-align:right"><span style="background:#dcfce7;color:#166534;padding:2px 7px;border-radius:12px;font-weight:700;font-size:11px">' + d.count + ' ราย</span></td>'
         + '<td style="padding:7px 8px;text-align:right">'
-        +   '<div style="font-weight:700;color:#003F5C">' + fmtS(avgRevCur) + '</div>'
+        +   '<div style="font-weight:700;color:var(--pr)">' + fmtS(avgRevCur) + '</div>'
         +   (revArrow ? '<div style="font-size:9px;color:' + revColor + '">' + revArrow + ' ' + fmtS(Math.abs(revDiff)) + '</div>' : '')
         + '</td>'
         + '<td style="padding:7px 8px;text-align:right;color:#94a3b8">' + (avgRevPrev !== null ? fmtS(avgRevPrev) : '—') + '</td>'
         + '<td style="padding:7px 8px;text-align:right">'
-        +   '<div style="font-weight:700;color:#009B9B">' + fmtInt(avgVolCur) + '</div>'
+        +   '<div style="font-weight:700;color:var(--ac)">' + fmtInt(avgVolCur) + '</div>'
         +   (volArrow ? '<div style="font-size:9px;color:' + volColor + '">' + volArrow + ' ' + fmtInt(Math.abs(volDiff)) + '</div>' : '')
         + '</td>'
         + '<td style="padding:7px 8px;text-align:right;color:#94a3b8">' + (avgVolPrev !== null ? fmtInt(avgVolPrev) : '—') + '</td>'
@@ -10814,7 +10814,7 @@ function _renderHomeDirector(m, mp) {
     });
     html += '</tbody></table></div>';
   }
-  html += '<button class="home-qbtn" style="width:100%;justify-content:center;margin-top:10px;border-color:#86efac;color:#16a34a;background:#f0fdf4;font-weight:700;padding:7px" onclick="swMain(\'growth\')">ดูกลุ่มเติบโตทั้งหมด →</button>'
+  html += '<button class="home-qbtn" style="width:100%;justify-content:center;margin-top:10px;border-color:#86efac;color:var(--gn);background:#f0fdf4;font-weight:700;padding:7px" onclick="swMain(\'growth\')">ดูกลุ่มเติบโตทั้งหมด →</button>'
     + '</div>';
 
   // ROW 5 — MoM Deep Panel + Inactive Panel (like AM row 3.6)
@@ -10842,7 +10842,7 @@ function _renderHomeDirector(m, mp) {
       +   '<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--t2);margin-bottom:4px">Revenue</div>'
       +   '<div style="display:flex;justify-content:space-between;align-items:baseline">'
       +     '<div style="font-size:14px;font-weight:800;color:var(--pr)">฿'+fmtS(Math.round(totRev))+'</div>'
-      +     '<div style="font-size:11px;font-weight:700;color:'+(parseFloat(momRev||0)>=0?'#16a34a':'#dc2626')+'">'
+      +     '<div style="font-size:11px;font-weight:700;color:'+(parseFloat(momRev||0)>=0?'var(--gn)':'var(--rd)')+'">'
       +       (momRev!==null?((parseFloat(momRev)>=0?'▲':'▼')+Math.abs(parseFloat(momRev))+'%'):'—')+'</div>'
       +   '</div>'
       +   '<div style="font-size:10px;color:var(--t2)">prev: ฿'+fmtS(Math.round(prevRev))+'</div>'
@@ -10851,7 +10851,7 @@ function _renderHomeDirector(m, mp) {
       +   '<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--t2);margin-bottom:4px">Volume</div>'
       +   '<div style="display:flex;justify-content:space-between;align-items:baseline">'
       +     '<div style="font-size:14px;font-weight:800;color:var(--pr)">'+fmtInt(totVol)+'</div>'
-      +     '<div style="font-size:11px;font-weight:700;color:'+(parseFloat(momVol||0)>=0?'#16a34a':'#dc2626')+'">'
+      +     '<div style="font-size:11px;font-weight:700;color:'+(parseFloat(momVol||0)>=0?'var(--gn)':'var(--rd)')+'">'
       +       (momVol!==null?((parseFloat(momVol)>=0?'▲':'▼')+Math.abs(parseFloat(momVol))+'%'):'—')+'</div>'
       +   '</div>'
       +   '<div style="font-size:10px;color:var(--t2)">prev: '+fmtInt(prevVol)+'</div>'
@@ -10880,12 +10880,12 @@ function _renderHomeDirector(m, mp) {
         + '<td style="padding:8px 10px;font-weight:700;color:var(--pr)">'+z.name+'</td>'
         + '<td style="padding:8px 10px;text-align:right;font-weight:800;color:var(--pr)">฿'+fmtS(Math.round(z.rev))+'</td>'
         + '<td style="padding:8px 10px;text-align:right;color:var(--t2)">฿'+fmtS(Math.round(z.prevRev))+'</td>'
-        + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:'+(momV===null?'var(--t2)':momV>=0?'#16a34a':'#dc2626')+'">'
+        + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:'+(momV===null?'var(--t2)':momV>=0?'var(--gn)':'var(--rd)')+'">'
         +   (momV!==null?(momV>=0?'▲':'▼')+Math.abs(momV)+'%':'—')+'</td>'
-        + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:'+(momVolZ===null?'var(--t2)':parseFloat(momVolZ)>=0?'#16a34a':'#dc2626')+'">'
+        + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:'+(momVolZ===null?'var(--t2)':parseFloat(momVolZ)>=0?'var(--gn)':'var(--rd)')+'">'
         +   (momVolZ!==null?(parseFloat(momVolZ)>=0?'▲':'▼')+Math.abs(parseFloat(momVolZ))+'%':'—')+'</td>'
         + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#0369a1">'+(z.leads>0?fmtS(Math.round(z.rev/z.leads)):'—')+'</td>'
-        + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#009B9B">'+fmtInt(Math.round(z.vol/Math.max(TODAY_DATE-1,1)))+'</td>'
+        + '<td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--ac)">'+fmtInt(Math.round(z.vol/Math.max(TODAY_DATE-1,1)))+'</td>'
         + '<td style="padding:8px 10px;text-align:center;font-size:10px;font-weight:700">'+trend+'</td>'
         + '</tr>';
     });
@@ -10994,41 +10994,41 @@ function _renderHomeDirector(m, mp) {
         + '<th style="text-align:left;padding:6px 8px;font-weight:700;color:#7c3d12" rowspan="2">Zone</th>'
         + '<th style="text-align:right;padding:6px 8px;font-weight:700;color:#9a3412" rowspan="2">Inactive</th>'
         + '<th style="text-align:right;padding:6px 8px;font-weight:700;color:#991b1b" rowspan="2">Loss</th>'
-        + '<th style="text-align:center;padding:6px 8px;font-weight:700;color:#003F5C" colspan="2">Avg Rev / ราย</th>'
-        + '<th style="text-align:center;padding:6px 8px;font-weight:700;color:#009B9B" colspan="2">Avg Vol / ราย</th>'
+        + '<th style="text-align:center;padding:6px 8px;font-weight:700;color:var(--pr)" colspan="2">Avg Rev / ราย</th>'
+        + '<th style="text-align:center;padding:6px 8px;font-weight:700;color:var(--ac)" colspan="2">Avg Vol / ราย</th>'
         + '<th style="text-align:left;padding:6px 8px;font-weight:700;color:var(--t2)" rowspan="2">Inact%</th>'
         + '</tr>'
         + '<tr style="background:#fff7ed;border-bottom:1.5px solid #fed7aa">'
-        + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:#003F5C;font-size:10px">' + m.en + '</th>'
+        + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:var(--pr);font-size:10px">' + m.en + '</th>'
         + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:#94a3b8;font-size:10px">' + prevLbl + '</th>'
-        + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:#009B9B;font-size:10px">' + m.en + '</th>'
+        + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:var(--ac);font-size:10px">' + m.en + '</th>'
         + '<th style="text-align:right;padding:4px 8px;font-weight:600;color:#94a3b8;font-size:10px">' + prevLbl + '</th>'
         + '</tr>'
         + '</thead><tbody>';
 
       bdInactList5.forEach(function(bd, idx) {
         var pctNum = parseFloat(bd.pct);
-        var barColor = pctNum >= 20 ? '#dc2626' : pctNum >= 10 ? '#e8622a' : '#f59e0b';
+        var barColor = pctNum >= 20 ? 'var(--rd)' : pctNum >= 10 ? 'var(--or)' : '#f59e0b';
         var rowBg = idx % 2 === 0 ? '#fffdf8' : '#fff';
         var revDiff = bd.avgRevCur - bd.avgRevPrev;
         var volDiff = bd.avgVolCur - bd.avgVolPrev;
         var revArrow = revDiff > 0 ? '▲' : revDiff < 0 ? '▼' : '';
         var volArrow = volDiff > 0 ? '▲' : volDiff < 0 ? '▼' : '';
-        var revColor = revDiff >= 0 ? '#16a34a' : '#dc2626';
-        var volColor = volDiff >= 0 ? '#16a34a' : '#dc2626';
+        var revColor = revDiff >= 0 ? 'var(--gn)' : 'var(--rd)';
+        var volColor = volDiff >= 0 ? 'var(--gn)' : 'var(--rd)';
         html += '<tr style="border-bottom:1px solid #fef3c7;background:' + rowBg + '">'
           + '<td style="padding:7px 8px;font-weight:700;color:var(--pr)">' + bd.zone + '</td>'
           + '<td style="padding:7px 8px;text-align:right;font-weight:800;color:#9a3412">' + bd.inact + '</td>'
           + '<td style="padding:7px 8px;text-align:right">'
-          + (bd.loss > 0 ? '<span style="font-weight:800;color:#dc2626">' + bd.loss + '</span>' : '<span style="color:#d1d5db">—</span>')
+          + (bd.loss > 0 ? '<span style="font-weight:800;color:var(--rd)">' + bd.loss + '</span>' : '<span style="color:#d1d5db">—</span>')
           + '</td>'
           + '<td style="padding:7px 8px;text-align:right">'
-          + '<div style="font-weight:700;color:#003F5C">' + fmtS(bd.avgRevCur) + '</div>'
+          + '<div style="font-weight:700;color:var(--pr)">' + fmtS(bd.avgRevCur) + '</div>'
           + (mp && revArrow ? '<div style="font-size:9px;color:' + revColor + '">' + revArrow + ' ' + fmtS(Math.abs(revDiff)) + '</div>' : '')
           + '</td>'
           + '<td style="padding:7px 8px;text-align:right;color:#94a3b8">' + (mp ? fmtS(bd.avgRevPrev) : '—') + '</td>'
           + '<td style="padding:7px 8px;text-align:right">'
-          + '<div style="font-weight:700;color:#009B9B">' + fmtInt(bd.avgVolCur) + '</div>'
+          + '<div style="font-weight:700;color:var(--ac)">' + fmtInt(bd.avgVolCur) + '</div>'
           + (mp && volArrow ? '<div style="font-size:9px;color:' + volColor + '">' + volArrow + ' ' + fmtInt(Math.abs(volDiff)) + '</div>' : '')
           + '</td>'
           + '<td style="padding:7px 8px;text-align:right;color:#94a3b8">' + (mp ? fmtInt(bd.avgVolPrev) : '—') + '</td>'
@@ -11090,9 +11090,9 @@ function _renderHomeDirector(m, mp) {
     var contentEl = document.getElementById('home_content');
     if (contentEl) contentEl.innerHTML =
       '<div style="padding:20px;background:#fff5f5;border:1.5px solid #fca5a5;border-radius:12px;margin:16px">'
-      + '<div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:6px">⚠️ Render Error [Director]</div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--rd);margin-bottom:6px">⚠️ Render Error [Director]</div>'
       + '<pre style="font-size:11px;color:#7f1d1d;white-space:pre-wrap;word-break:break-all;margin:0 0 10px">'+(err&&err.stack?err.stack:String(err))+'</pre>'
-      + '<button onclick="renderHome()" style="padding:6px 16px;background:#003F5C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 ลอง Render ใหม่</button>'
+      + '<button onclick="renderHome()" style="padding:6px 16px;background:var(--pr);color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 ลอง Render ใหม่</button>'
       + '</div>';
   }
 }
@@ -11139,7 +11139,7 @@ function _phase4BdRows(rows,m,mp){
 }
 function _phase4Bar(pct,label){
   pct=Math.max(0,Math.min(100,N(pct)));
-  var clr=pct>=80?'#16a34a':pct>=55?'#f59e0b':'#dc2626';
+  var clr=pct>=80?'var(--gn)':pct>=55?'#f59e0b':'var(--rd)';
   return '<div style="display:flex;align-items:center;justify-content:flex-end;gap:6px"><div style="width:50px;height:5px;background:#e5e7eb;border-radius:6px;overflow:hidden"><div style="width:'+pct+'%;height:5px;background:'+clr+'"></div></div><span style="font-size:10px;font-weight:800;color:'+clr+';min-width:34px">'+_esc(label)+'</span></div>';
 }
 function _renderPhase4BDRanking(m,mp,rows,scopeLabel){
@@ -11148,7 +11148,7 @@ function _renderPhase4BDRanking(m,mp,rows,scopeLabel){
   if(!list.length)return html+'<div style="padding:16px;text-align:center;color:var(--t2)">ไม่มีข้อมูล BD ใน scope นี้</div></div>';
   html+='<div style="overflow-x:auto"><table class="mt" style="font-size:11px;min-width:850px"><thead><tr><th>#</th><th>BD / Zone</th><th class="tdr">Score</th><th class="tdr">%Target</th><th class="tdr">Follow-up</th><th class="tdr">Success</th><th class="tdr">Risk saved</th><th class="tdr">Revenue</th><th class="tdr">MoM</th><th class="tdr">Data</th></tr></thead><tbody>';
   list.forEach(function(d,i){
-    var medal=i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'', scoreClr=d.score>=80?'#16a34a':d.score>=60?'#f59e0b':'#dc2626';
+    var medal=i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'', scoreClr=d.score>=80?'var(--gn)':d.score>=60?'#f59e0b':'var(--rd)';
     var mom=d.momPct==null?'-':(d.momPct>=0?'<span class="tup">▲':'<span class="tdn">▼')+Math.abs(d.momPct).toFixed(1)+'%</span>';
     html+='<tr><td style="color:var(--t2);font-weight:700">'+(i+1)+'</td><td><b>'+medal+_esc(d.name)+'</b><div style="font-size:10px;color:var(--t2)">Zone '+_esc(d.zone)+' · '+d.total+' agents</div></td>'
       +'<td class="tdr"><span style="font-weight:900;color:'+scoreClr+';background:'+scoreClr+'18;border:1px solid '+scoreClr+'55;border-radius:20px;padding:3px 9px">'+d.score+'</span></td>'
@@ -11219,7 +11219,7 @@ function _renderBDLeaderboard(m, mp) {
     + '<tbody id="bdlb-tbody"></tbody>'
     + '</table></div>'
     + '<div class="bdlb-legend">'
-    + '<span><span class="bdlb-dot" style="background:#16a34a"></span>เติบโตสูงสุด 2 อันดับ</span>'
+    + '<span><span class="bdlb-dot" style="background:var(--gn)"></span>เติบโตสูงสุด 2 อันดับ</span>'
     + '<span>🔴 แย่ / 🟡 ระวัง / 🟢 ดี = Health Score</span>'
     + (mp ? '<span>MoM = เปรียบ ' + m.th + ' vs ' + mp.th + '</span>' : '<span>เลือก 2 เดือนเพื่อดู MoM</span>')
     + '</div>'
@@ -11311,8 +11311,8 @@ function _bdRender() {
     var mom  = d.prevRev > 0 ? ((d.rev - d.prevRev) / d.prevRev * 100) : null;
     var momTxt = mom === null ? '<span style="color:var(--t2)">—</span>'
       : mom >= 0
-        ? '<span style="color:#16a34a;font-weight:700">▲' + Math.abs(mom).toFixed(1) + '%</span>'
-        : '<span style="color:#dc2626;font-weight:700">▼' + Math.abs(mom).toFixed(1) + '%</span>';
+        ? '<span style="color:var(--gn);font-weight:700">▲' + Math.abs(mom).toFixed(1) + '%</span>'
+        : '<span style="color:var(--rd);font-weight:700">▼' + Math.abs(mom).toFixed(1) + '%</span>';
 
     // ── Growth column: จำนวน + Rev Gain ──
     var growBarW = Math.round(d.growth / maxGrowth * 48);
@@ -11320,10 +11320,10 @@ function _bdRender() {
     var growTxt = '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">'
       + (mp
         ? '<div style="display:flex;align-items:center;gap:4px">'
-          + '<div style="width:'+growBarW+'px;height:4px;border-radius:2px;background:#16a34a;flex-shrink:0"></div>'
-          + '<span style="color:#16a34a;font-weight:800;font-size:13px;min-width:20px;text-align:right">'+d.growth+'</span>'
+          + '<div style="width:'+growBarW+'px;height:4px;border-radius:2px;background:var(--gn);flex-shrink:0"></div>'
+          + '<span style="color:var(--gn);font-weight:800;font-size:13px;min-width:20px;text-align:right">'+d.growth+'</span>'
           + '</div>'
-          + '<div style="font-size:11px;color:#16a34a;font-weight:700;padding:1px 6px;background:#dcfce7;border-radius:10px">+'+(growthRevGain>0?fmtS(Math.round(growthRevGain)):'0')+'</div>'
+          + '<div style="font-size:11px;color:var(--gn);font-weight:700;padding:1px 6px;background:#dcfce7;border-radius:10px">+'+(growthRevGain>0?fmtS(Math.round(growthRevGain)):'0')+'</div>'
         : '<span style="color:var(--t2);font-size:11px">—</span>')
       + '</div>';
 
@@ -11332,7 +11332,7 @@ function _bdRender() {
     var health   = (momH === null || momH >= 0) ? 'good' : (momH < -20) ? 'bad' : 'warn';
     var healthIco  = health === 'good' ? '🟢' : health === 'bad' ? '🔴' : '🟡';
     var healthLbl  = health === 'good' ? 'ดี' : health === 'bad' ? 'แย่' : 'ระวัง';
-    var healthClr  = health === 'good' ? '#16a34a' : health === 'bad' ? '#dc2626' : '#f59e0b';
+    var healthClr  = health === 'good' ? 'var(--gn)' : health === 'bad' ? 'var(--rd)' : '#f59e0b';
     var healthBg   = health === 'good' ? '#f0fdf4' : health === 'bad' ? '#fff5f5' : '#fffbeb';
     var healthTxt  = '<div style="text-align:center;padding:2px 0">'
       + '<div style="font-size:16px;line-height:1.2">'+healthIco+'</div>'
@@ -11682,10 +11682,10 @@ function _renderHomeAM(m, mp) {
       +   (momVolNum!==null?' · '+(momVolNum>=0?'+':'')+momVolNum+'% Volume':'')
       + '</div>'
       + '<div style="font-size:11px;color:var(--t2)">vs '+mp.th+' (เดือนก่อน)'
-      +   (momRevAmt!==0?' · '+(momRevAmt>0?'<span style="color:#16a34a;font-weight:700">+'+fmtS(Math.round(momRevAmt))+'</span>':'<span style="color:#dc2626;font-weight:700">'+fmtS(Math.round(momRevAmt))+'</span>'):'')
+      +   (momRevAmt!==0?' · '+(momRevAmt>0?'<span style="color:var(--gn);font-weight:700">+'+fmtS(Math.round(momRevAmt))+'</span>':'<span style="color:var(--rd);font-weight:700">'+fmtS(Math.round(momRevAmt))+'</span>'):'')
       + '</div>'
       + '<div style="margin-left:auto;display:flex;gap:12px;flex-shrink:0">'
-      +   '<div style="text-align:center"><div style="font-size:10px;color:var(--t2);font-weight:600">เติบโต</div><div style="font-size:13px;font-weight:800;color:#16a34a">'+amGrowthRows.length+'</div></div>'
+      +   '<div style="text-align:center"><div style="font-size:10px;color:var(--t2);font-weight:600">เติบโต</div><div style="font-size:13px;font-weight:800;color:var(--gn)">'+amGrowthRows.length+'</div></div>'
       +   '<div style="text-align:center"><div style="font-size:10px;color:var(--t2);font-weight:600">เสี่ยง</div><div style="font-size:13px;font-weight:800;color:#f97316">'+amRiskCount+'</div></div>'
       + '</div>'
       + '</div>';
@@ -11720,33 +11720,33 @@ function _renderHomeAM(m, mp) {
     + '</div>';
 
   // Card 4: ต้องติดตาม
-  var followColor = '#16a34a'; // T03
+  var followColor = 'var(--gn)'; // T03
   html += '<div class="home-kcard" style="--kc:'+followColor+'">'
     + '<div class="home-kcard-ico">🚨</div>'
     + '<div class="home-kcard-lbl">ต้องติดตาม</div>'
     + '</div>';
 
   // Card 5: กลุ่มเติบโต
-  html += '<div class="home-kcard" style="--kc:#16a34a;border:1.5px solid #86efac">'
+  html += '<div class="home-kcard" style="--kc:var(--gn);border:1.5px solid #86efac">'
     + '<div class="home-kcard-ico">🌱</div>'
     + '<div class="home-kcard-lbl">กลุ่มเติบโต</div>'
-    + '<div class="home-kcard-val" style="color:#16a34a">'+amGrowthRows.length+'<span style="font-size:12px;font-weight:600;color:var(--t2)"> ราย</span></div>'
+    + '<div class="home-kcard-val" style="color:var(--gn)">'+amGrowthRows.length+'<span style="font-size:12px;font-weight:600;color:var(--t2)"> ราย</span></div>'
     + (mp && amGrowthRevGain > 0
-        ? '<div class="home-kcard-sub" style="color:#16a34a;font-weight:700">+'+fmtS(Math.round(amGrowthRevGain))+' Rev gain</div>'
+        ? '<div class="home-kcard-sub" style="color:var(--gn);font-weight:700">+'+fmtS(Math.round(amGrowthRevGain))+' Rev gain</div>'
         : '<div class="home-kcard-sub">'+(mp?'vs '+mp.th:'เลือก 2 เดือน')+'</div>')
     + '</div>';
 
   // Card 6: % เป้า Zone
-  html += '<div class="home-kcard" style="--kc:'+(zoneHasTarget?(zonePct>=100?'#16a34a':zonePct>=70?'#f59e0b':'#dc2626'):'#64748b')+'">'
+  html += '<div class="home-kcard" style="--kc:'+(zoneHasTarget?(zonePct>=100?'var(--gn)':zonePct>=70?'#f59e0b':'var(--rd)'):'#64748b')+'">'
     + '<div class="home-kcard-ico">🎯</div>'
     + '<div class="home-kcard-lbl">% เป้า Zone</div>'
     + '<div style="display:flex;align-items:center;gap:8px;margin-top:3px">'
     +   '<div style="position:relative;width:46px;height:46px;flex-shrink:0">'
     +     '<svg viewBox="0 0 36 36" style="width:46px;height:46px;transform:rotate(-90deg)">'
     +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="3.5"/>'
-    +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+(zoneHasTarget?(zonePct>=100?'#16a34a':zonePct>=70?'#f59e0b':'#dc2626'):'#94a3b8')+'" stroke-width="3.5" stroke-dasharray="'+zonePct+' '+(100-zonePct)+'" stroke-linecap="round"/>'
+    +       '<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+(zoneHasTarget?(zonePct>=100?'var(--gn)':zonePct>=70?'#f59e0b':'var(--rd)'):'#94a3b8')+'" stroke-width="3.5" stroke-dasharray="'+zonePct+' '+(100-zonePct)+'" stroke-linecap="round"/>'
     +     '</svg>'
-    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:'+(zoneHasTarget?(zonePct>=100?'#16a34a':zonePct>=70?'#f59e0b':'#dc2626'):'#64748b')+'">'+(zoneHasTarget?zonePct+'%':'-')+'</div>'
+    +     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:'+(zoneHasTarget?(zonePct>=100?'var(--gn)':zonePct>=70?'#f59e0b':'var(--rd)'):'#64748b')+'">'+(zoneHasTarget?zonePct+'%':'-')+'</div>'
     +   '</div>'
     +   '<div>'
     +     '<div style="font-size:12px;font-weight:800;color:var(--pr)">'+fmtS(Math.round(totRev))+'</div>'
@@ -11821,17 +11821,17 @@ function _renderHomeAM(m, mp) {
     + '</div>'
     + '<div style="background:#f0fdf4;border-radius:10px;padding:10px 12px;border:1px solid #86efac;text-align:center">'
     +   '<div class="am-stat-lbl" style="color:#166534">เติบโต</div>'
-    +   '<div style="font-size:20px;font-weight:800;color:#16a34a;line-height:1">'+(mp?amTotGrowthAll:'—')+'</div>'
+    +   '<div style="font-size:20px;font-weight:800;color:var(--gn);line-height:1">'+(mp?amTotGrowthAll:'—')+'</div>'
     + '</div>'
     + '<div style="background:#f0f9ff;border-radius:10px;padding:10px 12px;border:1px solid #bae6fd;text-align:center">'
     +   '<div class="am-stat-lbl" style="color:#0369a1">Rev รวม</div>'
     +   '<div style="font-size:17px;font-weight:800;color:var(--pr);line-height:1">'+fmtS(Math.round(totRev))+'</div>'
-    +   (mp ? '<div style="font-size:10px;font-weight:700;margin-top:2px;color:'+(momRev!==null&&parseFloat(momRev)>=0?'#16a34a':'#dc2626')+'">'+(momRev!==null?(parseFloat(momRev)>=0?'▲':'▼')+Math.abs(parseFloat(momRev))+'% MoM':'—')+'</div>' : '')
+    +   (mp ? '<div style="font-size:10px;font-weight:700;margin-top:2px;color:'+(momRev!==null&&parseFloat(momRev)>=0?'var(--gn)':'var(--rd)')+'">'+(momRev!==null?(parseFloat(momRev)>=0?'▲':'▼')+Math.abs(parseFloat(momRev))+'% MoM':'—')+'</div>' : '')
     + '</div>'
     + '<div style="background:#f0fdff;border-radius:10px;padding:10px 12px;border:1px solid #99f6e4;text-align:center">'
     +   '<div class="am-stat-lbl" style="color:#0f766e">Vol รวม</div>'
     +   '<div style="font-size:17px;font-weight:800;color:#0f766e;line-height:1">'+fmtInt(Math.round(totVol))+'</div>'
-    +   (mp ? '<div style="font-size:10px;font-weight:700;margin-top:2px;color:'+(amMomVolAllVal!==null&&amMomVolAllVal>=0?'#16a34a':'#dc2626')+'">'+(amMomVolAllVal!==null?(amMomVolAllVal>=0?'▲':'▼')+Math.abs(amMomVolAllVal)+'% MoM':'—')+'</div>' : '')
+    +   (mp ? '<div style="font-size:10px;font-weight:700;margin-top:2px;color:'+(amMomVolAllVal!==null&&amMomVolAllVal>=0?'var(--gn)':'var(--rd)')+'">'+(amMomVolAllVal!==null?(amMomVolAllVal>=0?'▲':'▼')+Math.abs(amMomVolAllVal)+'% MoM':'—')+'</div>' : '')
     + '</div>'
     + '<div style="background:#f5f0ff;border-radius:10px;padding:10px 12px;border:1px solid #d8b4fe;text-align:center">'
     +   '<div class="am-stat-lbl" style="color:#6d28d9">Avg Rev</div>'
@@ -11862,22 +11862,22 @@ function _renderHomeAM(m, mp) {
     var avgVolPrev   = (mp && z.leads > 0 && z.prevVol > 0) ? Math.round(z.prevVol / z.leads) : null;
     var avgVolDiff   = avgVolPrev !== null ? avgVol - avgVolPrev : null;
 
-    var accentClr    = (z.loss > 0 && momVal !== null && momVal < -10) ? '#dc2626'
-                     : (z.loss > 0 || (momVal !== null && momVal < 0)) ? '#E8622A'
-                     : '#16a34a';
+    var accentClr    = (z.loss > 0 && momVal !== null && momVal < -10) ? 'var(--rd)'
+                     : (z.loss > 0 || (momVal !== null && momVal < 0)) ? 'var(--or)'
+                     : 'var(--gn)';
     var statusLabel  = (z.loss > 0 && momVal !== null && momVal < -10)
                      ? '<span style="font-size:10px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:20px;font-weight:700">ต้องเร่งแก้ไข</span>'
                      : (z.loss > 0 || (momVal !== null && momVal < 0))
                      ? '<span style="font-size:10px;background:#fff7ed;color:#9a3412;padding:2px 8px;border-radius:20px;font-weight:700">ติดตาม</span>'
                      : '<span style="font-size:10px;background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:20px;font-weight:700">ปกติ</span>';
 
-    var momClr     = momVal === null ? 'var(--t2)' : momVal >= 0 ? '#16a34a' : '#dc2626';
+    var momClr     = momVal === null ? 'var(--t2)' : momVal >= 0 ? 'var(--gn)' : 'var(--rd)';
     var momTxt     = momVal === null ? '—' : (momVal >= 0 ? '▲' : '▼') + Math.abs(momVal) + '% MoM Rev';
-    var momVolClr  = momVolVal === null ? 'var(--t2)' : momVolVal >= 0 ? '#0e7490' : '#dc2626';
+    var momVolClr  = momVolVal === null ? 'var(--t2)' : momVolVal >= 0 ? '#0e7490' : 'var(--rd)';
     var momVolTxt  = momVolVal === null ? '—' : (momVolVal >= 0 ? '▲' : '▼') + Math.abs(momVolVal) + '% MoM Vol';
-    var tBarClr    = z.targetPct >= 100 ? '#16a34a' : z.targetPct >= 75 ? '#f59e0b' : '#dc2626';
-    var avgRevClr  = avgRevDiff === null ? 'var(--pr)' : avgRevDiff >= 0 ? '#16a34a' : '#dc2626';
-    var avgVolClr  = avgVolDiff === null ? '#0e7490'   : avgVolDiff >= 0 ? '#0e7490'  : '#dc2626';
+    var tBarClr    = z.targetPct >= 100 ? 'var(--gn)' : z.targetPct >= 75 ? '#f59e0b' : 'var(--rd)';
+    var avgRevClr  = avgRevDiff === null ? 'var(--pr)' : avgRevDiff >= 0 ? 'var(--gn)' : 'var(--rd)';
+    var avgVolClr  = avgVolDiff === null ? '#0e7490'   : avgVolDiff >= 0 ? '#0e7490'  : 'var(--rd)';
 
     html += '<div style="background:var(--cd);border-radius:12px;border:1px solid var(--bd);overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06)">'
 
@@ -11907,9 +11907,9 @@ function _renderHomeAM(m, mp) {
           +   (stagnant > 0 && z.leads > 0 ? '<div style="font-size:8px;color:#94a3b8">'+(stagnant/z.leads*100).toFixed(0)+'%</div>' : '')
           + '</div>'
           + '<div style="background:#f0fdf4;border-radius:7px;padding:5px 4px;text-align:center;border:1px solid #86efac">'
-          +   '<div style="font-size:14px;font-weight:800;color:#16a34a;line-height:1">'+(mp ? (growthCount||'—') : '—')+'</div>'
+          +   '<div style="font-size:14px;font-weight:800;color:var(--gn);line-height:1">'+(mp ? (growthCount||'—') : '—')+'</div>'
           +   '<div style="font-size:8px;color:#166534;margin-top:1px;font-weight:700">เติบโต</div>'
-          +   (mp && growthCount > 0 && z.leads > 0 ? '<div style="font-size:8px;color:#16a34a">'+(growthCount/z.leads*100).toFixed(0)+'%</div>' : '')
+          +   (mp && growthCount > 0 && z.leads > 0 ? '<div style="font-size:8px;color:var(--gn)">'+(growthCount/z.leads*100).toFixed(0)+'%</div>' : '')
           + '</div>'
         + '</div>'
 
@@ -11994,8 +11994,8 @@ function _renderHomeAM(m, mp) {
       if(mp) myRows.forEach(function(r){ if(String(r[COL.zoneName]||'?')===z.name) prevVolZ+=N(r[mp.colVol]); });
       var momVolZ = prevVolZ > 0 ? ((z.vol-prevVolZ)/prevVolZ*100).toFixed(1) : null;
       var trend = momV===null?'—':momV>5?'🚀 เติบโต':momV>0?'📈 ดีขึ้น':momV>-10?'📉 ลดลง':'⚠️ เสี่ยง';
-      var momRevTxt = momV!==null ? '<span style="color:'+(momV>=0?'#16a34a':'#dc2626')+';font-weight:700">'+(momV>=0?'▲':'▼')+Math.abs(momV)+'%</span>' : '—';
-      var momVolTxt = momVolZ!==null ? '<span style="color:'+(parseFloat(momVolZ)>=0?'#16a34a':'#dc2626')+';font-weight:700">'+(parseFloat(momVolZ)>=0?'▲':'▼')+Math.abs(parseFloat(momVolZ))+'%</span>' : '—';
+      var momRevTxt = momV!==null ? '<span style="color:'+(momV>=0?'var(--gn)':'var(--rd)')+';font-weight:700">'+(momV>=0?'▲':'▼')+Math.abs(momV)+'%</span>' : '—';
+      var momVolTxt = momVolZ!==null ? '<span style="color:'+(parseFloat(momVolZ)>=0?'var(--gn)':'var(--rd)')+';font-weight:700">'+(parseFloat(momVolZ)>=0?'▲':'▼')+Math.abs(parseFloat(momVolZ))+'%</span>' : '—';
       var cardBg = momV===null?'#f8f9ff':momV>0?'#f0fdf4':momV>-10?'#fffbeb':'#fff5f5';
       var cardBorder = momV===null?'#dce9ff':momV>0?'#86efac':momV>-10?'#fde68a':'#fca5a5';
       html += '<div style="background:'+cardBg+';border:1.5px solid '+cardBorder+';border-radius:12px;padding:10px 14px">'
@@ -12076,12 +12076,12 @@ function _renderHomeAM(m, mp) {
     })();
 
     // Top growth agents — unified am-tbl
-    html += _amTblHdr('Agent', mp?mp.th:'ก่อนหน้า', '<span style="color:#16a34a">AVG Rev</span>', mp?mp.th:'ก่อนหน้า', '<span style="color:#166534">AVG Vol</span>', '%Chg', '#86efac');
+    html += _amTblHdr('Agent', mp?mp.th:'ก่อนหน้า', '<span style="color:var(--gn)">AVG Rev</span>', mp?mp.th:'ก่อนหน้า', '<span style="color:#166534">AVG Vol</span>', '%Chg', '#86efac');
     growthSorted.slice(0,8).forEach(function(r,i){
       var rv=N(r[m.colRev]),vol=N(r[m.colVol]);
       var prv=mp?N(r[mp.colRev]):null,prvVol=mp?N(r[mp.colVol]):null;
       var pct=(prv&&prv>0)?Math.round((rv-prv)/prv*100):null;
-      var pctTxt = pct!==null ? '<span style="color:'+(pct>=0?'#16a34a':'#64748b')+'">'+pct+'%</span>' : '—';
+      var pctTxt = pct!==null ? '<span style="color:'+(pct>=0?'var(--gn)':'#64748b')+'">'+pct+'%</span>' : '—';
       html += _amTblRow(
         String(r[COL.agentName]||'-'),
         prv!==null?fmtS(Math.round(prv)):'—',
@@ -12090,11 +12090,11 @@ function _renderHomeAM(m, mp) {
         fmtInt(Math.round(vol)),
         pctTxt,
         i%2===0?'#f0fdf4':'transparent',
-        '#16a34a', '#166534'
+        'var(--gn)', '#166534'
       );
     });
     if(growthSorted.length>8) html+='<div style="text-align:center;font-size:10px;color:var(--t2);padding:5px">+'+(growthSorted.length-8)+' รายอื่น</div>';
-    html += _amViewBtn('ดูรายชื่อทั้งหมด →', "swMain('growth')", '#86efac', '#16a34a', '#f0fdf4')
+    html += _amViewBtn('ดูรายชื่อทั้งหมด →', "swMain('growth')", '#86efac', 'var(--gn)', '#f0fdf4')
       + '</div>';
 
     // ── Loss Group Detail Panel (right of Growth) ──
@@ -12148,7 +12148,7 @@ function _renderHomeAM(m, mp) {
         );
       });
       if(lossSorted35.length>8) html+='<div style="text-align:center;font-size:10px;color:var(--t2);padding:5px">+'+(lossSorted35.length-8)+' รายอื่น</div>';
-      html += _amViewBtn('ดูรายชื่อทั้งหมด →', "swMain('risk')", '#fca5a5', '#dc2626', '#fff5f5')
+      html += _amViewBtn('ดูรายชื่อทั้งหมด →', "swMain('risk')", '#fca5a5', 'var(--rd)', '#fff5f5')
         + '</div>';
     })();
 
@@ -12168,13 +12168,13 @@ function _renderHomeAM(m, mp) {
     }
     var _amMpLabel = mp ? mp.th : '';
     function _amMetricCell(icon, label, val, pct, invert, borderCol, prevVal) {
-      var valColor = invert?(pct!==null&&pct<0?'#dc2626':'#16a34a'):(pct!==null&&pct>=0?'#16a34a':'#dc2626');
+      var valColor = invert?(pct!==null&&pct<0?'var(--rd)':'var(--gn)'):(pct!==null&&pct>=0?'var(--gn)':'var(--rd)');
       var isAvgCell = label.indexOf('AVG') === 0;
       var prevLabel = (isAvgCell && _amMpLabel) ? 'avg rev/vol ('+_amMpLabel+')' : 'ก่อนหน้า';
       var pctBadge = '';
       if (pct !== null) {
         var isGood = invert ? pct < 0 : pct >= 0;
-        var col = isGood ? '#16a34a' : '#dc2626';
+        var col = isGood ? 'var(--gn)' : 'var(--rd)';
         var arrow = pct >= 0 ? '▲' : '▼';
         pctBadge = '<span style="font-size:10px;font-weight:700;color:'+col+'">'+arrow+Math.abs(pct)+'%</span>';
       }
@@ -12352,7 +12352,7 @@ function _renderHomeAM(m, mp) {
     + '<div class="ctitle" style="margin-bottom:10px">📋 Zone Summary</div>'
     + '<div style="display:flex;flex-direction:column;gap:6px">';
   // T03: Loss/Inactive summary rows removed
-  html += _homeSummaryRow('✅ Active',   totActive, totLeads, '#dcfce7', '#16a34a');
+  html += _homeSummaryRow('✅ Active',   totActive, totLeads, '#dcfce7', 'var(--gn)');
   html += '</div>'
     + '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)">'
     + '<div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:8px">Day Progress</div>'
@@ -12387,9 +12387,9 @@ function _renderHomeAM(m, mp) {
     var contentEl = document.getElementById('home_content');
     if (contentEl) contentEl.innerHTML =
       '<div style="padding:20px;background:#fff5f5;border:1.5px solid #fca5a5;border-radius:12px;margin:16px">'
-      + '<div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:6px">⚠️ Render Error [AM]</div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--rd);margin-bottom:6px">⚠️ Render Error [AM]</div>'
       + '<pre style="font-size:11px;color:#7f1d1d;white-space:pre-wrap;word-break:break-all;margin:0 0 10px">'+(err&&err.stack?err.stack:String(err))+'</pre>'
-      + '<button onclick="renderHome()" style="padding:6px 16px;background:#003F5C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 ลอง Render ใหม่</button>'
+      + '<button onclick="renderHome()" style="padding:6px 16px;background:var(--pr);color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 ลอง Render ใหม่</button>'
       + '</div>';
   }
 }
@@ -12564,7 +12564,7 @@ function computeActionCenterRows(rows, trackingData, ctx) {
         type:'risk', key:riskKey, row:r, tracking:riskTrk,
         score:riskScore.score, reasons:riskScore.reasons,
         actionLabel:'ดู Risk', actionTab:'risk',
-        badge:'Risk', badgeColor:'#dc2626',
+        badge:'Risk', badgeColor:'var(--rd)',
         handler:'_trkChange',
         statusOptions:_trkStatusOptions(riskTrk.status || '')
       });
@@ -12577,7 +12577,7 @@ function computeActionCenterRows(rows, trackingData, ctx) {
         type:'growth', key:growthKey, row:r, tracking:growthTrk,
         score:growthScore.score, reasons:growthScore.reasons,
         actionLabel:'ดู Growth', actionTab:'growth',
-        badge:'Growth', badgeColor:'#16a34a',
+        badge:'Growth', badgeColor:'var(--gn)',
         handler:'_growthTrkChange',
         statusOptions:_growthStatusOptions(growthTrk.status || '')
       });
@@ -12630,7 +12630,7 @@ function renderActionCenter(items, m) {
     var pkg = String(r[COL.package] || r['Package'] || '-');
     var rev = N(r[m.colRev]);
     var reason = item.reasons && item.reasons.length ? item.reasons.join(' · ') : 'ต้องตรวจสอบ';
-    var scoreColor = item.score >= 75 ? '#dc2626' : item.score >= 50 ? '#d97706' : '#0369a1';
+    var scoreColor = item.score >= 75 ? 'var(--rd)' : item.score >= 50 ? '#d97706' : '#0369a1';
     html += '<div class="action-center-row" style="display:grid;grid-template-columns:34px minmax(180px,1fr) 92px 150px 96px;gap:8px;align-items:center;padding:9px 10px;border:1px solid #e2e8f0;border-radius:10px;background:white">'
       + '<div style="width:28px;height:28px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#0f172a">'+(idx+1)+'</div>'
       + '<div style="min-width:0">'
@@ -12907,16 +12907,16 @@ function _renderHomeBD(m, mp) {
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:2px">'
     +   '<div>'
     +     '<div style="font-size:9px;color:var(--t2);font-weight:700;text-transform:uppercase">Active</div>'
-    +     '<div style="font-size:20px;font-weight:800;color:#16a34a;line-height:1.1">'+totActive+'</div>'
+    +     '<div style="font-size:20px;font-weight:800;color:var(--gn);line-height:1.1">'+totActive+'</div>'
     +   '</div>'
     +   '<div>'
     +     '<div style="font-size:9px;color:var(--t2);font-weight:700;text-transform:uppercase">Conv</div>'
-    +     '<div style="font-size:20px;font-weight:800;color:'+(parseFloat(convRate)>=95?'#16a34a':'var(--ac)')+';line-height:1.1">'+convRate+'%</div>'
+    +     '<div style="font-size:20px;font-weight:800;color:'+(parseFloat(convRate)>=95?'var(--gn)':'var(--ac)')+';line-height:1.1">'+convRate+'%</div>'
     +     '<div style="font-size:10px;color:var(--t2)">'+totActive+' active</div>'
     +   '</div>'
     + '</div>'
     + '<div style="margin-top:8px;display:flex;gap:3px">'
-    +   (totActive > 0 ? '<span style="flex:'+totActive+';height:5px;border-radius:2px;background:#16a34a"></span>' : '')
+    +   (totActive > 0 ? '<span style="flex:'+totActive+';height:5px;border-radius:2px;background:var(--gn)"></span>' : '')
     + '</div>'
     + '<div style="font-size:9px;color:var(--t2);margin-top:2px">Active Agents</div>'
     + '</div>';
@@ -12928,7 +12928,7 @@ function _renderHomeBD(m, mp) {
 
   // Card 6: กลุ่มเติบโต
   html += _homeKpiCard('🟢 กลุ่มเติบโต', fmtInt(bdGrowthRows.length)+' ราย', null,
-    '#16a34a', '🟢',
+    'var(--gn)', '🟢',
     mp?'Rev ▲'+fmtS(Math.round(bdGrowthRevGain)):'เลือก 2 เดือน');
 
   // Card 7: Agents
@@ -12937,7 +12937,7 @@ function _renderHomeBD(m, mp) {
 
   // Card 8: % บรรลุเป้า
   var targetPctBD = bdHasTarget ? Math.min(Math.round(totRev / bdTarget * 100), 100) : 0;
-  var tClr = bdHasTarget ? (targetPctBD >= 100 ? '#16a34a' : targetPctBD >= 70 ? '#f59e0b' : '#dc2626') : '#64748b';
+  var tClr = bdHasTarget ? (targetPctBD >= 100 ? 'var(--gn)' : targetPctBD >= 70 ? '#f59e0b' : 'var(--rd)') : '#64748b';
   html += '<div class="home-kcard" style="--kc:'+tClr+'">'
     + '<div class="home-kcard-ico">🎯</div>'
     + '<div class="home-kcard-lbl">% บรรลุเป้า</div>'
@@ -12993,13 +12993,13 @@ function _renderHomeBD(m, mp) {
   function _pctBadge(pct, invert) {
     if (pct === null) return '';
     var isGood = invert ? pct < 0 : pct >= 0;
-    var col = isGood ? '#16a34a' : '#dc2626';
+    var col = isGood ? 'var(--gn)' : 'var(--rd)';
     var arrow = pct >= 0 ? '▲' : '▼';
     return '<span style="font-size:10px;font-weight:700;color:'+col+'">'+arrow+Math.abs(pct)+'%</span>';
   }
   var _mpLabel = mp ? mp.th : '';
   function _metricCell(icon, label, val, pct, invert, borderCol, prevVal) {
-    var valColor = invert?(pct!==null&&pct<0?'#dc2626':'#16a34a'):(pct!==null&&pct>=0?'#16a34a':'#dc2626');
+    var valColor = invert?(pct!==null&&pct<0?'var(--rd)':'var(--gn)'):(pct!==null&&pct>=0?'var(--gn)':'var(--rd)');
     var isAvgCell = label.indexOf('AVG') === 0;
     var prevLabel = (isAvgCell && _mpLabel) ? 'avg rev/vol ('+_mpLabel+')' : 'ก่อนหน้า';
     return '<div style="background:white;border:1px solid '+borderCol+';border-radius:9px;padding:7px 9px;display:flex;align-items:center;gap:7px">'
@@ -13025,7 +13025,7 @@ function _renderHomeBD(m, mp) {
   // Summary
   alertHtml += '<div class="ccard"><div class="ctitle" style="margin-bottom:10px">🚨 Alert สรุป</div>'
     + '<div style="display:flex;flex-direction:column;gap:6px">';
-  alertHtml += _homeSummaryRow('✅ Active', totActive, totLeads, '#dcfce7', '#16a34a');
+  alertHtml += _homeSummaryRow('✅ Active', totActive, totLeads, '#dcfce7', 'var(--gn)');
   alertHtml += '</div></div>';
 
 
@@ -13085,7 +13085,7 @@ function _renderHomeBD(m, mp) {
 
     alertHtml += '<div class="ccard" style="border:1.5px solid #86efac;background:#f9fef9">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-      + '<div class="ctitle" style="color:#166534">🟢 มิติกลุ่มเติบโต <span style="font-size:11px;font-weight:400;color:#16a34a">('+bdGrowthRows.length+' ราย)</span></div>'
+      + '<div class="ctitle" style="color:#166534">🟢 มิติกลุ่มเติบโต <span style="font-size:11px;font-weight:400;color:var(--gn)">('+bdGrowthRows.length+' ราย)</span></div>'
       + '<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 8px;border-radius:20px;font-weight:700">Avg/วัน เพิ่ม &gt;'+_growthThreshold+'฿</span>'
       + '</div>';
 
@@ -13102,9 +13102,9 @@ function _renderHomeBD(m, mp) {
         + '<div style="display:grid;grid-template-columns:1fr 46px 46px 40px 40px 38px;gap:3px;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;padding:0 2px 3px">'
         + '<span>Agent</span>'
         + '<span style="text-align:right">'+(mp?mp.th:'ก่อนหน้า')+'</span>'
-        + '<span style="text-align:right;color:#16a34a">AVG Rev</span>'
+        + '<span style="text-align:right;color:var(--gn)">AVG Rev</span>'
         + '<span style="text-align:right">'+(mp?mp.th:'ก่อนหน้า')+'</span>'
-        + '<span style="text-align:right;color:#16a34a">AVG Vol</span>'
+        + '<span style="text-align:right;color:var(--gn)">AVG Vol</span>'
         + '<span style="text-align:right">%Chg</span>'
         + '</div>';
       bdGrowthRows.sort(function(a,b){ return (N(b[m.colAvg])-N(b[mp.colAvg]))-(N(a[m.colAvg])-N(a[mp.colAvg])); }).slice(0,5).forEach(function(r,i){
@@ -13114,15 +13114,15 @@ function _renderHomeBD(m, mp) {
         alertHtml += '<div style="display:grid;grid-template-columns:1fr 46px 46px 40px 40px 38px;gap:3px;align-items:center;padding:4px 2px;border-radius:5px;background:'+(i%2===0?'#f0fdf4':'transparent')+'">'
           + '<span style="font-size:10px;color:#166534;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(medals[i]||'')+(medals[i]?' ':'')+String(r[COL.agentName]||'-')+'</span>'
           + '<span style="font-size:10px;color:#94a3b8;text-align:right">'+fmtS(Math.round(prv))+'</span>'
-          + '<span style="font-size:10px;font-weight:700;color:#16a34a;text-align:right">'+fmtS(Math.round(rv))+'</span>'
+          + '<span style="font-size:10px;font-weight:700;color:var(--gn);text-align:right">'+fmtS(Math.round(rv))+'</span>'
           + '<span style="font-size:10px;color:#94a3b8;text-align:right">'+fmtInt(Math.round(prvVol))+'</span>'
           + '<span style="font-size:10px;color:#64748b;text-align:right">'+fmtInt(Math.round(vol))+'</span>'
-          + '<span style="font-size:10px;font-weight:800;color:#16a34a;text-align:right">'+(pct!==null?'+'+pct+'%':'—')+'</span>'
+          + '<span style="font-size:10px;font-weight:800;color:var(--gn);text-align:right">'+(pct!==null?'+'+pct+'%':'—')+'</span>'
           + '</div>';
       });
       alertHtml += '</div>';
     }
-    alertHtml += '<button class="home-qbtn" style="width:100%;margin-top:8px;justify-content:center;border-color:#86efac;color:#16a34a;background:#f0fdf4" onclick="swMain(\'growth\')">ดูรายชื่อกลุ่มเติบโต →</button>'
+    alertHtml += '<button class="home-qbtn" style="width:100%;margin-top:8px;justify-content:center;border-color:#86efac;color:var(--gn);background:#f0fdf4" onclick="swMain(\'growth\')">ดูรายชื่อกลุ่มเติบโต →</button>'
       + '</div>';
   }
 
@@ -13155,7 +13155,7 @@ function _renderHomeBD(m, mp) {
   html += '<div class="ccard">'
     + '<div class="ctitle" style="margin-bottom:10px">🚨 Alert สรุป</div>'
     + '<div style="display:flex;flex-direction:column;gap:6px">';
-  html += _homeSummaryRow('✅ Active', totActive, totLeads, '#dcfce7', '#16a34a');
+  html += _homeSummaryRow('✅ Active', totActive, totLeads, '#dcfce7', 'var(--gn)');
   html += '</div>'
     + '<button class="home-qbtn home-qbtn-primary" style="width:100%;margin-top:10px;justify-content:center" onclick="swMain(\'ls\')">ดูรายการทั้งหมด →</button>'
     + '</div>';
@@ -13184,7 +13184,7 @@ function _renderHomeBD(m, mp) {
 
     html += '<div class="ccard" style="border:1.5px solid #86efac;background:#f9fef9">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-      + '<div class="ctitle" style="color:#166534">🟢 มิติกลุ่มเติบโต <span style="font-size:11px;font-weight:400;color:#16a34a">('+bdGrowthRows.length+' ราย)</span></div>'
+      + '<div class="ctitle" style="color:#166534">🟢 มิติกลุ่มเติบโต <span style="font-size:11px;font-weight:400;color:var(--gn)">('+bdGrowthRows.length+' ราย)</span></div>'
       + '<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 8px;border-radius:20px;font-weight:700">Avg/วัน &gt;'+_growthThreshold+'฿</span>'
       + '</div>';
     if (!bdGrowthRows.length) {
@@ -13200,9 +13200,9 @@ function _renderHomeBD(m, mp) {
         + '<div style="display:grid;grid-template-columns:1fr 50px 50px 44px 44px 40px;gap:3px;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;padding:0 2px 3px">'
         + '<span>Agent</span>'
         + '<span style="text-align:right">'+(mp?mp.th:'ก่อนหน้า')+'</span>'
-        + '<span style="text-align:right;color:#16a34a">AVG Rev</span>'
+        + '<span style="text-align:right;color:var(--gn)">AVG Rev</span>'
         + '<span style="text-align:right">'+(mp?mp.th:'ก่อนหน้า')+'</span>'
-        + '<span style="text-align:right;color:#16a34a">AVG Vol</span>'
+        + '<span style="text-align:right;color:var(--gn)">AVG Vol</span>'
         + '<span style="text-align:right">%Chg</span>'
         + '</div>';
       bdGrowthRows.sort(function(a,b){ return (N(b[m.colAvg])-N(b[mp.colAvg]))-(N(a[m.colAvg])-N(a[mp.colAvg])); }).slice(0,6).forEach(function(r,i){
@@ -13212,15 +13212,15 @@ function _renderHomeBD(m, mp) {
         html += '<div style="display:grid;grid-template-columns:1fr 50px 50px 44px 44px 40px;gap:3px;align-items:center;padding:5px 6px;border-radius:7px;background:'+(i%2===0?'#f0fdf4':'transparent')+'">'
           + '<span style="font-size:11px;color:#166534;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(medals[i]?medals[i]+' ':'')+String(r[COL.agentName]||'-')+'</span>'
           + '<span style="font-size:11px;color:#94a3b8;text-align:right">'+fmtS(Math.round(prv))+'</span>'
-          + '<span style="font-size:11px;font-weight:700;color:#16a34a;text-align:right">'+fmtS(Math.round(rv))+'</span>'
+          + '<span style="font-size:11px;font-weight:700;color:var(--gn);text-align:right">'+fmtS(Math.round(rv))+'</span>'
           + '<span style="font-size:11px;color:#94a3b8;text-align:right">'+fmtInt(Math.round(prvVol))+'</span>'
           + '<span style="font-size:11px;color:#64748b;text-align:right">'+fmtInt(Math.round(vol))+'</span>'
-          + '<span style="font-size:11px;font-weight:800;color:#16a34a;text-align:right">'+(pct!==null?'+'+pct+'%':'—')+'</span>'
+          + '<span style="font-size:11px;font-weight:800;color:var(--gn);text-align:right">'+(pct!==null?'+'+pct+'%':'—')+'</span>'
           + '</div>';
       });
       html += '</div>';
     }
-    html += '<button class="home-qbtn" style="width:100%;margin-top:8px;justify-content:center;border-color:#86efac;color:#16a34a;background:#f0fdf4" onclick="swMain(\'growth\')">ดูรายชื่อกลุ่มเติบโต →</button>'
+    html += '<button class="home-qbtn" style="width:100%;margin-top:8px;justify-content:center;border-color:#86efac;color:var(--gn);background:#f0fdf4" onclick="swMain(\'growth\')">ดูรายชื่อกลุ่มเติบโต →</button>'
       + '</div>';
   } else {
     html += '<div class="ccard" style="border:1.5px solid #86efac;background:#f9fef9;text-align:center;padding:30px 20px">'
@@ -13371,9 +13371,9 @@ function _renderHomeBD(m, mp) {
     var contentEl = document.getElementById('home_content');
     if (contentEl) contentEl.innerHTML =
       '<div style="padding:20px;background:#fff5f5;border:1.5px solid #fca5a5;border-radius:12px;margin:16px">'
-      + '<div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:6px">⚠️ Render Error [BD]</div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--rd);margin-bottom:6px">⚠️ Render Error [BD]</div>'
       + '<pre style="font-size:11px;color:#7f1d1d;white-space:pre-wrap;word-break:break-all;margin:0 0 10px">'+(err&&err.stack?err.stack:String(err))+'</pre>'
-      + '<button onclick="renderHome()" style="padding:6px 16px;background:#003F5C;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 ลอง Render ใหม่</button>'
+      + '<button onclick="renderHome()" style="padding:6px 16px;background:var(--pr);color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 ลอง Render ใหม่</button>'
       + '</div>';
   }
 }
@@ -13421,14 +13421,14 @@ function _homePopulateTrkSummary() {
     html += '<div style="padding:8px 9px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;margin-bottom:8px">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
       + '<div style="font-size:11px;font-weight:800;color:#0f172a">Daily Task Progress</div>'
-      + '<div style="font-size:12px;font-weight:900;color:'+(dailyPct>=80?'#16a34a':dailyPct>=50?'#b45309':'#dc2626')+'">'+dailyPct+'%</div>'
+      + '<div style="font-size:12px;font-weight:900;color:'+(dailyPct>=80?'var(--gn)':dailyPct>=50?'#b45309':'var(--rd)')+'">'+dailyPct+'%</div>'
       + '</div>'
       + '<div style="height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-bottom:6px">'
-      + '<div style="height:100%;width:'+dailyPct+'%;background:'+(dailyPct>=80?'#16a34a':dailyPct>=50?'#f59e0b':'#ef4444')+';border-radius:99px"></div>'
+      + '<div style="height:100%;width:'+dailyPct+'%;background:'+(dailyPct>=80?'var(--gn)':dailyPct>=50?'#f59e0b':'#ef4444')+';border-radius:99px"></div>'
       + '</div>'
       + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center">'
       + '<div><div style="font-size:10px;color:#64748b">ทั้งหมด</div><div style="font-size:13px;font-weight:900">'+dailyTotal+'</div></div>'
-      + '<div><div style="font-size:10px;color:#64748b">เสร็จ</div><div style="font-size:13px;font-weight:900;color:#16a34a">'+dailyDone+'</div></div>'
+      + '<div><div style="font-size:10px;color:#64748b">เสร็จ</div><div style="font-size:13px;font-weight:900;color:var(--gn)">'+dailyDone+'</div></div>'
       + '<div><div style="font-size:10px;color:#64748b">กำลังทำ</div><div style="font-size:13px;font-weight:900;color:#b45309">'+dailyInProgress+'</div></div>'
       + '<div><div style="font-size:10px;color:#64748b">รอ</div><div style="font-size:13px;font-weight:900;color:#64748b">'+dailyWaiting+'</div></div>'
       + '</div>'
@@ -13439,11 +13439,11 @@ function _homePopulateTrkSummary() {
   if (riskTotal) {
     html += '<div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">🔴 ติดตามกลุ่มเสี่ยง</div>';
     var riskItems = [
-      {key:'success', label:'สำเร็จ',     bg:'#dcfce7', color:'#16a34a'},
+      {key:'success', label:'สำเร็จ',     bg:'#dcfce7', color:'var(--gn)'},
       {key:'solving', label:'กำลังแก้',   bg:'#fef3c7', color:'#92400e'},
       {key:'contact', label:'ติดต่อแล้ว', bg:'#dbeafe', color:'#1d4ed8'},
       {key:'wait',    label:'รอ',          bg:'#f1f5f9', color:'#64748b'},
-      {key:'fail',    label:'ไม่สำเร็จ',  bg:'#fee2e2', color:'#dc2626'},
+      {key:'fail',    label:'ไม่สำเร็จ',  bg:'#fee2e2', color:'var(--rd)'},
     ];
     html += riskItems.filter(function(x){return riskCounts[x.key]>0;}).map(function(x){
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 8px;border-radius:7px;background:'+x.bg+';margin-bottom:3px">'
@@ -13457,7 +13457,7 @@ function _homePopulateTrkSummary() {
   if (growthTotal) {
     html += '<div style="font-size:10px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.4px;margin:'+(riskTotal?'8px':'0')+'px 0 4px">🟢 ติดตามกลุ่มเติบโต</div>';
     var growthItems = [
-      {key:'upsold',        label:'เสนอแพ็กเกจสำเร็จ', bg:'#dcfce7', color:'#16a34a'},
+      {key:'upsold',        label:'เสนอแพ็กเกจสำเร็จ', bg:'#dcfce7', color:'var(--gn)'},
       {key:'rewarded',      label:'มอบรางวัลแล้ว',      bg:'#fef3c7', color:'#92400e'},
       {key:'data_collected',label:'เก็บข้อมูลแล้ว',     bg:'#f5f3ff', color:'#5b21b6'},
       {key:'contacted',     label:'ติดต่อแล้ว',          bg:'#dbeafe', color:'#1d4ed8'},
@@ -13492,7 +13492,7 @@ function _trkStatusLabel(key) {
 .mt-overlay{position:fixed;inset:0;background:rgba(6,12,24,.62);backdrop-filter:blur(8px);z-index:9000;display:none;align-items:center;justify-content:center;padding:16px;}
 .mt-overlay.open{display:flex;}
 .mt-modal{background:#fff;border-radius:18px;width:100%;max-width:760px;box-shadow:0 24px 70px rgba(0,0,0,.35);overflow:hidden;border:1px solid rgba(255,255,255,.4);}
-.mt-hdr{background:linear-gradient(135deg,#0f172a,#003F5C 52%,#00788c);padding:18px 20px;color:white;display:flex;justify-content:space-between;align-items:center;}
+.mt-hdr{background:linear-gradient(135deg,#0f172a,var(--pr) 52%,#00788c);padding:18px 20px;color:white;display:flex;justify-content:space-between;align-items:center;}
 .mt-hdr-title{font-size:17px;font-weight:900;letter-spacing:-.01em;}
 .mt-hdr-sub{font-size:12px;opacity:.76;margin-top:3px;}
 .mt-close{background:rgba(255,255,255,.2);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
@@ -13521,13 +13521,13 @@ function _trkStatusLabel(key) {
 .mt-actions{display:flex;gap:8px;margin-top:16px;}
 .mt-save{flex:1;padding:10px;background:var(--pr);color:white;border:none;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;}
 .mt-save:hover{opacity:.88;}
-.mt-del{padding:10px 14px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:10px;cursor:pointer;font-size:12px;font-weight:700;}
+.mt-del{padding:10px 14px;background:#fee2e2;color:var(--rd);border:1px solid #fca5a5;border-radius:10px;cursor:pointer;font-size:12px;font-weight:700;}
 .mt-del:hover{background:#fecaca;}
 .mt-confirm-layer{position:fixed;inset:0;z-index:9300;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.42);backdrop-filter:blur(4px);}
 .mt-confirm-layer.open{display:flex;}
 .mt-confirm-box{width:min(420px,100%);background:#fff;border-radius:18px;border:1px solid rgba(226,232,240,.95);box-shadow:0 24px 80px rgba(15,23,42,.32);overflow:hidden;}
 .mt-confirm-head{padding:16px 18px;background:linear-gradient(135deg,#fff7ed,#fff1f2);display:flex;align-items:center;gap:10px;border-bottom:1px solid #fee2e2;}
-.mt-confirm-ico{width:36px;height:36px;border-radius:12px;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.mt-confirm-ico{width:36px;height:36px;border-radius:12px;background:#fee2e2;color:var(--rd);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 .mt-confirm-title{font-size:15px;font-weight:900;color:#111827;}
 .mt-confirm-msg{padding:16px 18px 4px;color:#475569;font-size:13px;line-height:1.55;}
 .mt-confirm-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 18px 18px;}
@@ -13819,7 +13819,7 @@ function delMt() {
 
 function _mtToast(msg) {
   var el = document.createElement('div');
-  el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a2e35;color:white;padding:10px 22px;border-radius:12px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+  el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--tx);color:white;padding:10px 22px;border-radius:12px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4)';
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(function(){ el.remove(); }, 2800);
