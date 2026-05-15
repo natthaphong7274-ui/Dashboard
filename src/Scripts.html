@@ -1027,9 +1027,33 @@ function _carrierTotalMetricSeries(curKey,fn){
   };
 }
 
+// ===== UX Sprint 5: Empty States Helpers =====
+function setEmpty(canvasId, type, msg) {
+  var cvs = document.getElementById(canvasId);
+  if(!cvs) return;
+  cvs.style.display = 'none';
+  var parent = cvs.parentElement;
+  var emptyDiv = parent.querySelector('.empty-panel');
+  if(!emptyDiv) {
+    emptyDiv = document.createElement('div');
+    parent.appendChild(emptyDiv);
+  }
+  emptyDiv.className = 'empty-panel ' + (type||'');
+  var icon = type==='positive' ? '✅' : type==='warning' ? '⚠️' : '🕒';
+  emptyDiv.innerHTML = '<div class="empty-icon">'+icon+'</div><div class="empty-text">'+msg+'</div>';
+  emptyDiv.style.display = 'flex';
+}
+function clearEmpty(canvasId) {
+  var cvs = document.getElementById(canvasId);
+  if(!cvs) return;
+  cvs.style.display = '';
+  var emptyDiv = cvs.parentElement.querySelector('.empty-panel');
+  if(emptyDiv) emptyDiv.style.display = 'none';
+}
+
 // ===== CHART HELPERS =====
 function mkLine(id,labels,datasets,opts){
-  dc(id);var el=document.getElementById(id);if(!el)return;
+  clearEmpty(id);dc(id);var el=document.getElementById(id);if(!el)return;
   CH[id]=new Chart(el.getContext('2d'),{type:'line',data:{labels,datasets},
     options:Object.assign({responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10}}},
@@ -1038,7 +1062,7 @@ function mkLine(id,labels,datasets,opts){
     },opts||{})});
 }
 function mkBar(id,labels,datasets,horiz,compact){
-  dc(id);var el=document.getElementById(id);if(!el)return;
+  clearEmpty(id);dc(id);var el=document.getElementById(id);if(!el)return;
   var extra={};
   if(compact){extra.maxBarThickness=22;extra.barPercentage=0.9;extra.categoryPercentage=0.8;}
   datasets=datasets.map(function(ds){return Object.assign({borderRadius:4,borderSkipped:false,maxBarThickness:compact?22:40},extra,ds);});
@@ -1051,7 +1075,7 @@ function mkBar(id,labels,datasets,horiz,compact){
               y:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return fmtS(v);}},grid:{color:horiz?'#f0f4f8':'none'}}}}});
 }
 function mkHBar(id,labels,data,colors,compact,drillCfg){
-  dc(id);var el=document.getElementById(id);if(!el)return;
+  clearEmpty(id);dc(id);var el=document.getElementById(id);if(!el)return;
   var sorted = sortSingleSeriesDesc(labels, data, colors);
   labels = sorted.labels; data = sorted.data; colors = sorted.colors;
   var bg=Array.isArray(colors)?colors:labels.map(function(){return colors;});
@@ -1075,7 +1099,7 @@ function mkHBar(id,labels,data,colors,compact,drillCfg){
     options:opts});
 }
 function mkDonut(id,labels,data){
-  dc(id);var el=document.getElementById(id);if(!el)return;
+  clearEmpty(id);dc(id);var el=document.getElementById(id);if(!el)return;
   var sorted = sortSingleSeriesDesc(labels, data, PAL.slice(0, data.length));
   labels = sorted.labels; data = sorted.data;
   var bg = sorted.colors || PAL.slice(0, data.length);
@@ -1092,6 +1116,11 @@ function mkRank(elId, sorted, lbl, fmtFn, prevMap, pctLabel){
   if(!RANK_SORT[elId]) RANK_SORT[elId]={sortCol:'val',dir:'desc'};
   var sc=RANK_SORT[elId].sortCol, sd=RANK_SORT[elId].dir;
   var mul=sd==='desc'?-1:1;
+
+  if(!sorted || sorted.length===0){
+    el.innerHTML='<div class="empty-panel positive" style="padding:40px 10px"><div class="empty-icon">🛡️</div><div class="empty-text">ไม่มีรายชื่อในกลุ่มนี้</div><div class="empty-sub">สถานการณ์ปกติ / ไม่มีข้อมูลติดลบ</div></div>';
+    return;
+  }
 
   // Build data with pct
   var rows=sorted.map(function(e){
@@ -1598,8 +1627,7 @@ function renderAllCharts(){
   if(document.getElementById('area_rank')) mkRank('area_rank',sar,'Revenue',fmtS,sarPrevMap,'vs '+(mp?mp.en:''));
 
   if(!sar.length){ // ★ No data state
-    var arev=document.getElementById('c_area_rev');
-    if(arev)arev.parentElement.innerHTML='<div style="padding:30px;text-align:center;color:var(--t2);font-size:12px">ไม่มีข้อมูลพื้นที่</div>';
+    setEmpty('c_area_rev', '', 'ไม่พบข้อมูลพื้นที่ในเงื่อนไขปัจจุบัน');
   } else {
     mkHBar('c_area_rev',sar.map(function(e){return e[0];}),sar.map(function(e){return Math.round(e[1]);}),
       'rgba(30,58,95,0.65)',true,{groupCol:COL.province,metricCol:m.colRev,panelId:'dp_area_rev',titleId:'dpt_area_rev',bodyId:'dpb_area_rev'});
@@ -1670,8 +1698,7 @@ function renderAllCharts(){
 
   var spkc=grpCnt(FR,COL.package).slice(0,12);
   if(!spkc.length){
-    var cpkg=document.getElementById('c_pkg_cnt');
-    if(cpkg)cpkg.parentElement.innerHTML='<div style="padding:30px;text-align:center;color:var(--t2);font-size:12px">ไม่มีข้อมูล Package</div>';
+    setEmpty('c_pkg_cnt', '', 'ไม่พบข้อมูล Package ในเงื่อนไขปัจจุบัน');
   } else {
     mkBar('c_pkg_cnt',spkc.map(function(e){return e[0];}),
       [{label:'จำนวน',data:spkc.map(function(e){return e[1];}),backgroundColor:'rgba(45,105,159,0.65)'}],false,true);
