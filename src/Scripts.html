@@ -5195,8 +5195,15 @@ function _showUserBadge(user){
   badge.innerHTML='<span style="font-size:12px;font-weight:700;color:var(--tx)">'+roleIcon+' '+user.displayName+'</span>'
     +(zoneText?'<span style="font-size:10px;color:#94a3b8">'+zoneText+'</span>':'');
   if(logoutBtn)logoutBtn.style.display='inline-block';
+  var helpBtn = document.getElementById('help_btn');
+  if (helpBtn) helpBtn.style.display = 'inline-block';
   // UX Sprint 8: Show keyboard hint bar
   document.body.classList.add('logged-in');
+  
+  // UX Sprint 9: Auto-show onboarding if first time
+  if (!localStorage.getItem('hasSeenOnboarding_v1')) {
+    setTimeout(openHelpModal, 500);
+  }
   // แสดง tab จัดการผู้ใช้เฉพาะ Director
   var umTab = document.getElementById('usermgmt_tab');
   if(umTab) umTab.style.display = ((user.role==='Director' || user.role==='AM')) ? 'inline-block' : 'none';
@@ -14300,7 +14307,21 @@ function delBdMt() {
       init(); _3dInited = true;
     }
   
-  // UX Sprint 8: Global Keyboard Shortcuts
+  // UX Sprint 9: Help / Onboarding Modal
+function openHelpModal() {
+  var overlay = document.getElementById('helpOverlay');
+  if (overlay) overlay.classList.add('open');
+}
+
+function closeHelpModal() {
+  var overlay = document.getElementById('helpOverlay');
+  if (overlay) {
+    overlay.classList.remove('open');
+    localStorage.setItem('hasSeenOnboarding_v1', 'true');
+  }
+}
+
+// UX Sprint 8: Global Keyboard Shortcuts
   document.addEventListener('keydown', function(e) {
     var tag = (e.target.tagName || '').toLowerCase();
     var isInput = (tag === 'input' || tag === 'textarea' || tag === 'select');

@@ -152,6 +152,7 @@
     <div class="nav-divider-v"></div>
     <span class="lupd" id="lupd"></span>
     <button class="rbtn rbtn-refresh" onclick="loadData()">🔄 รีเฟรช</button>
+    <button class="rbtn" id="help_btn" onclick="openHelpModal()" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;border-radius:20px;padding:4px 10px;">❓ ช่วยเหลือ</button>
     <span id="trk_poll_badge" class="trk-poll-badge" style="display:none;" title="อัปเดตสถานะจาก Sheet ทุก 30 วินาที">⟳ auto</span>
     <button class="rbtn rbtn-admin" id="usermgmt_tab" onclick="swMain('usermgmt')" style="display:none">🔐 จัดการผู้ใช้</button>
     <button id="logout_btn" onclick="doLogout()" class="btn-logout" style="display:none;">ออกจากระบบ</button>
@@ -983,6 +984,43 @@
             <div id="rc_export_meta"></div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UX Sprint 9: Help / Onboarding Modal -->
+<div class="ui-overlay" id="helpOverlay">
+  <div class="ui-modal" style="max-width:600px;">
+    <div class="ui-modal-header">
+      <div class="ui-modal-title">ยินดีต้อนรับสู่ Dashboard 🚀</div>
+      <div class="ui-modal-close" onclick="closeHelpModal()">✖</div>
+    </div>
+    <div class="ui-modal-body" style="font-size:13px;line-height:1.6;color:var(--t2);">
+      <p style="margin-bottom:12px;">แดชบอร์ดนี้ออกแบบมาเพื่อช่วยให้คุณติดตามผลงานระดับทีมและรายบุคคลได้อย่างรวดเร็ว</p>
+      
+      <div style="background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:16px;">
+        <h4 style="margin:0 0 8px;color:var(--t1);font-size:14px;">💡 คำศัพท์ที่พบบ่อย</h4>
+        <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;">
+          <li><b>Rev (Revenue):</b> รายได้รวม หรือยอดเงิน</li>
+          <li><b>Vol (Volume):</b> จำนวนออเดอร์ หรือปริมาณงาน</li>
+          <li><b>Target / เป้า:</b> สามารถกำหนดเป้าหมายเพื่อใช้วัด Performance (เฉพาะ Director/AM)</li>
+          <li><b>Threshold (เฝ้าระวัง):</b> เกณฑ์ % ที่ถ้าทำได้ต่ำกว่าจะถูกจัดอยู่ในกลุ่มเสี่ยง</li>
+        </ul>
+      </div>
+
+      <div style="background:#f0fdf4;padding:12px;border-radius:8px;border:1px solid #bbf7d0;margin-bottom:16px;">
+        <h4 style="margin:0 0 8px;color:#166534;font-size:14px;">⌨️ Keyboard Shortcuts (ปุ่มลัด)</h4>
+        <p style="margin:0 0 8px;">ทำงานได้เร็วขึ้นโดยไม่ต้องใช้เมาส์:</p>
+        <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:#15803d;">
+          <li>กด <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">1</kbd> ถึง <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">5</kbd> เพื่อสลับหน้าเมนูหลัก</li>
+          <li>กด <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">Ctrl</kbd> + <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">K</kbd> เพื่อค้นหา Agent / BD อย่างรวดเร็ว</li>
+          <li>กด <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">Esc</kbd> เพื่อปิดหน้าต่างหรือยกเลิกการพิมพ์</li>
+        </ul>
+      </div>
+
+      <div style="text-align:right;">
+        <button class="cmp-run-btn" onclick="closeHelpModal()">เข้าใจแล้ว เริ่มใช้งานเลย</button>
       </div>
     </div>
   </div>
