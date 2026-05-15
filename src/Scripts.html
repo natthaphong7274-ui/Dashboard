@@ -1540,17 +1540,33 @@ function renderAllCharts(){
   mkHBar('c_avg_prov',sapv.map(function(e){return e[0];}),sapv.map(function(e){return Math.round(e[1]);}),
     'rgba(26,77,110,0.55)',true,{groupCol:COL.province,metricCol:m.colAvg,panelId:'dp_avg_prov',titleId:'dpt_avg_prov',bodyId:'dpb_avg_prov'});
 
-  // BD Zone — ★ ซ่อนสำหรับ BD/AM role (ไม่มีประโยชน์เพราะข้อมูล zone เดียว)
+  // BD Zone — ★ ซ่อนสำหรับ BD/AM role
   if(role!=='BD'&&role!=='AM'){
     var sbz=grpSum(FR,COL.zoneName,m.colRev).slice(0,15);
+    var sbv=grpSum(FR,COL.zoneName,m.colVol).slice(0,15);
+    var sba=grpSum(FR,COL.zoneName,m.colAvg).slice(0,15);
+    
+    // KPI Grid
+    if(document.getElementById('bd_kgrid')){
+      var topBdRev = sbz.length ? sbz[0] : ['-',0];
+      var topBdVol = sbv.length ? sbv[0] : ['-',0];
+      document.getElementById('bd_kgrid').innerHTML=
+        '<div class="kcard" style="--kc:rgba(30,58,95,1)"><div class="kico">🏆</div>'
+        +'<div class="klbl">TOP ZONE (Revenue)</div>'
+        +'<div class="kval" style="color:rgba(30,58,95,1);font-size:17px;">'+fmtS(topBdRev[1])+'</div>'
+        +'<div class="ksub">'+topBdRev[0]+'</div></div>'
+        +'<div class="kcard" style="--kc:rgba(21,94,117,1)"><div class="kico">📦</div>'
+        +'<div class="klbl">TOP ZONE (Volume)</div>'
+        +'<div class="kval" style="color:rgba(21,94,117,1);font-size:17px;">'+fmtS(topBdVol[1])+'</div>'
+        +'<div class="ksub">'+topBdVol[0]+'</div></div>';
+    }
+
     mkHBar('c_bd_rev',sbz.map(function(e){return e[0];}),sbz.map(function(e){return Math.round(e[1]);}),
       'rgba(30,58,95,0.7)',true);
     updT('t_bd_rev','💰 Revenue ราย Zone ('+m.en+')');
-    var sbv=grpSum(FR,COL.zoneName,m.colVol).slice(0,15);
     mkHBar('c_bd_vol',sbv.map(function(e){return e[0];}),sbv.map(function(e){return Math.round(e[1]);}),
       'rgba(21,94,117,0.7)',true);
     updT('t_bd_vol','📦 Volume ราย Zone ('+m.en+')');
-    var sba=grpSum(FR,COL.zoneName,m.colAvg).slice(0,15);
     mkHBar('c_bd_avg',sba.map(function(e){return e[0];}),sba.map(function(e){return Math.round(e[1]);}),
       'rgba(26,77,110,0.7)',true);
     updT('t_bd_avg','📐 Avg Rev/Day ราย Zone ('+m.en+')');
@@ -1559,6 +1575,28 @@ function renderAllCharts(){
 
   // Area
   var sar=grpSum(FR,COL.province,m.colRev).slice(0,15);
+  var sav=grpSum(FR,COL.province,m.colVol).slice(0,15);
+
+  // KPI Grid
+  if(document.getElementById('area_kgrid')){
+    var topAreaRev = sar.length ? sar[0] : ['-',0];
+    var topAreaVol = sav.length ? sav[0] : ['-',0];
+    document.getElementById('area_kgrid').innerHTML=
+      '<div class="kcard" style="--kc:rgba(30,58,95,1)"><div class="kico">🏆</div>'
+      +'<div class="klbl">TOP จังหวัด (Revenue)</div>'
+      +'<div class="kval" style="color:rgba(30,58,95,1);font-size:17px;">'+fmtS(topAreaRev[1])+'</div>'
+      +'<div class="ksub">'+topAreaRev[0]+'</div></div>'
+      +'<div class="kcard" style="--kc:rgba(21,94,117,1)"><div class="kico">📦</div>'
+      +'<div class="klbl">TOP จังหวัด (Volume)</div>'
+      +'<div class="kval" style="color:rgba(21,94,117,1);font-size:17px;">'+fmtS(topAreaVol[1])+'</div>'
+      +'<div class="ksub">'+topAreaVol[0]+'</div></div>';
+  }
+
+  // Ranking with MoM diff
+  var sarPrevMap=null;
+  if(mp){var sarP=grpSum(FR,COL.province,mp.colRev);sarPrevMap={};sarP.forEach(function(e){sarPrevMap[e[0]]=e[1];});}
+  if(document.getElementById('area_rank')) mkRank('area_rank',sar,'Revenue',fmtS,sarPrevMap,'vs '+(mp?mp.en:''));
+
   if(!sar.length){ // ★ No data state
     var arev=document.getElementById('c_area_rev');
     if(arev)arev.parentElement.innerHTML='<div style="padding:30px;text-align:center;color:var(--t2);font-size:12px">ไม่มีข้อมูลพื้นที่</div>';
@@ -1567,7 +1605,6 @@ function renderAllCharts(){
       'rgba(30,58,95,0.65)',true,{groupCol:COL.province,metricCol:m.colRev,panelId:'dp_area_rev',titleId:'dpt_area_rev',bodyId:'dpb_area_rev'});
   }
   updT('t_area_rev','💰 Revenue แยกจังหวัด Top15 ('+m.en+')');
-  var sav=grpSum(FR,COL.province,m.colVol).slice(0,15);
   mkHBar('c_area_vol',sav.map(function(e){return e[0];}),sav.map(function(e){return Math.round(e[1]);}),
     'rgba(21,94,117,0.65)',true,{groupCol:COL.province,metricCol:m.colVol,panelId:'dp_area_vol',titleId:'dpt_area_vol',bodyId:'dpb_area_vol'});
   var sc3=grpCnt(FR,COL.province).slice(0,20);
@@ -1579,20 +1616,58 @@ function renderAllCharts(){
       backgroundColor:['rgba(30,58,95,0.8)','rgba(21,94,117,0.75)','rgba(26,77,110,0.7)','rgba(45,105,159,0.65)','rgba(14,116,144,0.7)','rgba(22,78,99,0.7)'].slice(0,sare.length)}],false,true);
 
   // Account
+  var sacr=grpSum(FR,COL.account21,m.colRev).slice(0,12);
+  var sacv=grpSum(FR,COL.account21,m.colVol).slice(0,12);
+  
+  // KPI Grid
+  if(document.getElementById('acc_kgrid')){
+    var topAccRev = sacr.length ? sacr[0] : ['-',0];
+    var topAccVol = sacv.length ? sacv[0] : ['-',0];
+    document.getElementById('acc_kgrid').innerHTML=
+      '<div class="kcard" style="--kc:rgba(30,58,95,1)"><div class="kico">🏆</div>'
+      +'<div class="klbl">TOP ACCOUNT (Revenue)</div>'
+      +'<div class="kval" style="color:rgba(30,58,95,1);font-size:17px;">'+fmtS(topAccRev[1])+'</div>'
+      +'<div class="ksub">'+topAccRev[0]+'</div></div>'
+      +'<div class="kcard" style="--kc:rgba(21,94,117,1)"><div class="kico">📦</div>'
+      +'<div class="klbl">TOP ACCOUNT (Volume)</div>'
+      +'<div class="kval" style="color:rgba(21,94,117,1);font-size:17px;">'+fmtS(topAccVol[1])+'</div>'
+      +'<div class="ksub">'+topAccVol[0]+'</div></div>';
+  }
+
   var sac=grpCnt(FR,COL.account21).slice(0,12);
   mkBar('c_acc_cnt',sac.map(function(e){return e[0];}),
     [{label:'จำนวน',data:sac.map(function(e){return e[1];}),backgroundColor:'rgba(45,105,159,0.65)'}],false,true);
-  var sacr=grpSum(FR,COL.account21,m.colRev).slice(0,12);
   mkBar('c_acc_rev',sacr.map(function(e){return e[0];}),
     [{label:'Revenue',data:sacr.map(function(e){return Math.round(e[1]);}),backgroundColor:'rgba(30,58,95,0.75)'}],false,true);
   updT('t_acc_rev','💰 Revenue แยกตาม 21 ('+m.en+')');
-  mkRank('acc_rank',sacr,'Revenue');
-  var sacv=grpSum(FR,COL.account21,m.colVol).slice(0,12);
+  
+  var accPrevMap=null;
+  if(mp){var sacP=grpSum(FR,COL.account21,mp.colRev);accPrevMap={};sacP.forEach(function(e){accPrevMap[e[0]]=e[1];});}
+  mkRank('acc_rank',sacr,'Revenue',fmtS,accPrevMap,'vs '+(mp?mp.en:''));
+  
   mkBar('c_acc_vol',sacv.map(function(e){return e[0];}),
     [{label:'Volume',data:sacv.map(function(e){return Math.round(e[1]);}),backgroundColor:'rgba(21,94,117,0.7)'}],false,true);
   updT('t_acc_vol','📦 Volume แยกตาม 21 ('+m.en+')');
 
   // Package
+  var spkr=grpSum(FR,COL.package,m.colRev).slice(0,12);
+  var spkv=grpSum(FR,COL.package,m.colVol).slice(0,12);
+  
+  // KPI Grid
+  if(document.getElementById('pkg_kgrid')){
+    var topPkgRev = spkr.length ? spkr[0] : ['-',0];
+    var topPkgVol = spkv.length ? spkv[0] : ['-',0];
+    document.getElementById('pkg_kgrid').innerHTML=
+      '<div class="kcard" style="--kc:rgba(30,58,95,1)"><div class="kico">🏆</div>'
+      +'<div class="klbl">TOP PACKAGE (Revenue)</div>'
+      +'<div class="kval" style="color:rgba(30,58,95,1);font-size:17px;">'+fmtS(topPkgRev[1])+'</div>'
+      +'<div class="ksub">'+topPkgRev[0]+'</div></div>'
+      +'<div class="kcard" style="--kc:rgba(21,94,117,1)"><div class="kico">📦</div>'
+      +'<div class="klbl">TOP PACKAGE (Volume)</div>'
+      +'<div class="kval" style="color:rgba(21,94,117,1);font-size:17px;">'+fmtS(topPkgVol[1])+'</div>'
+      +'<div class="ksub">'+topPkgVol[0]+'</div></div>';
+  }
+
   var spkc=grpCnt(FR,COL.package).slice(0,12);
   if(!spkc.length){
     var cpkg=document.getElementById('c_pkg_cnt');
@@ -1601,19 +1676,24 @@ function renderAllCharts(){
     mkBar('c_pkg_cnt',spkc.map(function(e){return e[0];}),
       [{label:'จำนวน',data:spkc.map(function(e){return e[1];}),backgroundColor:'rgba(45,105,159,0.65)'}],false,true);
   }
-  var spkr=grpSum(FR,COL.package,m.colRev).slice(0,12);
+  
   mkHBar('c_pkg_rev',spkr.map(function(e){return e[0];}),spkr.map(function(e){return Math.round(e[1]);}),
     'rgba(30,58,95,0.7)',true);
   updT('t_pkg_rev','💰 Revenue แยก Package ('+m.en+')');
-  var spkv=grpSum(FR,COL.package,m.colVol).slice(0,12);
+  
   mkHBar('c_pkg_vol',spkv.map(function(e){return e[0];}),spkv.map(function(e){return Math.round(e[1]);}),
     'rgba(21,94,117,0.7)',true);
   updT('t_pkg_vol','📦 Volume แยก Package ('+m.en+')');
+  
   var spka=grpSum(FR,COL.package,m.colAvg).slice(0,12);
   mkHBar('c_pkg_avg',spka.map(function(e){return e[0];}),spka.map(function(e){return Math.round(e[1]);}),
     'rgba(26,77,110,0.7)',true);
   updT('t_pkg_avg','📐 Avg Rev/Day แยก Package ('+m.en+')');
   mkDonut('c_pkg_pie',spkc.map(function(e){return e[0];}),spkc.map(function(e){return e[1];}));
+  
+  var pkgPrevMap=null;
+  if(mp){var spkP=grpSum(FR,COL.package,mp.colRev);pkgPrevMap={};spkP.forEach(function(e){pkgPrevMap[e[0]]=e[1];});}
+  if(document.getElementById('pkg_rank')) mkRank('pkg_rank',spkr,'Revenue',fmtS,pkgPrevMap,'vs '+(mp?mp.en:''));
   } // end isOvActive
 
   // ★ Avg Rev/ชิ้น section ต้องเรียกทุกครั้งที่ render

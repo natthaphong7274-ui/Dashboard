@@ -354,6 +354,7 @@
     <!-- BD -->
     <div class="spanel" id="sp-bd">
       <div class="sdiv"><h3>👤 Performance ราย Zone</h3></div>
+      <div class="kgrid" id="bd_kgrid" style="margin-bottom:12px;"></div>
       <div class="g2">
         <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_rev">Revenue ราย Zone</div></div><div class="ch300"><canvas id="c_bd_rev"></canvas></div></div>
         <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_vol">Volume ราย Zone</div></div><div class="ch300"><canvas id="c_bd_vol"></canvas></div></div>
@@ -367,6 +368,7 @@
     <!-- Area -->
     <div class="spanel" id="sp-area">
       <div class="sdiv"><h3>🗺️ รายพื้นที่ / จังหวัด</h3></div>
+      <div class="kgrid" id="area_kgrid" style="margin-bottom:12px;"></div>
       <!-- Charts section -->
       <div id="area-tab-charts">
       <div class="g2">
@@ -383,6 +385,7 @@
         <div class="ccard"><div class="chdr"><div class="ctitle">จำนวนลูกค้า แยกจังหวัด</div></div><div class="ch260"><canvas id="c_area_cnt"></canvas></div></div>
         <div class="ccard"><div class="chdr"><div class="ctitle">Revenue แยก AREA</div></div><div class="ch260"><canvas id="c_area_region"></canvas></div></div>
       </div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Ranking จังหวัดตาม Revenue</div></div><div style="max-height:240px;overflow-y:auto" id="area_rank"></div></div>
       <div class="ccard gfull" id="dp_area_rev" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_area_rev"></span><span class="drill-close" onclick="closeDrill('dp_area_rev')">✕ ปิด</span></div><div id="dpb_area_rev"></div></div>
       <div class="ccard gfull" id="dp_area_vol" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_area_vol"></span><span class="drill-close" onclick="closeDrill('dp_area_vol')">✕ ปิด</span></div><div id="dpb_area_vol"></div></div>
       </div>
@@ -391,6 +394,7 @@
     <!-- Account -->
     <div class="spanel" id="sp-acc">
       <div class="sdiv"><h3>🏷️ Account แยกตาม 21.00</h3></div>
+      <div class="kgrid" id="acc_kgrid" style="margin-bottom:12px;"></div>
       <div class="g3">
         <div class="ccard"><div class="chdr"><div class="ctitle">จำนวน Account</div></div><div class="ch220"><canvas id="c_acc_cnt"></canvas></div></div>
         <div class="ccard"><div class="chdr"><div class="ctitle" id="t_acc_rev">Revenue แยกตาม 21</div></div><div class="ch220"><canvas id="c_acc_rev"></canvas></div></div>
@@ -402,6 +406,7 @@
     <!-- Package -->
     <div class="spanel" id="sp-pkg">
       <div class="sdiv"><h3>📦 Package</h3></div>
+      <div class="kgrid" id="pkg_kgrid" style="margin-bottom:12px;"></div>
       <div class="g3">
         <div class="ccard"><div class="chdr"><div class="ctitle">จำนวนลูกค้า ตาม Package</div></div><div class="ch220"><canvas id="c_pkg_cnt"></canvas></div></div>
         <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_rev">Revenue แยก Package</div></div><div class="ch220"><canvas id="c_pkg_rev"></canvas></div></div>
@@ -411,6 +416,7 @@
         <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_avg">Avg Rev แยก Package</div></div><div class="ch220"><canvas id="c_pkg_avg"></canvas></div></div>
         <div class="ccard"><div class="chdr"><div class="ctitle">Package Distribution</div></div><div class="ch220"><canvas id="c_pkg_pie"></canvas></div></div>
       </div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Ranking ตาม Package (เรียง Revenue)</div></div><div style="max-height:240px;overflow-y:auto" id="pkg_rank"></div></div>
     </div>
 
     <!-- Compare -->
