@@ -205,8 +205,8 @@
           <button class="stab active" id="stab_revenue" onclick="swSec('revenue',this)">Revenue</button>
           <button class="stab" id="stab_vol" onclick="swSec('vol',this)">Volume</button>
           <button class="stab" id="stab_avgrev" onclick="swSec('avgrev',this)">Avg Rev</button>
+          <button class="stab" id="stab_avgvol" onclick="swSec('avgvol',this)">Avg Vol</button>
           <button class="stab" id="stab_avgpiece" onclick="swSec('avgpiece',this)">Avg Rev/ชิ้น</button>
-          <button class="stab" id="stab_avgvol" onclick="swSec('avgvol',this)">Avg Vol/วัน</button>
         </div>
       </div>
       <div class="ov-tab-divider"></div>
@@ -328,9 +328,9 @@
       <div class="ccard gfull" id="dp_ap_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_prov"></span><span class="drill-close" onclick="closeDrill('dp_ap_prov')">✕ ปิด</span></div><div id="dpb_ap_prov"></div></div>
     </div>
 
-    <!-- Avg Vol/วัน Section (UX Sprint 4: แยกออกมาเป็น panel อิสระ) -->
+    <!-- Avg Vol Section (UX Sprint 4: คู่ Avg Rev) -->
     <div class="spanel" id="sp-avgvol">
-      <div class="sdiv"><h3>📦 Avg Volume ต่อวัน (Vol ÷ วันที่ผ่านมา)</h3></div>
+      <div class="sdiv"><h3>📦 Avg Volume/วัน — คู่ Avg Rev</h3></div>
       <div class="kgrid" id="avgvol_kgrid" style="margin-bottom:12px;"></div>
       <div class="g3">
         <div class="ccard">

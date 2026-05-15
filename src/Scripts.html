@@ -670,7 +670,7 @@ function swSec(sec,btn){
   if(sec==='carrier') loadAndRenderCarrier();
   if(sec==='area') { /* charts only */ }
   _applyOverviewRoleRules();
-  var secNames={revenue:'Revenue',vol:'Volume',avgrev:'Avg Rev',avgpiece:'Avg Rev/ชิ้น',avgvol:'Avg Vol/วัน',bd:'BD Zone',area:'พื้นที่',acc:'Account',pkg:'Package',compare:'เปรียบเทียบ'};
+  var secNames={revenue:'Revenue',vol:'Volume',avgrev:'Avg Rev',avgpiece:'Avg Rev/ชิ้น',avgvol:'Avg Vol',bd:'BD Zone',area:'พื้นที่',acc:'Account',pkg:'Package',compare:'เปรียบเทียบ'};
   _clientLog('VIEW_SUBTAB', '[ภาพรวม] เปิด Sub-tab: '+(secNames[sec]||sec));
 }
 function setCmpMode(mode,btn){
