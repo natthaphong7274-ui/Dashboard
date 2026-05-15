@@ -613,7 +613,16 @@ function _applyCarrierRoleRules(){
     swCarSec('pie',document.getElementById('cr_tab_pie'));
   }
 }
+function _applyGlobalRoleRules(){
+  var isDirector = _currentRole() === 'Director';
+  var reportBtn = _findButtonByOnclick("openReportCenter(");
+  if(reportBtn){
+    if(!isDirector) reportBtn.classList.add('disabled-role');
+    else reportBtn.classList.remove('disabled-role');
+  }
+}
 function applyRoleVisualizationRules(){
+  _applyGlobalRoleRules();
   _applyOverviewRoleRules();
   _applyCarrierRoleRules();
 }
