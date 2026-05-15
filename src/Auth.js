@@ -325,7 +325,7 @@ function _normalizeZoneName(zone) {
 
 function _canAccessZone(session, zoneName) {
   if (!session || !session.ok) return false;
-  if (session.role === 'Director') return true;
+  if (session.role === 'Director' || session.role === 'AM') return true;
   var zones = session.zones || [];
   if (zones.indexOf('All') >= 0) return true;
   var target = _normalizeZoneName(zoneName);

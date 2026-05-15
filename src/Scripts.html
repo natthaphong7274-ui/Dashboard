@@ -371,6 +371,7 @@ function getTMP(){
 // ===== FILTERS =====
 function buildFilters(){
   var role = _currentUser && _currentUser.role;
+  if(role === 'AM') role = 'Director';
   // ── Role-based: ซ่อน column ที่ไม่มีประโยชน์ตาม role ──
   // BD: zone เดียว → Zone Name + AREA ไม่มีประโยชน์
   // AM: หลาย zone ในเขตตัวเอง → คง Zone Name ไว้ ซ่อนแค่ AREA

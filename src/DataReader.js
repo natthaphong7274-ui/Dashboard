@@ -18,7 +18,7 @@ function getAllData(token) {
   var session = _requireSession(token || '', 'GET_ALL_DATA');
   if (!session.ok) return session;
   var allowedZones = null;
-  if (session.role !== 'Director') {
+  if (session.role !== 'Director' && session.role !== 'AM') {
     if (session.zones && session.zones[0] !== 'All') {
       allowedZones = session.zones;
     }
@@ -205,7 +205,7 @@ function getCarrierData(){ return {carrierCols:[],carrierRows:[]}; }
 
 function _maskPhoneForRole(phone, role) {
   var raw = String(phone || '').trim();
-  if (!raw || role === 'Director') return raw;
+  if (!raw || role === 'Director' || role === 'AM') return raw;
   var digits = raw.replace(/\D/g, '');
   if (digits.length < 7) return raw.charAt(0) + '***';
   return digits.slice(0, 3) + '***' + digits.slice(-2);
@@ -215,7 +215,7 @@ function _maskSensitiveRowForSession(row, session) {
   if (!row) return row;
   var out = {};
   Object.keys(row).forEach(function(k){ out[k] = row[k]; });
-  if (session && session.role !== 'Director') {
+  if (session && session.role !== 'Director' && session.role !== 'AM') {
     ['Phone','phone','Tel','เบอร์โทร'].forEach(function(k) {
       if (out[k] !== undefined && out[k] !== '') out[k] = _maskPhoneForRole(out[k], session.role);
     });
