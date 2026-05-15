@@ -23,6 +23,15 @@ Branch: `UX_Sprint-3`
 - เมื่อเปลี่ยน Zone filter จะ rebuild side list และ action card ตาม scope ปัจจุบัน
 - ย้ายกล่องอธิบายเกณฑ์แผนที่จาก sidebar ไปไว้บนตัวแผนที่ เพื่อให้เห็นเกณฑ์พร้อมกับสีพื้นที่จริง
 
+## Hero Chart & Forecast Logic Upgrade (New)
+
+- **Hero Chart Unification:** ยุบการ์ด KPI (Avg Rev/day, Avg Vol/day, Forecast EOM) มารวมไว้เป็นส่วนหัวของกราฟเส้นขนาดใหญ่เพียงแผงเดียว (Hero Chart) ลด Cognitive Load และเพิ่มพื้นที่ให้แผนที่
+- **Metric Normalization:** เปลี่ยนแกน Y ของกราฟเส้นให้พล็อตด้วยค่า **Avg/day** ทั้งหมด ทำให้สามารถเปรียบเทียบ Performance แบบ Apple-to-Apple ได้อย่างสมบูรณ์แบบ
+- **Weighted Time Series Blending Model:** อัปเกรดลอจิกพยากรณ์ Forecast EOM
+  - ใช้ **Historical WMA** คำนวณความเร็วเฉลี่ย 3 เดือนย้อนหลังแบบถ่วงน้ำหนัก (x3, x2, x1)
+  - ผสานกับ **Current Run-rate** โดยให้น้ำหนักตามจำนวนวันที่ผ่านไปในเดือนปัจจุบัน (ยิ่งเข้าใกล้ปลายเดือน ยิ่งใช้น้ำหนักเดือนปัจจุบันสูง) ทำให้ตัวเลข Forecast แม่นยำและ Stable
+- **UX Consolidation:** ลบกราฟแท่ง (Bar Chart) และการ์ดข้อมูล Insights (โตเด่นสุด / เสี่ยงสุด) ที่ซ้ำซ้อนกับแผง "พื้นที่ที่ควรเริ่มก่อน (Focus List)" ทิ้ง เพื่อทำให้หน้าจอ Clean และโฟกัสได้ดีขึ้น
+
 ## Files Touched
 
 - `src/Scripts.html`
