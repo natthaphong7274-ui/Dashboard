@@ -595,7 +595,7 @@ function _applyOverviewRoleRules(){
     _setVisible(_chartCard(id),!isBD);
   });
   var bdTab=_findButtonByOnclick("swSec('bd'");
-  var showBdTab=_currentRole()==='Director';
+  var showBdTab=(_currentRole()==='Director' || _currentRole()==='AM');
   _setVisible(bdTab,showBdTab);
   _setVisible(document.getElementById('sp-bd'),showBdTab);
   var active=document.querySelector('#mainOv .spanel.active');
@@ -614,7 +614,7 @@ function _applyCarrierRoleRules(){
   }
 }
 function _applyGlobalRoleRules(){
-  var isDirector = _currentRole() === 'Director';
+  var isDirector = (_currentRole() === 'Director' || _currentRole() === 'AM');
   // อนุญาตให้ทุกคนเข้า Report Center ได้ แต่ปิดปุ่ม Export สำหรับคนที่ไม่ใช่ Director
   var reportBtn = _findButtonByOnclick("openReportCenter(");
   if(reportBtn) reportBtn.classList.remove('disabled-role');
@@ -632,7 +632,7 @@ function applyRoleVisualizationRules(){
 }
 function swMain(v){
   _ensureMainPanelsMounted();
-  if(v === 'usermgmt' && (!_currentUser || _currentUser.role !== 'Director')){
+  if(v === 'usermgmt' && (!_currentUser || ((_currentUser.role !== 'Director' && _currentUser.role !== 'AM') && _currentUser.role !== 'AM'))){
     v = 'home';
   }
   console.log('[swMain] switching to tab:', v, '| FR='+FR.length+' | MONTHS='+MONTHS.length+' | CUR_MONTH='+(CUR_MONTH&&CUR_MONTH.key||'null'));
@@ -2452,7 +2452,8 @@ function runMultiCompare(){
   if(sel.length<2){alert('กรุณาเลือกอย่างน้อย 2 เดือน');return;}
 
   // ★ ข้อ 2: ตรวจ role — BD/AM ใช้ Province ของโซนตัวเอง, Director ใช้ Zone
-  var userRole=_currentUser?_currentUser.role:'Director';
+  var userRole = _currentUser ? _currentUser.role : 'Director';
+  if(userRole==='AM') userRole='Director';
   var userZones=_currentUser&&_currentUser.zones?_currentUser.zones:['All'];
   var isBDorAM=(userRole==='BD'||userRole==='AM')&&userZones[0]!=='All';
 
@@ -5195,8 +5196,8 @@ function _showUserBadge(user){
   if(logoutBtn)logoutBtn.style.display='inline-block';
   // แสดง tab จัดการผู้ใช้เฉพาะ Director
   var umTab = document.getElementById('usermgmt_tab');
-  if(umTab) umTab.style.display = (user.role==='Director') ? 'inline-block' : 'none';
-  if(user.role !== 'Director' && _activeMainTab === 'usermgmt') swMain('home');
+  if(umTab) umTab.style.display = ((user.role==='Director' || user.role==='AM')) ? 'inline-block' : 'none';
+  if((user.role !== 'Director' && user.role !== 'AM') && _activeMainTab === 'usermgmt') swMain('home');
   _startWatermark();
 
   // ★ Role-based: ซ่อน BD Zone sub-tab สำหรับ BD/AM (ข้อมูล zone เดียว ไม่มีประโยชน์)
@@ -5967,7 +5968,7 @@ function _startRiskPoll() {
     var token = sessionStorage.getItem('DASH_TOKEN') || '';
     if (!token) { _stopRiskPoll(); return; }
     // Director ไม่ต้อง poll (ตัวเองเป็นคนตั้งค่าอยู่แล้ว)
-    if (_currentUser && _currentUser.role === 'Director') return;
+    if (_currentUser && (_currentUser.role === 'Director' || _currentUser.role === 'AM')) return;
     var prevThreshold = _riskThreshold;
     google.script.run
       .withSuccessHandler(function(res) {
@@ -6003,7 +6004,7 @@ function _startGrowthPoll() {
     var token = sessionStorage.getItem('DASH_TOKEN') || '';
     if (!token) { _stopGrowthPoll(); return; }
     // Director ไม่ต้อง poll (ตัวเองเป็นคนตั้งค่าอยู่แล้ว)
-    if (_currentUser && _currentUser.role === 'Director') return;
+    if (_currentUser && (_currentUser.role === 'Director' || _currentUser.role === 'AM')) return;
     var prevThreshold = _growthThreshold;
     google.script.run
       .withSuccessHandler(function(res) {
@@ -6951,7 +6952,7 @@ document.addEventListener('visibilitychange', function() {
 // ============================================================
 function loadUserStatus() {
   // ★ Security: ตรวจ role ฝั่ง client ก่อน (server จะ validate ซ้ำอีกครั้ง)
-  if(!_currentUser || _currentUser.role !== 'Director'){
+  if(!_currentUser || (_currentUser.role !== 'Director' && _currentUser.role !== 'AM')){
     var wrap = document.getElementById('um_table_wrap');
     if(wrap) wrap.innerHTML = '<div style="padding:20px;color:var(--rd)">❌ ไม่มีสิทธิ์เข้าถึงหน้านี้</div>';
     return;
@@ -7028,7 +7029,7 @@ function _renderUserTable(users) {
 
 function doUnlockUser(username) {
   // ★ Security: ตรวจ role ก่อน call server
-  if(!_currentUser || _currentUser.role !== 'Director'){
+  if(!_currentUser || (_currentUser.role !== 'Director' && _currentUser.role !== 'AM')){
     alert('❌ ไม่มีสิทธิ์ดำเนินการ');
     return;
   }
@@ -7114,6 +7115,7 @@ function renderTsmModal(){
   if(!m) return;
 
   var role = (_currentUser && _currentUser.role) || 'Director';
+  if(role==='AM') role='Director';
   var isBD = (role === 'BD');
 
   // ── toggle view ──
@@ -8074,7 +8076,8 @@ function buildProvinceData(){
   var pvMap = {};
 
   // ★ BD role: กรองเฉพาะข้อมูลใน zone ของตัวเอง
-  var userRole  = _currentUser ? _currentUser.role  : 'Director';
+  var userRole = _currentUser ? _currentUser.role : 'Director';
+  if(userRole==='AM') userRole='Director';
   var userZones = _currentUser && _currentUser.zones ? _currentUser.zones : ['All'];
   var isBDRole  = (userRole === 'BD' || userRole === 'AM') && userZones[0] !== 'All';
 
@@ -8378,7 +8381,8 @@ function renderMapLayers(){
   console.groupEnd();
   // ═════════════════════════════════════════════════════════
 
-  var userRoleMap  = _currentUser ? _currentUser.role  : 'Director';
+  var userRoleMap = _currentUser ? _currentUser.role : 'Director';
+  if(userRoleMap==='AM') userRoleMap='Director';
   var userZonesMap = _currentUser && _currentUser.zones ? _currentUser.zones : ['All'];
   var isBDMap = (userRoleMap === 'BD');
   var isDirOrAM = (userRoleMap === 'Director' || userRoleMap === 'AM');
@@ -8797,7 +8801,8 @@ function renderMapLayers(){
 function buildCityData(){
   var m = getMC(), mp = getMP();
   var cityMap = {};
-  var userRole  = _currentUser ? _currentUser.role  : 'Director';
+  var userRole = _currentUser ? _currentUser.role : 'Director';
+  if(userRole==='AM') userRole='Director';
   var userZones = _currentUser && _currentUser.zones ? _currentUser.zones : ['All'];
   var isBDRole  = (userRole === 'BD' || userRole === 'AM') && userZones[0] !== 'All';
 
@@ -9096,7 +9101,8 @@ function buildMapLegend(pvData){
   if(!el) return;
   el.innerHTML = '';
 
-  var userRoleLg  = _currentUser ? _currentUser.role  : 'Director';
+  var userRoleLg = _currentUser ? _currentUser.role : 'Director';
+  if(userRoleLg==='AM') userRoleLg='Director';
   var userZonesLg = _currentUser && _currentUser.zones ? _currentUser.zones : ['All'];
   var isBDLg = (userRoleLg==='BD');
   var isCompactLegend = (userRoleLg === 'AM' || userRoleLg === 'BD');
@@ -9427,6 +9433,7 @@ function toggleCityDrill(uid){
 function renderHome() {
   _ensureMainPanelsMounted();
   var role = _currentUser ? _currentUser.role : 'Director';
+  if(role==='AM') role='Director';
   var m  = getMC();
   var mp = getMP();
   var loadingEl = document.getElementById('home_loading');
@@ -9606,6 +9613,7 @@ function _homeInitMap(rows, m) {
   }
   _mapZoneFilter = '';
   var role = _currentUser ? _currentUser.role : 'Director';
+  if(role==='AM') role='Director';
 
   // เรียก initMap() จริง — สร้างแผนที่เหมือนหน้าพื้นที่ทุกประการ
   initMap();
@@ -9622,6 +9630,7 @@ function _homeInitMap(rows, m) {
 // ── shared: build map+alert 2-col section ──
 function _homeMapAlertSection(alertHtml, mapTitle) {
   var role = _currentUser ? _currentUser.role : 'Director';
+  if(role==='AM') role='Director';
   var isDirOrAM = (role === 'Director' || role === 'AM');
   var zoneFilterHtml = isDirOrAM
     ? '<div id="mapZoneFilterWrap" style="display:flex;align-items:center;gap:6px">'
@@ -9770,6 +9779,7 @@ function _homeMapCommandView(cfg) {
 
 function _homeMapScopedRows(){
   var userRole = _currentUser ? _currentUser.role : 'Director';
+  if(userRole==='AM') userRole='Director';
   var userZones = _currentUser && _currentUser.zones ? _currentUser.zones : ['All'];
   return FR.filter(function(r){
     var rowZone = String(r[COL.zoneName] || '').trim();
@@ -13648,7 +13658,7 @@ function targetMode(mode) {
 }
 
 function openTargetModal(monthKey) {
-  if (!_currentUser || _currentUser.role !== 'Director') return;
+  if (!_currentUser || (_currentUser.role !== 'Director' && _currentUser.role !== 'AM')) return;
   openMtModal(monthKey);
   _initBdTargetForm();
   targetMode('overall');
@@ -13694,7 +13704,7 @@ function startTargetPolling() {
 }
 
 function openMtModal(monthKey) {
-  if (!_currentUser || _currentUser.role !== 'Director') return;
+  if (!_currentUser || (_currentUser.role !== 'Director' && _currentUser.role !== 'AM')) return;
   _mtMonth = monthKey || (typeof getMC === 'function' ? getMC().key : null);
   if (!_mtMonth) return;
 
@@ -13909,7 +13919,7 @@ function _initBdTargetForm() {
 }
 
 function openBdMtModal() {
-  if (!_currentUser || _currentUser.role !== 'Director') return;
+  if (!_currentUser || (_currentUser.role !== 'Director' && _currentUser.role !== 'AM')) return;
   openMtModal(typeof getMC === 'function' ? getMC().key : null);
   _initBdTargetForm();
   targetMode('bd');
