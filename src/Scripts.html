@@ -666,10 +666,11 @@ function swSec(sec,btn){
   document.getElementById('monthBar').style.display=sec==='compare'?'none':'flex';
   if(sec==='compare'){document.getElementById('cmp_kpi').innerHTML='';document.getElementById('cmp_charts').innerHTML='';}
   if(sec==='avgpiece')renderAvgPieceSection();
+  if(sec==='avgvol')renderAvgPieceSection(); // ★ UX Sprint 4: avgvol ใช้ render function เดิม เพราะ kgrid/charts ถูกแยก panel แล้ว
   if(sec==='carrier') loadAndRenderCarrier();
   if(sec==='area') { /* charts only */ }
   _applyOverviewRoleRules();
-  var secNames={revenue:'Revenue',vol:'Volume',avgrev:'Avg Rev',avgpiece:'Avg Rev/ชิ้น',bd:'BD Zone',area:'พื้นที่',acc:'Account',pkg:'Package',compare:'เปรียบเทียบ'};
+  var secNames={revenue:'Revenue',vol:'Volume',avgrev:'Avg Rev',avgpiece:'Avg Rev/ชิ้น',avgvol:'Avg Vol/วัน',bd:'BD Zone',area:'พื้นที่',acc:'Account',pkg:'Package',compare:'เปรียบเทียบ'};
   _clientLog('VIEW_SUBTAB', '[ภาพรวม] เปิด Sub-tab: '+(secNames[sec]||sec));
 }
 function setCmpMode(mode,btn){

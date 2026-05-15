@@ -206,6 +206,7 @@
           <button class="stab" id="stab_vol" onclick="swSec('vol',this)">Volume</button>
           <button class="stab" id="stab_avgrev" onclick="swSec('avgrev',this)">Avg Rev</button>
           <button class="stab" id="stab_avgpiece" onclick="swSec('avgpiece',this)">Avg Rev/ชิ้น</button>
+          <button class="stab" id="stab_avgvol" onclick="swSec('avgvol',this)">Avg Vol/วัน</button>
         </div>
       </div>
       <div class="ov-tab-divider"></div>
@@ -303,7 +304,7 @@
       <div class="ccard gfull" id="dp_avg_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_avg_prov"></span><span class="drill-close" onclick="closeDrill('dp_avg_prov')">✕ ปิด</span></div><div id="dpb_avg_prov"></div></div>
     </div>
 
-    <!-- ★ NEW: Avg Rev/ชิ้น Section -->
+    <!-- Avg Rev/ชิ้น Section -->
     <div class="spanel" id="sp-avgpiece">
       <div class="sdiv"><h3>🏷️ Avg Revenue ต่อชิ้น (Rev ÷ Vol)</h3></div>
       <div class="kgrid" id="avgpiece_kgrid" style="margin-bottom:12px;"></div>
@@ -321,7 +322,15 @@
           <div class="ch260"><canvas id="c_ap_prov"></canvas></div>
         </div>
       </div>
-      <div class="sdiv"><h3>📦 Avg Volume ต่อวัน (Vol ÷ Day-1)</h3></div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Avg Rev/ชิ้น Ranking</div></div><div style="max-height:230px;overflow-y:auto" id="ap_rank"></div></div>
+      <div class="ccard gfull" id="dp_ap_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_zone"></span><span class="drill-close" onclick="closeDrill('dp_ap_zone')">✕ ปิด</span></div><div id="dpb_ap_zone"></div></div>
+      <div class="ccard gfull" id="dp_ap_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_pkg"></span><span class="drill-close" onclick="closeDrill('dp_ap_pkg')">✕ ปิด</span></div><div id="dpb_ap_pkg"></div></div>
+      <div class="ccard gfull" id="dp_ap_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_prov"></span><span class="drill-close" onclick="closeDrill('dp_ap_prov')">✕ ปิด</span></div><div id="dpb_ap_prov"></div></div>
+    </div>
+
+    <!-- Avg Vol/วัน Section (UX Sprint 4: แยกออกมาเป็น panel อิสระ) -->
+    <div class="spanel" id="sp-avgvol">
+      <div class="sdiv"><h3>📦 Avg Volume ต่อวัน (Vol ÷ วันที่ผ่านมา)</h3></div>
       <div class="kgrid" id="avgvol_kgrid" style="margin-bottom:12px;"></div>
       <div class="g2">
         <div class="ccard">
@@ -333,10 +342,6 @@
           <div class="ch260"><canvas id="c_av_pkg"></canvas></div>
         </div>
       </div>
-      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Avg Rev/ชิ้น Ranking</div></div><div style="max-height:230px;overflow-y:auto" id="ap_rank"></div></div>
-      <div class="ccard gfull" id="dp_ap_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_zone"></span><span class="drill-close" onclick="closeDrill('dp_ap_zone')">✕ ปิด</span></div><div id="dpb_ap_zone"></div></div>
-      <div class="ccard gfull" id="dp_ap_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_pkg"></span><span class="drill-close" onclick="closeDrill('dp_ap_pkg')">✕ ปิด</span></div><div id="dpb_ap_pkg"></div></div>
-      <div class="ccard gfull" id="dp_ap_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_prov"></span><span class="drill-close" onclick="closeDrill('dp_ap_prov')">✕ ปิด</span></div><div id="dpb_ap_prov"></div></div>
       <div class="ccard gfull" id="dp_av_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_av_zone"></span><span class="drill-close" onclick="closeDrill('dp_av_zone')">✕ ปิด</span></div><div id="dpb_av_zone"></div></div>
     </div>
 
