@@ -615,11 +615,15 @@ function _applyCarrierRoleRules(){
 }
 function _applyGlobalRoleRules(){
   var isDirector = _currentRole() === 'Director';
+  // อนุญาตให้ทุกคนเข้า Report Center ได้ แต่ปิดปุ่ม Export สำหรับคนที่ไม่ใช่ Director
   var reportBtn = _findButtonByOnclick("openReportCenter(");
-  if(reportBtn){
-    if(!isDirector) reportBtn.classList.add('disabled-role');
-    else reportBtn.classList.remove('disabled-role');
-  }
+  if(reportBtn) reportBtn.classList.remove('disabled-role');
+
+  // ค้นหาปุ่มที่มีคำว่า export
+  document.querySelectorAll('button[onclick*="export"]').forEach(function(btn){
+    if(!isDirector) btn.classList.add('disabled-role');
+    else btn.classList.remove('disabled-role');
+  });
 }
 function applyRoleVisualizationRules(){
   _applyGlobalRoleRules();
