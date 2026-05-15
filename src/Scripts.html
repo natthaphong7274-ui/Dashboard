@@ -5195,6 +5195,8 @@ function _showUserBadge(user){
   badge.innerHTML='<span style="font-size:12px;font-weight:700;color:var(--tx)">'+roleIcon+' '+user.displayName+'</span>'
     +(zoneText?'<span style="font-size:10px;color:#94a3b8">'+zoneText+'</span>':'');
   if(logoutBtn)logoutBtn.style.display='inline-block';
+  // UX Sprint 8: Show keyboard hint bar
+  document.body.classList.add('logged-in');
   // แสดง tab จัดการผู้ใช้เฉพาะ Director
   var umTab = document.getElementById('usermgmt_tab');
   if(umTab) umTab.style.display = ((user.role==='Director' || user.role==='AM')) ? 'inline-block' : 'none';
@@ -13740,6 +13742,8 @@ function openMtModal(monthKey) {
   }
   mtHint();
   document.getElementById('mtOverlay').classList.add('open');
+  // UX Sprint 8: Auto-focus value input for faster keyboard entry
+  setTimeout(function() { var inp = document.getElementById('mt_val'); if (inp) inp.focus(); }, 80);
 }
 
 function closeMt() {
@@ -14295,6 +14299,43 @@ function delBdMt() {
     if (ov && ov.style.display !== 'none' && !_3dInited) {
       init(); _3dInited = true;
     }
+  
+  // UX Sprint 8: Global Keyboard Shortcuts
+  document.addEventListener('keydown', function(e) {
+    var tag = (e.target.tagName || '').toLowerCase();
+    var isInput = (tag === 'input' || tag === 'textarea' || tag === 'select');
+
+    // Esc: Close modals, blur inputs
+    if (e.key === 'Escape') {
+      if (typeof hideAC === 'function') hideAC();
+      if (typeof closeMtModal === 'function') closeMtModal();
+      var umModal = document.getElementById('um_modal');
+      if (umModal && umModal.style.display !== 'none') umModal.style.display = 'none';
+      if (isInput) e.target.blur();
+      return;
+    }
+
+    // Cmd+K or Ctrl+K: Global search focus
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      var srch = document.getElementById('agentSrch');
+      if (srch) {
+        srch.focus();
+        srch.select();
+      }
+      return;
+    }
+
+    // Number keys for tab navigation
+    if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (e.key === '1') { e.preventDefault(); swMain('home'); }
+      else if (e.key === '2') { e.preventDefault(); swMain('ov'); }
+      else if (e.key === '3') { e.preventDefault(); swMain('cr'); }
+      else if (e.key === '4') { e.preventDefault(); swMain('risk'); }
+      else if (e.key === '5') { e.preventDefault(); swMain('growth'); }
+    }
   });
+
+});
 })();
 </script>
