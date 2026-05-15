@@ -332,7 +332,7 @@
     <div class="spanel" id="sp-avgvol">
       <div class="sdiv"><h3>📦 Avg Volume ต่อวัน (Vol ÷ วันที่ผ่านมา)</h3></div>
       <div class="kgrid" id="avgvol_kgrid" style="margin-bottom:12px;"></div>
-      <div class="g2">
+      <div class="g3">
         <div class="ccard">
           <div class="chdr"><div class="ctitle" id="t_av_zone">Avg Vol/วัน ราย Zone</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_av_zone"></canvas></div>
@@ -341,8 +341,14 @@
           <div class="chdr"><div class="ctitle" id="t_av_pkg">Avg Vol/วัน แยก Package</div></div>
           <div class="ch260"><canvas id="c_av_pkg"></canvas></div>
         </div>
+        <div class="ccard">
+          <div class="chdr"><div class="ctitle" id="t_av_prov">Avg Vol/วัน แยกจังหวัด Top10</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="ch260"><canvas id="c_av_prov"></canvas></div>
+        </div>
       </div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Avg Vol/วัน Ranking</div></div><div style="max-height:230px;overflow-y:auto" id="avd_rank"></div></div>
       <div class="ccard gfull" id="dp_av_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_av_zone"></span><span class="drill-close" onclick="closeDrill('dp_av_zone')">✕ ปิด</span></div><div id="dpb_av_zone"></div></div>
+      <div class="ccard gfull" id="dp_av_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_av_prov"></span><span class="drill-close" onclick="closeDrill('dp_av_prov')">✕ ปิด</span></div><div id="dpb_av_prov"></div></div>
     </div>
 
     <!-- BD -->

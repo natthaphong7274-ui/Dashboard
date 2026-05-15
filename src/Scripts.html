@@ -1702,8 +1702,20 @@ function renderAvgPieceSection(){
     'rgba(14,116,144,0.65)',true);
   updT('t_av_pkg','📦 Avg Vol/วัน แยก Package ('+m.en+')');
 
-  // Ranking
-  // Avg Rev/ชิ้น Ranking — แสดง % vs เดือนก่อน
+  // ★ UX Sprint 4: Avg Vol/วัน แยกจังหวัด + Ranking (เพิ่มใหม่)
+  var avdpv=grpAvgVolDay(FR,'Province',m).slice(0,10);
+  mkHBar('c_av_prov',avdpv.map(function(e){return e[0];}),avdpv.map(function(e){return e[1];}),
+    'rgba(14,116,144,0.6)',true,{type:'avgvolday',groupCol:'Province',panelId:'dp_av_prov',titleId:'dpt_av_prov',bodyId:'dpb_av_prov'});
+  updT('t_av_prov','📦 Avg Vol/วัน แยกจังหวัด ('+m.en+')');
+
+  // Avg Vol/วัน Ranking
+  var avdPrevMap=null;
+  if(mp){var avdzP=grpAvgVolDay(FR,primaryGroup,mp);avdPrevMap={};avdzP.forEach(function(e){avdPrevMap[e[0]]=e[1];});}
+  if(document.getElementById('avd_rank')){
+    mkRank('avd_rank',avdz,'Avg Vol/วัน',fmtF,avdPrevMap,'vs '+(mp?mp.en:''));
+  }
+
+  // Ranking — Avg Rev/ชิ้น
   var apPrevMap=null;
   if(mp){var apzP=grpAvgPiece(FR,primaryGroup,mp);apPrevMap={};apzP.forEach(function(e){apPrevMap[e[0]]=e[1];});}
   mkRank('ap_rank',apz,'Avg Rev/ชิ้น',fmtF,apPrevMap,'vs '+(mp?mp.en:''));
