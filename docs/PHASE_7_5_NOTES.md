@@ -48,6 +48,10 @@ Branch: `codex/phase-7.5`
 - เพิ่ม `renderCarrierColorLegend(stats)` เพื่อสร้าง legend จาก carrier ที่มีข้อมูลจริงในเดือน/ตัวกรองปัจจุบัน
 - legend ใช้สีจาก `getCarrierColor()` จึงสอดคล้องกับ `CG_COLORS` และ alias ที่ตั้งไว้ก่อนหน้า
 - กรณีไม่มีข้อมูลหรือไม่มี carrier จะซ่อน legend อัตโนมัติ
+- ปรับหน้า `ขนส่ง` ให้ใช้โครงเหมือนหน้า `ภาพรวม`: summary KPI ด้านบน, trend charts, แถวการ์ดขนส่ง, legend และ tabs/detail
+- แยก KPI รวมออกจากการ์ดรายขนส่ง: `carrier_summary_kgrid` ใช้สำหรับ Volume/Revenue/Avg รวม ส่วน `carrier_kgrid` ใช้สำหรับ Top carrier cards เท่านั้น
+- เพิ่ม `Carrier Avg Trend` เป็นกราฟแท่ง+เส้น 3 ใบ ได้แก่ `Avg Rev/day`, `Avg Vol/day` และ `Avg Rev/Vol` โดยใช้ 6 carrier months ล่าสุด
+- เอา MoM comparison ออกจาก KPI รวม `Volume`/`Revenue` ของหน้า `ขนส่ง` เช่นเดียวกับหน้า `ภาพรวม` เพื่อเลี่ยงการตีความ MTD ผิด
 
 ### Responsive & Accessibility
 

@@ -1029,6 +1029,18 @@ function renderOverviewTrendPanel(curKey, seriesMap){
   _renderOverviewComboTrend('c_ov_trend_avg_vol_day',seriesMap&&seriesMap.avgVolDay,'var(--c-avd)',fmtF,'ov_trend_note_avg_vol_day');
   _renderOverviewComboTrend('c_ov_trend_avg_rev_piece',seriesMap&&seriesMap.avgRevPiece,'var(--c-apc)',fmtF,'ov_trend_note_avg_rev_piece');
 }
+function renderCarrierTrendPanel(curKey, seriesMap){
+  var panel=document.getElementById('carrier_trend_panel');
+  if(!panel)return;
+  var months=_recentCarrierMonths(curKey,6);
+  var range=document.getElementById('carrier_trend_range');
+  if(range){
+    range.textContent=months.length?(months[0].key.toUpperCase()+' - '+months[months.length-1].key.toUpperCase()):'';
+  }
+  _renderOverviewComboTrend('c_car_trend_avg_rev_day',seriesMap&&seriesMap.avgRevDay,'var(--c-ard)',function(v){return fmtS(Math.round(v));},'car_trend_note_avg_rev_day');
+  _renderOverviewComboTrend('c_car_trend_avg_vol_day',seriesMap&&seriesMap.avgVolDay,'var(--c-avd)',fmtF,'car_trend_note_avg_vol_day');
+  _renderOverviewComboTrend('c_car_trend_avg_rev_vol',seriesMap&&seriesMap.avgRevVol,'var(--c-apc)',fmtF,'car_trend_note_avg_rev_vol');
+}
 function _renderOverviewComboTrend(id,series,color,fmtFn,noteId){
   var el=document.getElementById(id);
   if(!el)return;
@@ -4680,6 +4692,8 @@ function renderCarrierSection(){
   _applyCarrierRoleRules();
   _resetKpiTrendCards();
   if(!CARRIERS.length){
+    var sumEl=document.getElementById('carrier_summary_kgrid');
+    if(sumEl)sumEl.innerHTML='<div style="padding:20px;color:var(--t2)">ไม่พบข้อมูลขนส่ง</div>';
     document.getElementById('carrier_kgrid').innerHTML='<div style="padding:20px;color:var(--t2)">ไม่พบข้อมูลขนส่ง</div>';
     renderCarrierColorLegend([]);
     return;
@@ -4766,17 +4780,34 @@ function renderCarrierSection(){
     return'<div class="ktrend '+(d>=0?'tup':'tdn')+'">'+(d>=0?'▲':'▼')+fmtFn(Math.abs(d))+(pct?' ('+Math.abs(pct)+'%)':'')+(prevKey?' vs '+prevKey:'')+'</div>';
   }
 
-  // ── KPI Cards — style เดียวกับภาพรวม ──
-  // Row 1: Vol, Rev, Avg Rev/Day, Loss/Inactive placeholder
-  var kHtml=
-    _kpiTrendCard({label:'VOLUME '+curKey.toUpperCase(),value:fmtS(totalVol),sub:'จำนวน Volume รวม',color:'var(--c-vol)',icon:'📦',fmt:fmtS,
-      series:_carrierTotalMetricSeries(curKey,function(d){return d.vol;}),trend:diffTrend(totalVol,totalVolPrev,fmtS)})
-    +_kpiTrendCard({label:'REVENUE '+curKey.toUpperCase(),value:fmtS(totalRev),sub:'ยอด Revenue รวม',color:'var(--c-rev)',icon:'💰',fmt:fmtS,
-      series:_carrierTotalMetricSeries(curKey,function(d){return d.rev;}),trend:diffTrend(totalRev,totalRevPrev,fmtS)})
+  var volumeSeries=_carrierTotalMetricSeries(curKey,function(d){return d.vol;});
+  var revenueSeries=_carrierTotalMetricSeries(curKey,function(d){return d.rev;});
+  var avgRevDaySeries=_carrierTotalMetricSeries(curKey,function(d){return d.rev/Math.max(1,getDAY1ForMonth(d.month.key));});
+  var avgRevVolSeries=_carrierTotalMetricSeries(curKey,function(d){return d.vol>0?d.rev/d.vol:0;});
+  var avgVolDaySeries=_carrierTotalMetricSeries(curKey,function(d){return d.vol/Math.max(1,getDAY1ForMonth(d.month.key));});
+
+  // ── Summary KPI Cards — เหมือนหน้า Overview: MTD ไม่เทียบ MoM, Avg เทียบได้ ──
+  var summaryHtml=
+    _kpiTrendCard({label:'VOLUME '+curKey.toUpperCase(),value:fmtS(totalVol),sub:'จำนวน Volume MTD, ไม่เทียบ MoM',color:'var(--c-vol)',icon:'📦',fmt:fmtS,
+      series:volumeSeries,summaryMode:'none'})
+    +_kpiTrendCard({label:'REVENUE '+curKey.toUpperCase(),value:fmtS(totalRev),sub:'ยอด Revenue MTD, ไม่เทียบ MoM',color:'var(--c-rev)',icon:'💰',fmt:fmtS,
+      series:revenueSeries,summaryMode:'none'})
     +_kpiTrendCard({label:'AVG REV/DAY '+curKey.toUpperCase(),value:fmtS(Math.round(totalAvgRevDay)),sub:'Rev รวม ÷ '+dayDiv+'วัน',color:'var(--c-ard)',icon:'📐',fmt:function(v){return fmtS(Math.round(v));},
-      series:_carrierTotalMetricSeries(curKey,function(d){return d.rev/Math.max(1,getDAY1ForMonth(d.month.key));}),trend:diffTrend(totalAvgRevDay,totalAvgRevDayPrev,function(v){return fmtS(Math.round(v));})});
+      series:avgRevDaySeries,summaryMode:'mom'})
+    +_kpiTrendCard({label:'AVG REV/VOL '+curKey.toUpperCase(),value:fmtF(totalAvgRevVol),sub:'Revenue ÷ Volume รวม',color:'var(--c-apc)',icon:'🏷️',fmt:fmtF,
+      series:avgRevVolSeries,summaryMode:'mom'})
+    +_kpiTrendCard({label:'AVG VOL/วัน '+curKey.toUpperCase(),value:fmtF(totalAvgVolDay),sub:'Volume ÷ '+dayDiv+'วัน',color:'var(--c-avd)',icon:'📦',fmt:fmtF,
+      series:avgVolDaySeries,summaryMode:'mom'});
+  var sumGrid=document.getElementById('carrier_summary_kgrid');
+  if(sumGrid)sumGrid.innerHTML=summaryHtml;
+  renderCarrierTrendPanel(curKey,{
+    avgRevDay:avgRevDaySeries,
+    avgVolDay:avgVolDaySeries,
+    avgRevVol:avgRevVolSeries
+  });
 
   // Top carriers
+  var kHtml='';
   carrierStats.slice(0,4).forEach(function(c){
     var pct=totalVol>0?Math.round(c.vCur/totalVol*100):0;
     // ★ ข้อ 4: เปลี่ยนเป็น Avg แทน total
@@ -4796,14 +4827,8 @@ function renderCarrierSection(){
         :'')});
   });
   document.getElementById('carrier_kgrid').innerHTML=kHtml;
-
-  // Row 2 (extra) — Avg Rev/Vol + Avg Vol/Day (เหมือน kpi-extra-row ในภาพรวม)
-  var k2Html=
-    _kpiTrendCard({mini:true,label:'AVG REV/VOL '+curKey.toUpperCase(),value:fmtF(totalAvgRevVol),sub:'Revenue ÷ Volume รวม',color:'var(--c-apc)',icon:'🏷️',fmt:fmtF,
-      series:_carrierTotalMetricSeries(curKey,function(d){return d.vol>0?d.rev/d.vol:0;}),trend:diffTrend(totalAvgRevVol,totalAvgRevVolPrev,fmtF)})
-    +_kpiTrendCard({mini:true,label:'AVG VOL/วัน '+curKey.toUpperCase(),value:fmtF(totalAvgVolDay),sub:'Volume ÷ '+dayDiv+'วัน',color:'var(--c-avd)',icon:'📦',fmt:fmtF,
-      series:_carrierTotalMetricSeries(curKey,function(d){return d.vol/Math.max(1,getDAY1ForMonth(d.month.key));}),trend:diffTrend(totalAvgVolDay,totalAvgVolDayPrev,fmtF)});
-  document.getElementById('carrier_kgrid2').innerHTML=k2Html;
+  var extraGrid=document.getElementById('carrier_kgrid2');
+  if(extraGrid)extraGrid.innerHTML='';
   _flushKpiTrendCards();
 
   // ── ★ ข้อ 6: build dropdown filter ทุกครั้ง ──

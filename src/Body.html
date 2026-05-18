@@ -519,8 +519,52 @@
     </div>
 
     <!-- KPI Cards -->
-    <div class="kgrid" id="carrier_kgrid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));margin-bottom:4px"></div>
-    <div class="kpi-extra-row" id="carrier_kgrid2" style="margin-bottom:12px"></div>
+    <div class="kgrid carrier-summary-grid" id="carrier_summary_kgrid"></div>
+    <div class="kpi-extra-row" id="carrier_kgrid2"></div>
+    <div class="overview-trend-panel carrier-trend-panel" id="carrier_trend_panel">
+      <div class="overview-trend-head">
+        <div>
+          <div class="overview-trend-title">Carrier Avg Trend</div>
+          <div class="overview-trend-sub">กราฟแท่งคือค่าเฉลี่ยรวมทุกขนส่ง เส้นคือ % MoM จากเดือนก่อนหน้า</div>
+        </div>
+        <span id="carrier_trend_range" class="overview-trend-range"></span>
+      </div>
+      <div class="overview-trend-grid">
+        <div class="overview-trend-card">
+          <div class="overview-trend-card-head">
+            <div class="overview-trend-card-title">Avg Rev/day trend</div>
+            <div class="overview-trend-legend"><span><i class="bar"></i>Actual</span><span><i class="line"></i>MoM</span></div>
+          </div>
+          <div class="overview-trend-chart"><canvas id="c_car_trend_avg_rev_day"></canvas></div>
+          <div class="overview-trend-note" id="car_trend_note_avg_rev_day"></div>
+        </div>
+        <div class="overview-trend-card">
+          <div class="overview-trend-card-head">
+            <div class="overview-trend-card-title">Avg Vol/day trend</div>
+            <div class="overview-trend-legend"><span><i class="bar"></i>Actual</span><span><i class="line"></i>MoM</span></div>
+          </div>
+          <div class="overview-trend-chart"><canvas id="c_car_trend_avg_vol_day"></canvas></div>
+          <div class="overview-trend-note" id="car_trend_note_avg_vol_day"></div>
+        </div>
+        <div class="overview-trend-card">
+          <div class="overview-trend-card-head">
+            <div class="overview-trend-card-title">Avg Rev/Vol trend</div>
+            <div class="overview-trend-legend"><span><i class="bar"></i>Actual</span><span><i class="line"></i>MoM</span></div>
+          </div>
+          <div class="overview-trend-chart"><canvas id="c_car_trend_avg_rev_vol"></canvas></div>
+          <div class="overview-trend-note" id="car_trend_note_avg_rev_vol"></div>
+        </div>
+      </div>
+    </div>
+    <div class="carrier-card-section">
+      <div class="carrier-card-section-head">
+        <div>
+          <div class="carrier-card-title">การ์ดขนส่ง</div>
+          <div class="carrier-card-sub">Top carriers ตาม volume ในเดือนที่เลือก</div>
+        </div>
+      </div>
+      <div class="kgrid carrier-card-grid" id="carrier_kgrid"></div>
+    </div>
     <div class="carrier-color-legend" id="carrier_color_legend" aria-label="Carrier color legend"></div>
 
     <!-- ── Section Tabs — styled ── -->
