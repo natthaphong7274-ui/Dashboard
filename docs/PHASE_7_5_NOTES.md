@@ -22,6 +22,8 @@ Branch: `codex/phase-7.5`
 - ปรับ CSS เฉพาะ `#mainOv` ให้ tab และ card มี focus/hover feedback ชัดขึ้น
 - รวม KPI หลักและ KPI เสริม (`Avg Rev/ชิ้น`, `Avg Vol/วัน`) เข้า grid เดียวกัน เพื่อให้แสดงเป็นแถวเดียวเมื่อพื้นที่พอ และค่อย wrap บนหน้าจอเล็ก
 - ปรับ chart grid ของแต่ละ tab ให้ใช้ `auto-fit` แทนคอลัมน์ตายตัว เพื่อแก้ช่องว่างด้านขวาเมื่อบาง role ซ่อน chart เช่น BD ไม่เห็น Zone chart
+- แก้หน้า `BD Zone` สำหรับ AM: เดิม tab เปิดให้ AM เห็น แต่ chart render เฉพาะ Director ทำให้เกิดการ์ดเปล่า ตอนนี้ AM render chart ตาม scope ได้แล้ว
+- เพิ่ม empty state ให้ horizontal bar chart เมื่อไม่มีข้อมูลใน scope ปัจจุบัน แทนการปล่อย canvas/card ว่าง
 
 ## UX Decision: Card หรือ Graph
 

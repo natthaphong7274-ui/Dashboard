@@ -1089,6 +1089,10 @@ function mkBar(id,labels,datasets,horiz,compact){
 }
 function mkHBar(id,labels,data,colors,compact,drillCfg){
   clearEmpty(id);dc(id);var el=document.getElementById(id);if(!el)return;
+  if(!labels||!labels.length||!data||!data.some(function(v){return N(v)>0;})){
+    setEmpty(id,'warning','ไม่มีข้อมูลสำหรับกราฟนี้ใน scope ปัจจุบัน');
+    return;
+  }
   var sorted = sortSingleSeriesDesc(labels, data, colors);
   labels = sorted.labels; data = sorted.data; colors = sorted.colors;
   var bg=Array.isArray(colors)?colors:labels.map(function(){return colors;});
@@ -1582,8 +1586,8 @@ function renderAllCharts(){
   mkHBar('c_avg_prov',sapv.map(function(e){return e[0];}),sapv.map(function(e){return Math.round(e[1]);}),
     'rgba(26,77,110,0.55)',true,{groupCol:COL.province,metricCol:m.colAvg,panelId:'dp_avg_prov',titleId:'dpt_avg_prov',bodyId:'dpb_avg_prov'});
 
-  // BD Zone — ★ ซ่อนสำหรับ BD/AM role
-  if(role!=='BD'&&role!=='AM'){
+  // BD Zone — Director/AM เห็นตาม scope, BD ไม่เห็นข้อมูลระดับ Zone
+  if(role!=='BD'){
     var sbz=grpSum(FR,COL.zoneName,m.colRev).slice(0,15);
     var sbv=grpSum(FR,COL.zoneName,m.colVol).slice(0,15);
     var sba=grpSum(FR,COL.zoneName,m.colAvg).slice(0,15);
