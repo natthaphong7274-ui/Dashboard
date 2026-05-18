@@ -4846,6 +4846,7 @@ function renderCarrierSection(){
       +'</div>';
   });
   document.getElementById('carrier_kgrid').innerHTML=kHtml;
+  renderCarrierFocusTrendGrid(curKey,carrierStats.slice(0,4));
   var extraGrid=document.getElementById('carrier_kgrid2');
   if(extraGrid)extraGrid.innerHTML='';
   _flushKpiTrendCards();
@@ -4875,6 +4876,92 @@ function renderCarrierSection(){
 }
 
 // ─── sub-renders ──────────────────────────────────────────
+function renderCarrierFocusTrendGrid(curKey,topCarriers){
+  var el=document.getElementById('carrier_focus_trend_grid');
+  if(!el)return;
+  var rows=(topCarriers||[]).filter(function(c){return c&&c.name;});
+  if(!rows.length){el.innerHTML='';return;}
+  el.innerHTML=rows.map(function(c,idx){
+    var id='car_focus_trend_'+idx+'_'+String(c.name).replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+    return '<div class="carrier-focus-trend-card" style="--kc:'+_uiText(c.color)+'">'
+      +'<div class="carrier-focus-trend-head">'
+        +'<span class="carrier-focus-dot"></span>'
+        +'<div><div class="carrier-focus-trend-title">'+_uiText(c.name)+'</div><div class="carrier-focus-trend-sub">Avg Rev/day trend</div></div>'
+      +'</div>'
+      +'<div class="carrier-focus-trend-chart"><canvas id="'+id+'"></canvas></div>'
+      +'<div class="carrier-focus-trend-note" id="'+id+'_note"></div>'
+      +'</div>';
+  }).join('');
+  rows.forEach(function(c,idx){
+    var id='car_focus_trend_'+idx+'_'+String(c.name).replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+    var series=_carrierMetricSeries(curKey,c.name,function(d){
+      return d.rev/Math.max(1,getDAY1ForMonth(d.month.key));
+    });
+    _renderCarrierFocusTrendChart(id,series,c.color,function(v){return fmtS(Math.round(v));});
+  });
+}
+function _renderCarrierFocusTrendChart(id,series,color,fmtFn){
+  var el=document.getElementById(id);
+  if(!el)return;
+  clearEmpty(id);dc(id);
+  var labels=(series&&series.labels)||[];
+  var values=(series&&series.values)||[];
+  var note=document.getElementById(id+'_note');
+  if(values.length<2 || !values.some(function(v){return N(v)>0;})){
+    setEmpty(id,'warning','ยังไม่มี trend');
+    if(note)note.innerHTML='';
+    return;
+  }
+  fmtFn=fmtFn||fmtS;
+  var chartColor=_cssColor(color);
+  var fillColor=_colorAlpha(chartColor,.16);
+  var gridColor=_colorAlpha(chartColor,.18);
+  var lastIdx=values.length-1;
+  var prev=values[lastIdx-1]||0;
+  var cur=values[lastIdx]||0;
+  var diff=cur-prev;
+  var pct=prev?((diff/Math.abs(prev))*100):null;
+  var state=diff>=0?'up':'down';
+  var arrow=diff>=0?'▲':'▼';
+  if(note){
+    note.innerHTML='<span>'+_uiText(labels[lastIdx]||'Current')+' '+_uiText(fmtFn(cur))+'</span>'
+      +'<b class="'+state+'">'+arrow+' '+_uiText(fmtFn(Math.abs(diff)))+(pct!==null?' ('+Math.abs(pct).toFixed(1)+'%)':'')+'</b>';
+  }
+  CH[id]=new Chart(el.getContext('2d'),{
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[{
+        label:'Avg Rev/day',
+        data:values,
+        borderColor:chartColor,
+        backgroundColor:fillColor,
+        fill:true,
+        tension:.34,
+        borderWidth:2.4,
+        pointRadius:3.2,
+        pointHoverRadius:5,
+        pointBackgroundColor:'rgba(248,250,252,.98)',
+        pointBorderColor:chartColor,
+        pointBorderWidth:2
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){return 'Avg Rev/day '+fmtFn(ctx.raw||0);}}}
+      },
+      scales:{
+        x:{ticks:{font:{size:10,weight:'800'},color:'#64748b'},grid:{display:false},border:{display:false}},
+        y:{beginAtZero:true,ticks:{font:{size:10},color:'#64748b',maxTicksLimit:3,callback:function(v){return fmtFn(v);}},grid:{color:gridColor,drawBorder:false},border:{display:false}}
+      }
+    }
+  });
+}
+
 function getCarrierContext(){
   var sel=document.getElementById('car_month_sel');
   // ★ fallback: ถ้า dropdown ว่าง ใช้ CARRIER_MONTHS ล่าสุดที่มีข้อมูล

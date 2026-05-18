@@ -371,6 +371,74 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   font-weight:900;
   line-height:1.2;
 }
+.carrier-focus-trend-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.carrier-focus-trend-card{
+  min-width:0;
+  border:1px solid #d7e0e4;
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(248,250,252,.98),rgba(255,255,255,.98));
+  padding:10px 12px;
+  box-shadow:0 6px 16px rgba(15,23,42,.05);
+}
+.carrier-focus-trend-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+.carrier-focus-dot{
+  width:10px;
+  height:10px;
+  flex:0 0 auto;
+  border-radius:3px;
+  background:var(--kc,var(--ac));
+  box-shadow:0 0 0 3px rgba(15,23,42,.04);
+}
+.carrier-focus-trend-title{
+  color:var(--tx);
+  font-size:12px;
+  font-weight:900;
+  line-height:1.15;
+}
+.carrier-focus-trend-sub{
+  color:var(--t2);
+  font-size:10px;
+  font-weight:700;
+  margin-top:1px;
+}
+.carrier-focus-trend-chart{
+  height:120px;
+  position:relative;
+}
+.carrier-focus-trend-chart canvas{
+  width:100%!important;
+  height:100%!important;
+}
+.carrier-focus-trend-note{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  border-top:1px solid #edf2f7;
+  margin-top:8px;
+  padding-top:7px;
+  color:var(--tx);
+  font-size:11px;
+  font-weight:900;
+  line-height:1.2;
+}
+.carrier-focus-trend-note span,
+.carrier-focus-trend-note b{
+  min-width:0;
+  font-variant-numeric:tabular-nums;
+}
+.carrier-focus-trend-note .up{color:var(--gn);}
+.carrier-focus-trend-note .down{color:var(--rd);}
 @media(max-width:1100px){
   .overview-trend-grid{
     grid-template-columns:1fr;
