@@ -4169,6 +4169,14 @@ body{
   display:none;
   margin:0;
 }
+#mainOv .spanel > .g2,
+#mainOv .spanel > .g3{
+  grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr));
+}
+#mainOv .spanel > .g2 > .ccard,
+#mainOv .spanel > .g3 > .ccard{
+  min-width:0;
+}
 #mainOv .stab,
 #mainCr .cr-tab,
 #mainCr .stab{
