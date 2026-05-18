@@ -17,6 +17,11 @@ var BRUTE_PREFIX      = 'BRUTE_';       // soft block counter by user-agent fing
 var BRUTE_MAX_FAIL    = 8;              // failed login attempts before temporary soft block
 var BRUTE_TTL_MS      = 10 * 60 * 1000; // soft block window: 10 minutes
 
+// ── Dashboard Cache ─────────────────────────────────────────
+var DASH_CACHE_TTL_SECONDS = 300;       // Phase 7.1: 5-minute CacheService TTL
+var DASH_CACHE_CHUNK_CHARS = 25000;     // keep chunks safely below CacheService item limits
+var DASH_CACHE_MAX_CHUNKS  = 80;        // guard against runaway payloads
+
 // ── Spreadsheet ──────────────────────────────────────────────
 var LOG_SHEET         = 'ActivityLog';  // ชื่อ sheet สำหรับ Activity Log
 

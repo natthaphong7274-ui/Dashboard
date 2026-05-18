@@ -6,7 +6,7 @@
 
 //  getAllData(token) — กรองตาม Zone
 // ============================================================
-function getAllData(token) {
+function getAllData(token, options) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // ── AUTO-DISCOVER: สร้าง MONTH_SHEETS จากชีตที่มีอยู่จริง ──
@@ -17,6 +17,7 @@ function getAllData(token) {
   // ── ตรวจ session จาก token ──
   var session = _requireSession(token || '', 'GET_ALL_DATA');
   if (!session.ok) return session;
+  options = options || {};
   var allowedZones = null;
   if (session.role !== 'Director' && session.role !== 'AM') {
     if (session.zones && session.zones[0] !== 'All') {
@@ -31,6 +32,35 @@ function getAllData(token) {
   logActivity(session.username, session.role, 'VIEW_DASHBOARD', 'โหลดข้อมูล Dashboard | ' + zoneDesc);
 
   // ── ดึง BASE SHEET ──
+  var monthSignature = MONTH_SHEETS.map(function(m) {
+    return [m.monthKey, m.sheetName || BASE_SHEET, m.currentMonth ? '1' : '0'].join(':');
+  }).join(',');
+  var scopeSignature = [
+    ss.getId ? ss.getId() : 'active',
+    DATA_YEAR,
+    session.role || '-',
+    session.username || '-',
+    (session.zones || []).slice().sort().join(','),
+    monthSignature
+  ];
+  var dataCacheKey = _cacheJsonKey('dashboard:allData:v1', scopeSignature);
+
+  if (options.forceRefresh) {
+    _cacheRemoveJson(dataCacheKey);
+    logActivity(session.username, session.role, 'CACHE_REFRESH', 'getAllData cache cleared | ' + zoneDesc);
+  } else {
+    var cached = _cacheGetJson(dataCacheKey);
+    if (cached && cached.value) {
+      cached.value.cacheMeta = {
+        hit: true,
+        ttlSeconds: cached.meta && cached.meta.ttlSeconds,
+        chunks: cached.meta && cached.meta.chunks,
+        createdAt: cached.meta && cached.meta.createdAt
+      };
+      return cached.value;
+    }
+  }
+
   var baseSheet   = ss.getSheetByName(BASE_SHEET);
   if (!baseSheet) throw new Error('ไม่พบ Sheet: ' + BASE_SHEET);
   var baseData    = baseSheet.getDataRange().getValues();
@@ -195,10 +225,16 @@ function getAllData(token) {
       color:cl.color, colorVol:cl.colorVol, colorAvg:cl.colorAvg };
   });
 
-  return { headers:allHeaders, rows:rows, months:months,
-           carriers:CARRIERS, carrierMonths:CARRIER_MONTHS, dataYear:DATA_YEAR,
-           dataQuality:dataQuality, sheetHealth:sheetHealth,
-           userInfo: session.ok ? { username:session.username, role:session.role, zones:session.zones } : null };
+  var result = { headers:allHeaders, rows:rows, months:months,
+                 carriers:CARRIERS, carrierMonths:CARRIER_MONTHS, dataYear:DATA_YEAR,
+                 dataQuality:dataQuality, sheetHealth:sheetHealth,
+                 userInfo: session.ok ? { username:session.username, role:session.role, zones:session.zones } : null,
+                 cacheMeta:{ hit:false, ttlSeconds:DASH_CACHE_TTL_SECONDS } };
+  var cacheWrite = _cachePutJson(dataCacheKey, result, DASH_CACHE_TTL_SECONDS);
+  result.cacheMeta.writeOk = !!(cacheWrite && cacheWrite.ok);
+  result.cacheMeta.chunks = cacheWrite && cacheWrite.chunks;
+  result.cacheMeta.error = cacheWrite && cacheWrite.error;
+  return result;
 }
 
 function getCarrierData(){ return {carrierCols:[],carrierRows:[]}; }

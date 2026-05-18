@@ -248,7 +248,7 @@ function grpAvgVolDayPrev(rows, groupCol, mp) {
 }
 
 // ===== LOAD =====
-function loadData(){
+function loadData(forceRefresh){
   renderLoading('kgrid','Loading dashboard data...');
   renderLoading('home_content','Loading workspace...');
   _chartsRendered = {}; // invalidate chart cache เมื่อโหลดข้อมูลใหม่
@@ -311,7 +311,7 @@ function loadData(){
       console.error('[loadData] failure:', e);
       _hideSplash();
     })
-    .getAllData(sessionStorage.getItem('DASH_TOKEN')||'');
+    .getAllData(sessionStorage.getItem('DASH_TOKEN')||'', { forceRefresh: !!forceRefresh });
 }
 
 // ===== MONTH UI =====
