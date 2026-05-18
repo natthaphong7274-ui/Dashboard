@@ -4343,8 +4343,24 @@ function renderGrowthChart(){
 // ─── Carrier Comparison (3 modes: month / multi / cross) ──
 var carCmpMode='month';
 var carMultiViewMode='barline';
+var carMultiMetric='avd';
+var carMultiTopN=5;
 function setCarMultiViewMode(mode,btn){
   carMultiViewMode=mode;
+  var btns=btn?btn.parentElement.querySelectorAll('.stab'):[];
+  Array.from(btns).forEach(function(b){b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  renderCarrierComparison();
+}
+function setCarMultiMetric(metric,btn){
+  carMultiMetric=metric;
+  var btns=btn?btn.parentElement.querySelectorAll('.stab'):[];
+  Array.from(btns).forEach(function(b){b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  renderCarrierComparison();
+}
+function setCarMultiTopN(n,btn){
+  carMultiTopN=n;
   var btns=btn?btn.parentElement.querySelectorAll('.stab'):[];
   Array.from(btns).forEach(function(b){b.classList.remove('active');});
   if(btn)btn.classList.add('active');
@@ -4363,7 +4379,7 @@ function setCarCmpMode(mode,btn){
   if(crossPick)crossPick.style.display=mode==='cross'?'flex':'none';
   _buildCarCmpOpts();
   renderCarrierComparison();
-  var mNames={month:'2 เดือนเทียบกัน',multi:'หลายเดือน overlay',cross:'ขนส่ง A vs B'};
+  var mNames={month:'2 เดือนเทียบกัน',multi:'หลายเดือน matrix',cross:'ขนส่ง A vs B'};
   _clientLog('CHANGE_CMP_MODE','[ขนส่ง > เปรียบเทียบ] Mode: '+(mNames[mode]||mode));
 }
 
@@ -4497,6 +4513,94 @@ function renderCarrierComparison(){
     var selMonths=Array.from(checks).map(function(c){return c.value;});
     if(selMonths.length<2){el.innerHTML='<div style="padding:16px;color:var(--t2)">กรุณาเลือกอย่างน้อย 2 เดือน</div>';return;}
     var mData=selMonths.map(function(k){return _getCarMonthStats(k);}).filter(Boolean);
+    var metricMap={
+      avd:{label:'Avg Vol/day',short:'Avg Vol/day',fn:function(c){return c.avd;},fmt:fmtF,color:'var(--c-avd)'},
+      ard:{label:'Avg Rev/day',short:'Avg Rev/day',fn:function(c){return c.ard;},fmt:function(v){return fmtS(Math.round(v));},color:'var(--c-ard)'},
+      arv:{label:'Rev/ชิ้น',short:'Rev/ชิ้น',fn:function(c){return c.arv;},fmt:fmtF,color:'var(--c-apc)'},
+      vol:{label:'Volume MTD',short:'Volume',fn:function(c){return c.v;},fmt:fmtS,color:'var(--c-vol)'},
+      rev:{label:'Revenue MTD',short:'Revenue',fn:function(c){return c.r;},fmt:fmtS,color:'var(--c-rev)'}
+    };
+    var meta=metricMap[carMultiMetric]||metricMap.avd;
+    var allCars=[].concat.apply([],mData.map(function(m){return m.stats.map(function(c){return c.name;});}));
+    allCars=allCars.filter(function(v,i,a){return a.indexOf(v)===i;});
+    var lastStats=mData.length?mData[mData.length-1].stats:[];
+    allCars.sort(function(a,b){
+      var av=lastStats.find(function(c){return c.name===a;})||{};
+      var bv=lastStats.find(function(c){return c.name===b;})||{};
+      return (meta.fn(bv)||0)-(meta.fn(av)||0);
+    });
+    var showAll=carMultiTopN===0;
+    var chartCars=showAll?allCars:allCars.slice(0,carMultiTopN||5);
+    function findStat(m,name){return m.stats.find(function(c){return c.name===name;})||{name:name,color:getCarrierColor(name),v:0,r:0,avd:0,ard:0,arv:0};}
+    function carDelta(name){
+      var first=mData.length?findStat(mData[0],name):null;
+      var last=mData.length?findStat(mData[mData.length-1],name):null;
+      var a=first?meta.fn(first):0,b=last?meta.fn(last):0;
+      var d=b-a,p=a?((d/Math.abs(a))*100):null;
+      return{name:name,first:a,last:b,diff:d,pct:p,color:getCarrierColor(name)};
+    }
+    var deltas=chartCars.map(carDelta).sort(function(a,b){return b.diff-a.diff;});
+    var best=deltas[0]||null,worst=deltas[deltas.length-1]||null;
+    function insightCard(title,row,state){
+      if(!row)return '';
+      var pct=row.pct===null?'':(' ('+Math.abs(row.pct).toFixed(1)+'%)');
+      return '<div class="carrier-cmp-insight '+state+'">'
+        +'<div class="carrier-cmp-insight-label">'+title+'</div>'
+        +'<div class="carrier-cmp-insight-main"><span style="background:'+row.color+'"></span>'+_uiText(row.name)+'</div>'
+        +'<div class="carrier-cmp-insight-sub">'+(row.diff>=0?'▲ ':'▼ ')+_uiText(meta.fmt(Math.abs(row.diff)))+pct+'</div>'
+        +'</div>';
+    }
+    var table='<div class="carrier-cmp-matrix-wrap"><table class="mt carrier-cmp-matrix"><thead><tr><th>ขนส่ง</th>';
+    mData.forEach(function(m){table+='<th class="tdr">'+m.key.toUpperCase()+'</th>';});
+    table+='<th class="tdr">Δ ล่าสุด</th></tr></thead><tbody>';
+    chartCars.forEach(function(name){
+      var d=carDelta(name), cls=d.diff>=0?'tdpos':'tdneg';
+      table+='<tr><td><span class="carrier-cmp-name"><i style="background:'+getCarrierColor(name)+'"></i>'+_uiText(name)+'</span></td>';
+      mData.forEach(function(m){table+='<td class="tdr">'+_uiText(meta.fmt(meta.fn(findStat(m,name))||0))+'</td>';});
+      table+='<td class="tdr '+cls+'">'+(d.diff>=0?'▲ ':'▼ ')+_uiText(meta.fmt(Math.abs(d.diff)))+'</td></tr>';
+    });
+    table+='</tbody></table></div>';
+    el.innerHTML='<div class="carrier-cmp-toolbar">'
+      +'<div><div class="carrier-cmp-title">Carrier x Month Comparison</div><div class="carrier-cmp-sub">เทียบขนส่งแต่ละเจ้าข้ามเดือนด้วย metric เดียวกัน</div></div>'
+      +'<div class="carrier-cmp-controls">'
+        +'<div class="carrier-cmp-control"><span>Metric</span>'
+          +'<button class="stab '+(carMultiMetric==='avd'?'active':'')+'" onclick="setCarMultiMetric(\'avd\',this)">Avg Vol/day</button>'
+          +'<button class="stab '+(carMultiMetric==='ard'?'active':'')+'" onclick="setCarMultiMetric(\'ard\',this)">Avg Rev/day</button>'
+          +'<button class="stab '+(carMultiMetric==='arv'?'active':'')+'" onclick="setCarMultiMetric(\'arv\',this)">Rev/ชิ้น</button>'
+          +'<button class="stab '+(carMultiMetric==='vol'?'active':'')+'" onclick="setCarMultiMetric(\'vol\',this)">Volume</button>'
+          +'<button class="stab '+(carMultiMetric==='rev'?'active':'')+'" onclick="setCarMultiMetric(\'rev\',this)">Revenue</button>'
+        +'</div>'
+        +'<div class="carrier-cmp-control"><span>Show</span>'
+          +'<button class="stab '+(carMultiTopN===5?'active':'')+'" onclick="setCarMultiTopN(5,this)">Top 5</button>'
+          +'<button class="stab '+(carMultiTopN===8?'active':'')+'" onclick="setCarMultiTopN(8,this)">Top 8</button>'
+          +'<button class="stab '+(carMultiTopN===0?'active':'')+'" onclick="setCarMultiTopN(0,this)">All</button>'
+        +'</div>'
+      +'</div>'
+      +'</div>'
+      +'<div class="carrier-cmp-insights">'+insightCard('โตสุด',best,'up')+insightCard('ลดสุด',worst,'down')+'</div>'
+      +'<div class="carrier-cmp-chart"><canvas id="cx_car_month_matrix"></canvas></div>'
+      +table;
+    setTimeout(function(){
+      dc('cx_car_month_matrix');
+      var cv=document.getElementById('cx_car_month_matrix');if(!cv)return;
+      CH['cx_car_month_matrix']=new Chart(cv.getContext('2d'),{
+        type:'bar',
+        data:{
+          labels:mData.map(function(m){return m.key.toUpperCase();}),
+          datasets:chartCars.map(function(name){
+            var cc=getCarrierColor(name);
+            return{label:name,data:mData.map(function(m){return meta.fn(findStat(m,name))||0;}),backgroundColor:cc,borderColor:_darkenHex(cc,.12),borderWidth:1,borderRadius:6,borderSkipped:false,maxBarThickness:28};
+          })
+        },
+        options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+          plugins:{legend:{display:true,position:'top',labels:{font:{size:10,weight:'700'},boxWidth:10,usePointStyle:true}},
+            tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+meta.fmt(ctx.raw||0);}}}},
+          scales:{x:{ticks:{font:{size:10,weight:'800'},color:'#64748b'},grid:{display:false}},
+            y:{beginAtZero:true,ticks:{font:{size:10},color:'#64748b',callback:function(v){return meta.fmt(v);}},grid:{color:'#edf2f7',drawBorder:false}}}
+        }
+      });
+    },60);
+    return;
     var kHtml=mData.map(function(m,mi){
       var mc=_mColor(m.key);
       var avgRd=m.dd>0?m.totalRev/m.dd:0;

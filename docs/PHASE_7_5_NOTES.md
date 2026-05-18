@@ -55,6 +55,8 @@ Branch: `codex/phase-7.5`
 - แยกการ์ดรายขนส่งออกจากกราฟจริง: การ์ดรายขนส่งไม่แสดง mini chart แล้ว แต่แสดง metric สำคัญเป็นข้อความแทน
 - เพิ่ม `Avg Rev/day` ลงในการ์ดรายขนส่ง พร้อม trend เทียบเดือนก่อนหน้า ร่วมกับ `Avg Vol/day` และ `Rev/ชิ้น`
 - เพิ่มแถวกราฟ trend แยกใต้การ์ดรายขนส่ง แสดง `Avg Rev/day trend` ของ Top carriers ตาม volume เพื่อให้ดูแนวโน้มรายขนส่งได้โดยไม่ทำให้การ์ดแน่นเกินไป
+- ปรับ tab `เปรียบเทียบ` ของหน้า `ขนส่ง` ใน mode หลายเดือนให้เป็น `Carrier x Month Comparison` พร้อม grouped bar, ตาราง matrix, insight โตสุด/ลดสุด, metric toggle (`Avg Vol/day`, `Avg Rev/day`, `Rev/ชิ้น`, `Volume`, `Revenue`) และตัวเลือก Top 5/Top 8/All
+- ตั้ง default การเปรียบเทียบหลายเดือนเป็น metric เฉลี่ย (`Avg Vol/day`) เพื่อเลี่ยงการอ่านยอด MTD ของเดือนที่ยังไม่ครบเดือนผิด
 
 ### Responsive & Accessibility
 
