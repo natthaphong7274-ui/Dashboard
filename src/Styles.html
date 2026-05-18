@@ -4162,6 +4162,13 @@ body{
   border-color:var(--line)!important;
   box-shadow:var(--shadow-sm)!important;
 }
+#mainOv #kgrid{
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+}
+#mainOv #kgrid_extra:empty{
+  display:none;
+  margin:0;
+}
 #mainOv .stab,
 #mainCr .cr-tab,
 #mainCr .stab{

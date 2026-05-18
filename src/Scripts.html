@@ -909,15 +909,14 @@ function renderKPI(){
       +'<div class="klbl">'+_metricLabelHtml(k.l)+'</div><div class="kval">'+k.v+'</div>'
       +'<div class="ksub">'+k.s+'</div>'+(k.trend||'')+'</div>';
   }).join('');
-  document.getElementById('kgrid').innerHTML=html;
-
-  // Extra KPI row: Avg Rev/ชิ้น + Avg Vol/วัน — ทั้งคู่เทียบ vs เดือนก่อน ✅
-  var extraHtml='';
-  extraHtml+=_kpiTrendCard({mini:true,label:'AVG REV/ชิ้น '+m.en,value:fmtF(apV),sub:'Revenue ÷ Volume รวม',color:'var(--c-apc)',icon:'🏷️',series:apSeries,fmt:fmtF,
+  // Secondary KPI cards stay in the same grid so overview scans as one command row.
+  html+=_kpiTrendCard({label:'AVG REV/ชิ้น '+m.en,value:fmtF(apV),sub:'Revenue ÷ Volume รวม',color:'var(--c-apc)',icon:'🏷️',series:apSeries,fmt:fmtF,
     trend:mp?'<div class="ktrend '+(apDiff>=0?'tup':'tdn')+'">'+(apDiff>=0?'▲':'▼')+fmtF(Math.abs(apDiff))+' '+pill(apPct)+' vs '+mp.en+'</div>':''});
-  extraHtml+=_kpiTrendCard({mini:true,label:'AVG VOL/วัน '+m.en,value:fmtF(avdV),sub:'Volume ÷ '+mDay+' วัน',color:'var(--c-avd)',icon:'📦',series:avdSeries,fmt:fmtF,
+  html+=_kpiTrendCard({label:'AVG VOL/วัน '+m.en,value:fmtF(avdV),sub:'Volume ÷ '+mDay+' วัน',color:'var(--c-avd)',icon:'📦',series:avdSeries,fmt:fmtF,
     trend:mp?'<div class="ktrend '+(avdDiff>=0?'tup':'tdn')+'">'+(avdDiff>=0?'▲':'▼')+fmtF(Math.abs(avdDiff))+' '+pill(avdPct)+' vs '+mp.en+'</div>':''});
-  document.getElementById('kgrid_extra').innerHTML=extraHtml;
+  document.getElementById('kgrid').innerHTML=html;
+  var extraEl=document.getElementById('kgrid_extra');
+  if(extraEl)extraEl.innerHTML='';
   _flushKpiTrendCards();
 }
 
