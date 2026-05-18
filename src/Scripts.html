@@ -172,6 +172,39 @@ function getDAY1ForMonth(monthKey){
   if(mIdx > _now.getMonth()) yr -= 1;
   return daysInMonth(yr, mIdx+1);
 }
+function getDayDivisorMeta(monthKey){
+  var days=Math.max(1,getDAY1ForMonth(monthKey));
+  var isPartial=false;
+  if(monthKey&&typeof MONTHS!=='undefined'&&MONTHS.length){
+    var mc=MONTHS.find(function(m){return m.key===monthKey;});
+    isPartial=!!(mc&&mc.currentMonth);
+  }else if(!monthKey){
+    isPartial=true;
+  }
+  return {
+    days:days,
+    isPartial:isPartial,
+    label:days+' days'+(isPartial?' partial':' full month'),
+    thLabel:days+' วัน'+(isPartial?' (เดือนยังไม่ครบ)':'')
+  };
+}
+function avgRevDayTotal(rows,m){
+  var d=getDayDivisorMeta(m&&m.key).days;
+  return d>0?sumCol(rows,m.colRev)/d:0;
+}
+function avgVolDayTotal(rows,m){
+  var d=getDayDivisorMeta(m&&m.key).days;
+  return d>0?sumCol(rows,m.colVol)/d:0;
+}
+function grpAvgRevDay(rows,groupCol,m){
+  var g={};
+  rows.forEach(function(r){
+    var k=String(r[groupCol]||'?');
+    g[k]=(g[k]||0)+N(r[m.colRev]);
+  });
+  var d=getDayDivisorMeta(m&&m.key).days;
+  return Object.keys(g).map(function(k){return[k,d>0?g[k]/d:0];}).sort(function(a,b){return b[1]-a[1];});
+}
 
 var _today = new Date();
 var TODAY_DATE = _today.getDate();
@@ -863,37 +896,33 @@ function renderKPI(){
   _resetKpiTrendCards();
   var mDay=getDAY1ForMonth(m.key);   // divisor ของเดือนปัจจุบัน
   var mpDay=mp?getDAY1ForMonth(mp.key):0; // divisor ของเดือนก่อน
-  var revV=Math.round(sumCol(FR,m.colRev)),volV=Math.round(sumCol(FR,m.colVol)),avgV=Math.round(sumCol(FR,m.colAvg));
+  var revV=Math.round(sumCol(FR,m.colRev)),volV=Math.round(sumCol(FR,m.colVol));
   var totalRev=sumCol(FR,m.colRev),totalVol=sumCol(FR,m.colVol);
+  var mMeta=getDayDivisorMeta(m.key);
+  var avgV=Math.round(avgRevDayTotal(FR,m));
   var apV=totalVol>0?totalRev/totalVol:0;
   var apPrev=0, avgPrev=0, avdPrev=0;
   if(mp){
     var pRev=sumCol(FR,mp.colRev),pVol=sumCol(FR,mp.colVol);
     apPrev=pVol>0?pRev/pVol:0;
-    avgPrev=Math.round(sumCol(FR,mp.colAvg));
+    avgPrev=Math.round(avgRevDayTotal(FR,mp));
     avdPrev=mpDay>0?pVol/mpDay:0;
   }
   // Avg Vol/day — ใช้ divisor ของเดือนนั้น
-  var avdV=mDay>0?totalVol/mDay:0;
+  var avdV=avgVolDayTotal(FR,m);
   var avgDiff=avgV-avgPrev, avgPct=avgPrev?pctChg(avgPrev,avgV):null;
   var avdDiff=avdV-avdPrev, avdPct=avdPrev?pctChg(avdPrev,avdV):null;
   var apDiff=apV-apPrev,    apPct=apPrev?pctChg(apPrev,apV):null;
 
   var revSeries=_monthMetricSeries(m.key,function(mm){return sumCol(FR,mm.colRev);});
   var volSeries=_monthMetricSeries(m.key,function(mm){return sumCol(FR,mm.colVol);});
-  var avgSeries=_monthMetricSeries(m.key,function(mm){return sumCol(FR,mm.colAvg);});
+  var avgSeries=_monthMetricSeries(m.key,function(mm){return avgRevDayTotal(FR,mm);});
   var apSeries=_monthMetricSeries(m.key,function(mm){
     var r=sumCol(FR,mm.colRev),v=sumCol(FR,mm.colVol);
     return v>0?r/v:0;
   });
-  var avdSeries=_monthMetricSeries(m.key,function(mm){
-    var v=sumCol(FR,mm.colVol),d=getDAY1ForMonth(mm.key);
-    return d>0?v/d:0;
-  });
-  var ardSeries=_monthMetricSeries(m.key,function(mm){
-    var r=sumCol(FR,mm.colRev),d=getDAY1ForMonth(mm.key);
-    return d>0?r/d:0;
-  });
+  var avdSeries=_monthMetricSeries(m.key,function(mm){return avgVolDayTotal(FR,mm);});
+  var ardSeries=_monthMetricSeries(m.key,function(mm){return avgRevDayTotal(FR,mm);});
 
   var html=[
     {l:'รายการ',v:FR.length.toLocaleString(),s:'จาก '+R.length+' รายการ',c:'var(--t2)',i:'📋'},
@@ -902,7 +931,7 @@ function renderKPI(){
     // Volume — แสดงยอดรวม ไม่เทียบเดือน
     {l:'VOLUME '+m.en,v:fmtS(volV),s:'จำนวน Volume MTD, ไม่เทียบ MoM',c:'var(--c-vol)',i:'📦',series:volSeries,fmt:fmtS,noCompare:true},
     // Avg Rev/Day — เทียบกับเดือนก่อน ✅
-    {l:'AVG REV/DAY '+m.en,v:fmtS(avgV),s:'Revenue ÷ '+mDay+' วัน',c:'var(--c-avg)',i:'📐',
+    {l:'AVG REV/DAY '+m.en,v:fmtS(avgV),s:'Revenue ÷ '+mMeta.thLabel,c:'var(--c-ard)',i:'📐',
      series:avgSeries,fmt:fmtS,
      trend:mp?'<div class="ktrend '+(avgDiff>=0?'tup':'tdn')+'">'+(avgDiff>=0?'▲':'▼')+fmtS(Math.abs(avgDiff))+' '+pill(avgPct)+' vs '+mp.en+'</div>':''},
   ].map(function(k){
@@ -916,7 +945,7 @@ function renderKPI(){
   // Secondary KPI cards stay in the same grid so overview scans as one command row.
   html+=_kpiTrendCard({label:'AVG REV/ชิ้น '+m.en,value:fmtF(apV),sub:'Revenue ÷ Volume รวม',color:'var(--c-apc)',icon:'🏷️',series:apSeries,fmt:fmtF,summaryMode:'mom',
     trend:mp?'<div class="ktrend '+(apDiff>=0?'tup':'tdn')+'">'+(apDiff>=0?'▲':'▼')+fmtF(Math.abs(apDiff))+' '+pill(apPct)+' vs '+mp.en+'</div>':''});
-  html+=_kpiTrendCard({label:'AVG VOL/วัน '+m.en,value:fmtF(avdV),sub:'Volume ÷ '+mDay+' วัน',color:'var(--c-avd)',icon:'📦',series:avdSeries,fmt:fmtF,summaryMode:'mom',
+  html+=_kpiTrendCard({label:'AVG VOL/วัน '+m.en,value:fmtF(avdV),sub:'Volume ÷ '+mMeta.thLabel,color:'var(--c-avd)',icon:'📦',series:avdSeries,fmt:fmtF,summaryMode:'mom',
     trend:mp?'<div class="ktrend '+(avdDiff>=0?'tup':'tdn')+'">'+(avdDiff>=0?'▲':'▼')+fmtF(Math.abs(avdDiff))+' '+pill(avdPct)+' vs '+mp.en+'</div>':''});
   document.getElementById('kgrid').innerHTML=html;
   var extraEl=document.getElementById('kgrid_extra');
@@ -1711,30 +1740,30 @@ function renderAllCharts(){
   mkHBar('c_vol_prov',svpv.map(function(e){return e[0];}),svpv.map(function(e){return Math.round(e[1]);}),
     'rgba(21,94,117,0.55)',true);
 
-  // Avg Rev (จาก Sheet)
-  var saz=grpSum(FR,COL.zoneName,m.colAvg).slice(0,15);
+  // Avg Rev/day (Phase 8): SUM(Revenue) ÷ actual day divisor, not source sheet Avg sum
+  var saz=grpAvgRevDay(FR,COL.zoneName,m).slice(0,15);
   if(!isBD){
     mkHBar('c_avg_zone',saz.map(function(e){return e[0];}),saz.map(function(e){return Math.round(e[1]);}),
-      'rgba(26,77,110,0.75)',true,{groupCol:COL.zoneName,metricCol:m.colAvg,panelId:'dp_avg_zone',titleId:'dpt_avg_zone',bodyId:'dpb_avg_zone'});
+      'rgba(26,77,110,0.75)',true);
     updT('t_avg_zone','📐 Avg Rev/Day ราย Zone ('+m.en+') — คลิกแท่ง→รายชื่อ');
   }
   // Avg Rev Ranking — แสดง % vs เดือนก่อน
   var avgPrevMap=null;
-  var avgRankData=isBD?grpSum(FR,COL.agentName,m.colAvg).slice(0,15):saz;
-  if(mp){var sazP=grpSum(FR,isBD?COL.agentName:COL.zoneName,mp.colAvg);avgPrevMap={};sazP.forEach(function(e){avgPrevMap[e[0]]=e[1];});}
-  mkRank('avg_rank',avgRankData,'Avg Rev',fmtS,avgPrevMap,'vs '+( mp?mp.en:''));
-  var sap=grpSum(FR,COL.package,m.colAvg).slice(0,10);
+  var avgRankData=isBD?grpAvgRevDay(FR,COL.agentName,m).slice(0,15):saz;
+  if(mp){var sazP=grpAvgRevDay(FR,isBD?COL.agentName:COL.zoneName,mp);avgPrevMap={};sazP.forEach(function(e){avgPrevMap[e[0]]=e[1];});}
+  mkRank('avg_rank',avgRankData,'Avg Rev/day',fmtS,avgPrevMap,'vs '+( mp?mp.en:''));
+  var sap=grpAvgRevDay(FR,COL.package,m).slice(0,10);
   mkHBar('c_avg_pkg',sap.map(function(e){return e[0];}),sap.map(function(e){return Math.round(e[1]);}),
-    'rgba(26,77,110,0.65)',true,{groupCol:COL.package,metricCol:m.colAvg,panelId:'dp_avg_pkg',titleId:'dpt_avg_pkg',bodyId:'dpb_avg_pkg'});
-  var sapv=grpSum(FR,COL.province,m.colAvg).slice(0,10);
+    'rgba(26,77,110,0.65)',true);
+  var sapv=grpAvgRevDay(FR,COL.province,m).slice(0,10);
   mkHBar('c_avg_prov',sapv.map(function(e){return e[0];}),sapv.map(function(e){return Math.round(e[1]);}),
-    'rgba(26,77,110,0.55)',true,{groupCol:COL.province,metricCol:m.colAvg,panelId:'dp_avg_prov',titleId:'dpt_avg_prov',bodyId:'dpb_avg_prov'});
+    'rgba(26,77,110,0.55)',true);
 
   // BD Zone — Director/AM เห็นตาม scope, BD ไม่เห็นข้อมูลระดับ Zone
   if(role!=='BD'){
     var sbz=grpSum(FR,COL.zoneName,m.colRev).slice(0,15);
     var sbv=grpSum(FR,COL.zoneName,m.colVol).slice(0,15);
-    var sba=grpSum(FR,COL.zoneName,m.colAvg).slice(0,15);
+    var sba=grpAvgRevDay(FR,COL.zoneName,m).slice(0,15);
     
     // KPI Grid
     if(document.getElementById('bd_kgrid')){

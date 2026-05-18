@@ -25,6 +25,16 @@ var CARRIERS = [
 
 var DATA_YEAR = '2026';
 
+// Phase 8: default baseline for loss/inactive analysis.
+// Keep this configurable so seasonal drops do not accidentally become the comparison base.
+var LOSS_BASELINE_MONTH_KEY = 'mar';
+function getLossBaselineMonthKey(currentMonthKey) {
+  var configured = String(LOSS_BASELINE_MONTH_KEY || '').toLowerCase();
+  if (_MONTH_ORDER.indexOf(configured) >= 0) return configured;
+  var currentIdx = _MONTH_ORDER.indexOf(String(currentMonthKey || '').toLowerCase());
+  return currentIdx > 0 ? _MONTH_ORDER[currentIdx - 1] : 'mar';
+}
+
 // ============================================================
 //  AUTO-DISCOVER: สร้าง MONTH_SHEETS จากชีตที่มีอยู่จริงใน Spreadsheet
 //  รูปแบบชีต: Raw-KPI-{MonthName}  เช่น Raw-KPI-Jan, Raw-KPI-May
