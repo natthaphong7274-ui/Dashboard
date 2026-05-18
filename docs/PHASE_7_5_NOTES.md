@@ -25,6 +25,8 @@ Branch: `codex/phase-7.5`
 - แก้หน้า `BD Zone` สำหรับ AM: เดิม tab เปิดให้ AM เห็น แต่ chart render เฉพาะ Director ทำให้เกิดการ์ดเปล่า ตอนนี้ AM render chart ตาม scope ได้แล้ว
 - เพิ่ม empty state ให้ horizontal bar chart เมื่อไม่มีข้อมูลใน scope ปัจจุบัน แทนการปล่อย canvas/card ว่าง
 - เปลี่ยน mini chart ใต้ KPI หน้า `ภาพรวม` จากกราฟแท่ง+เส้นเป็น MoM summary strip แบบ `เดือนก่อน -> เดือนนี้` พร้อม diff และ % เพื่อให้อ่านการเติบโตได้เร็วขึ้น
+- เพิ่มแถว `Avg Performance Trend` ใต้ KPI cards เป็นกราฟแท่ง+เส้น 3 ใบ ได้แก่ `Avg Rev/day trend`, `Avg Vol/day trend` และ `Avg Rev/ชิ้น trend`
+- กราฟ trend ใช้ 6 เดือนล่าสุดจาก helper เดือนเดิม: แท่งคือค่าเฉลี่ยรายเดือน และเส้นคือ % MoM จากเดือนก่อนหน้า
 
 ## UX Decision: Card หรือ Graph
 
@@ -33,6 +35,7 @@ Branch: `codex/phase-7.5`
 - แนวทางที่เลือกในรอบนี้คือ **คงการ์ดด้านบนเป็น command KPI** และเปลี่ยน mini chart เป็น MoM summary strip ส่วนกราฟหลักยังอยู่ใน panel ด้านล่างของแต่ละ tab
 - ไม่แนะนำให้เปลี่ยน KPI ด้านบนทั้งหมดเป็นกราฟ เพราะจะทำให้ first scan ช้าลง และทำให้หน้า `ภาพรวม` ดูแน่นเกินสำหรับงานปฏิบัติการ
 - ถ้า role บางประเภทเห็น chart น้อยกว่า role อื่น ให้แก้ด้วย responsive grid ก่อน ไม่ควรเพิ่ม card ที่ไม่มี action หรือ insight จริงเพียงเพื่อเติมพื้นที่ว่าง
+- ถ้าต้องการเห็น trend เชิงภาพ ให้ใช้แถว `Avg Performance Trend` แยกจาก KPI card เพื่อไม่ให้ KPI card อ่านยาก
 
 ### Carrier
 

@@ -169,6 +169,83 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   color:var(--t2);
 }
 .kcard-mini.kcard-trend{min-height:148px;}
+.overview-trend-panel{
+  margin:0 0 12px;
+  padding:12px 14px;
+  border:1px solid var(--line,var(--bd));
+  border-radius:14px;
+  background:#fbfcfd;
+  box-shadow:var(--shadow-sm,0 1px 6px rgba(0,0,0,.07));
+}
+.overview-trend-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.overview-trend-title{
+  color:var(--tx,var(--pr));
+  font-size:13px;
+  font-weight:900;
+}
+.overview-trend-sub{
+  margin-top:2px;
+  color:var(--t2);
+  font-size:11px;
+}
+.overview-trend-range{
+  border:1px solid #d6e0e2;
+  border-radius:999px;
+  background:#f4f7f8;
+  color:var(--tx);
+  font-size:11px;
+  font-weight:800;
+  padding:5px 9px;
+  white-space:nowrap;
+}
+.overview-trend-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.overview-trend-card{
+  min-width:0;
+  border:1px solid #d7e0e4;
+  border-radius:12px;
+  background:#fff;
+  padding:10px 12px;
+}
+.overview-trend-card-title{
+  color:var(--pr);
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+.overview-trend-chart{
+  position:relative;
+  height:220px;
+}
+.overview-trend-chart canvas{
+  width:100%!important;
+  height:100%!important;
+}
+@media(max-width:1100px){
+  .overview-trend-grid{
+    grid-template-columns:1fr;
+  }
+  .overview-trend-chart{
+    height:240px;
+  }
+}
+@media(max-width:720px){
+  .overview-trend-head{
+    flex-direction:column;
+  }
+  .overview-trend-range{
+    align-self:flex-start;
+  }
+}
 .tup{color:var(--gn);}.tdn{color:var(--rd);}
 .spanel{display:none;}.spanel.active{display:block;}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}

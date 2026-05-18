@@ -245,6 +245,29 @@
     <div class="kgrid" id="kgrid"><div class="loading"><div class="spin"></div>กำลังโหลด...</div></div>
     <!-- Extra KPI: Avg Rev/piece + Avg Vol/day -->
     <div class="kpi-extra-row" id="kgrid_extra"></div>
+    <div class="overview-trend-panel" id="overview_trend_panel">
+      <div class="overview-trend-head">
+        <div>
+          <div class="overview-trend-title">Avg Performance Trend</div>
+          <div class="overview-trend-sub">กราฟแท่งคือค่าเฉลี่ยรายเดือน เส้นคือ % MoM จากเดือนก่อนหน้า</div>
+        </div>
+        <span id="overview_trend_range" class="overview-trend-range"></span>
+      </div>
+      <div class="overview-trend-grid">
+        <div class="overview-trend-card">
+          <div class="overview-trend-card-title">Avg Rev/day trend</div>
+          <div class="overview-trend-chart"><canvas id="c_ov_trend_avg_rev_day"></canvas></div>
+        </div>
+        <div class="overview-trend-card">
+          <div class="overview-trend-card-title">Avg Vol/day trend</div>
+          <div class="overview-trend-chart"><canvas id="c_ov_trend_avg_vol_day"></canvas></div>
+        </div>
+        <div class="overview-trend-card">
+          <div class="overview-trend-card-title">Avg Rev/ชิ้น trend</div>
+          <div class="overview-trend-chart"><canvas id="c_ov_trend_avg_rev_piece"></canvas></div>
+        </div>
+      </div>
+    </div>
 
     <!-- Revenue -->
     <div class="spanel active" id="sp-revenue">

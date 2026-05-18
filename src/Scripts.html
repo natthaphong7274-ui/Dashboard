@@ -890,6 +890,10 @@ function renderKPI(){
     var v=sumCol(FR,mm.colVol),d=getDAY1ForMonth(mm.key);
     return d>0?v/d:0;
   });
+  var ardSeries=_monthMetricSeries(m.key,function(mm){
+    var r=sumCol(FR,mm.colRev),d=getDAY1ForMonth(mm.key);
+    return d>0?r/d:0;
+  });
 
   var html=[
     {l:'รายการ',v:FR.length.toLocaleString(),s:'จาก '+R.length+' รายการ',c:'var(--t2)',i:'📋'},
@@ -918,6 +922,11 @@ function renderKPI(){
   var extraEl=document.getElementById('kgrid_extra');
   if(extraEl)extraEl.innerHTML='';
   _flushKpiTrendCards();
+  renderOverviewTrendPanel(m.key, {
+    avgRevDay: ardSeries,
+    avgVolDay: avdSeries,
+    avgRevPiece: apSeries
+  });
 }
 
 var _pendingKpiTrendCharts=[];
@@ -1002,6 +1011,63 @@ function _renderKpiTrendChart(job){
         x:{display:false,grid:{display:false}},
         y:{display:false,beginAtZero:true,grid:{display:false}},
         y1:{display:false,position:'right',grid:{display:false}}
+      }
+    }
+  });
+}
+function renderOverviewTrendPanel(curKey, seriesMap){
+  var panel=document.getElementById('overview_trend_panel');
+  if(!panel)return;
+  var months=_recentMonths(curKey,6);
+  var range=document.getElementById('overview_trend_range');
+  if(range){
+    range.textContent=months.length?(months[0].en+' - '+months[months.length-1].en):'';
+  }
+  _renderOverviewComboTrend('c_ov_trend_avg_rev_day',seriesMap&&seriesMap.avgRevDay,'var(--c-ard)',function(v){return fmtS(Math.round(v));});
+  _renderOverviewComboTrend('c_ov_trend_avg_vol_day',seriesMap&&seriesMap.avgVolDay,'var(--c-avd)',fmtF);
+  _renderOverviewComboTrend('c_ov_trend_avg_rev_piece',seriesMap&&seriesMap.avgRevPiece,'var(--c-apc)',fmtF);
+}
+function _renderOverviewComboTrend(id,series,color,fmtFn){
+  var el=document.getElementById(id);
+  if(!el)return;
+  clearEmpty(id);dc(id);
+  var labels=(series&&series.labels)||[];
+  var values=(series&&series.values)||[];
+  if(values.length<2 || !values.some(function(v){return N(v)>0;})){
+    setEmpty(id,'warning','ยังไม่มีข้อมูล trend เพียงพอ');
+    return;
+  }
+  fmtFn=fmtFn||fmtS;
+  var chartColor=_cssColor(color);
+  var growth=values.map(function(v,i){
+    if(i===0||!values[i-1])return null;
+    return ((v-values[i-1])/Math.abs(values[i-1]))*100;
+  });
+  CH[id]=new Chart(el.getContext('2d'),{
+    data:{
+      labels:labels,
+      datasets:[
+        {type:'bar',label:'Actual',data:values,backgroundColor:chartColor,borderRadius:5,borderSkipped:false,maxBarThickness:32,yAxisID:'y'},
+        {type:'line',label:'MoM %',data:growth,borderColor:chartColor,backgroundColor:chartColor,tension:.34,pointRadius:3,pointHoverRadius:5,borderWidth:2,yAxisID:'y1'}
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:10,weight:'700'},boxWidth:10,usePointStyle:true}},
+        tooltip:{callbacks:{
+          label:function(ctx){
+            if(ctx.dataset.type==='line')return 'MoM '+(ctx.raw===null?'-':ctx.raw.toFixed(1)+'%');
+            return 'Actual '+fmtFn(ctx.raw||0);
+          }
+        }}
+      },
+      scales:{
+        x:{ticks:{font:{size:10}},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return fmtFn(v);}},grid:{color:'#eef3f7'}},
+        y1:{position:'right',ticks:{font:{size:10},callback:function(v){return v+'%';}},grid:{display:false}}
       }
     }
   });
