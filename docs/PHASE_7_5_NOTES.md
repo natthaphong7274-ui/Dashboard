@@ -60,6 +60,7 @@ Branch: `codex/phase-7.5`
 - เพิ่ม filter รายขนส่งใน `Carrier x Month Comparison` เพื่อเจาะดู carrier เดียวได้ โดย insight จะเปลี่ยนจากโตสุด/ลดสุดเป็นเดือนดีที่สุด/เดือนต่ำสุดของ carrier นั้น
 - Polish เพิ่มเติมตาม review: เพิ่ม context chips และหัวข้อ `Monthly pattern` ใน comparison matrix, เพิ่ม section kicker ให้แยก Snapshot/Trend ของขนส่ง, และเพิ่ม share bar ในการ์ดรายขนส่งเพื่อให้เห็นสัดส่วนได้เร็วขึ้น
 - เพิ่ม toggle `Growth line` ใน `Carrier x Month Comparison` เพื่อเปิด/ปิดเส้น MoM % บนแกนขวา โดย default ปิดไว้เพื่อให้ grouped bar ยังอ่านง่าย
+- ปรับ tooltip ของ `Carrier x Month Comparison` ให้แสดงเฉพาะจุดที่ hover ใกล้ที่สุด ไม่ดึงทุก carrier/ทุกเส้นมาใน popup พร้อมซ่อน legend ของเส้น growth เพื่อลดความรก
 
 ### Responsive & Accessibility
 

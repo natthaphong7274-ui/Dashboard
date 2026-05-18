@@ -4647,14 +4647,19 @@ function renderCarrierComparison(){
             var cc=getCarrierColor(name);
             var vals=mData.map(function(m){return meta.fn(findStat(m,name))||0;});
             var growth=vals.map(function(v,i){return i===0||!vals[i-1]?null:((v-vals[i-1])/Math.abs(vals[i-1]))*100;});
-            return{type:'line',label:name+' MoM %',data:growth,borderColor:_darkenHex(cc,.16),backgroundColor:_darkenHex(cc,.16),borderWidth:2,pointRadius:3,pointHoverRadius:5,pointBackgroundColor:'#f8fafc',pointBorderColor:_darkenHex(cc,.16),pointBorderWidth:1.5,borderDash:[5,4],tension:.3,yAxisID:'y1',order:1,spanGaps:false};
+            return{type:'line',label:name+' growth',data:growth,borderColor:_darkenHex(cc,.16),backgroundColor:_darkenHex(cc,.16),borderWidth:2,pointRadius:3,pointHoverRadius:5,pointBackgroundColor:'#f8fafc',pointBorderColor:_darkenHex(cc,.16),pointBorderWidth:1.5,borderDash:[5,4],tension:.3,yAxisID:'y1',order:1,spanGaps:false};
           }):[])
         },
-        options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+        options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',axis:'x',intersect:true},
           plugins:{legend:{display:true,position:'top',labels:{font:{size:10,weight:'700'},boxWidth:10,usePointStyle:true,
-              filter:function(item){return carMultiGrowth||item.text.indexOf('MoM %')<0;}}},
-            tooltip:{callbacks:{label:function(ctx){
-              if(ctx.dataset.yAxisID==='y1')return ctx.dataset.label+': '+(ctx.raw===null?'-':((ctx.raw>=0?'+':'')+ctx.raw.toFixed(1)+'%'));
+              filter:function(item){return item.text.indexOf('growth')<0;}}},
+            tooltip:{displayColors:true,callbacks:{
+              title:function(items){
+                var first=items&&items[0];
+                return first?first.label:'';
+              },
+              label:function(ctx){
+              if(ctx.dataset.yAxisID==='y1')return ctx.dataset.label.replace(' growth','')+' MoM: '+(ctx.raw===null?'-':((ctx.raw>=0?'+':'')+ctx.raw.toFixed(1)+'%'));
               return ctx.dataset.label+': '+meta.fmt(ctx.raw||0);
             }}}},
           scales:{x:{ticks:{font:{size:10,weight:'800'},color:'#64748b'},grid:{display:false}},
