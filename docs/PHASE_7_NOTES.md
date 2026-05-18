@@ -59,6 +59,13 @@ Branch: `codex/phase-7-performance-security`
 - Director, AM และ BD จะมี cache key คนละชุดตามสิทธิ์การมองเห็น
 - Report Center เป็น preview ตาม scope ได้ แต่ export ถูกจำกัดเพื่อกันข้อมูลหลุด
 
+## Additional UI Standard Update
+
+- ปรับสีประจำขนส่งใน `src/Scripts.html` ให้ใช้ชุด `CG_COLORS` ตามมาตรฐานใหม่:
+  `FLASH`, `THAIPOST`, `KEX OFF`, `KEX ON`, `DHL`, `BEST`, `SPX`, `INTER&ODM`, `DOP FLASH`, `DOP LEX`, `DOP KEX`, `JT` และ `DEFAULT`
+- เพิ่ม alias ให้ชื่อ carrier เดิมในระบบยัง map สีถูก เช่น `KERRY_OFFLINE` -> `KEX OFF`, `KERRY_ONLINE` -> `KEX ON`, `MSBEST` -> `BEST`, `FLASHFRUIT`/`FLASHBULKY` -> `FLASH`
+- ปรับ fallback ของ carrier ที่ไม่รู้จักให้ใช้ `DEFAULT` เพื่อให้สีในกราฟและตารางขนส่งนิ่งกว่าเดิม
+
 ## Files Touched
 
 - `src/Cache.js`

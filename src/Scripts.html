@@ -3870,31 +3870,47 @@ function _reportCenterBadge(text,state){
 //  🚚 CARRIER SECTION — v2
 // ============================================================
 
-// ★ ข้อ 2: สีประจำขนส่ง — Flash=เหลือง, Thaipost=แดง, KEX=ส้ม
-var CAR_COLOR_MAP={
-  'FLASH':       '#F5C518',  // เหลือง
-  'FLASHBULKY':  '#F5A623',  // เหลืองส้ม
-  'FLASHFRUIT':  '#F5D76E',  // เหลืองอ่อน
-  'THAIPOST':    '#E53935',  // แดง
-  'KERRY_OFFLINE':'#FF6D00', // ส้ม
-  'KERRY_ONLINE': '#FF8F00', // ส้มอ่อน
-  'MSBEST':      'var(--ac)',  // teal
-  'MYSAVEFRUIT': '#00788C',  // dark teal
-  'BEST':        '#5C3D8F',  // purple
-  'DHL':         'var(--or)',  // orange-red
-  'EASYPOSTFRUIT':'#4CAF50', // green
-  'ECO':         '#00BCD4',  // cyan
-  'INTER':       '#2196F3',  // blue
-  'JT':          '#E91E63',  // pink
-  'LALAMOVE':    '#9C27B0',  // purple-2
-  'SHIPPOPFRUIT':'#607D8B',  // blue-grey
-  'SHOPEE':      '#FF5722',  // deep-orange
-  'SHOPEEOFFLINE':'#795548'  // brown
+// ★ สีประจำขนส่งตาม CG color standard
+var CG_COLORS={
+  'FLASH':'#FFE600',
+  'THAIPOST':'#e74c3c',
+  'KEX OFF':'#e67e22',
+  'KEX ON':'#2c3e50',
+  'DHL':'#FFCC00',
+  'BEST':'#2980b9',
+  'SPX':'#d35400',
+  'INTER&ODM':'#95a5a6',
+  'DOP FLASH':'#1a5276',
+  'DOP LEX':'#6c3483',
+  'DOP KEX':'#e91e8c',
+  'JT':'#27ae60',
+  'DEFAULT':'#7f8c8d'
 };
-var CAR_COLORS_FALLBACK=['var(--pr)','var(--ac)','var(--or)','#5C3D8F','#007A7A','#CC4A1A','#00788C','#2196F3','#FF9800','#4CAF50','#E91E63','#9C27B0','#00BCD4','#FF5722','#795548','#607D8B','#F44336','#3F51B5'];
+var CAR_COLOR_ALIASES={
+  'KERRY_OFFLINE':'KEX OFF',
+  'KERRY ONLINE':'KEX ON',
+  'KERRY_ONLINE':'KEX ON',
+  'KEX OFFLINE':'KEX OFF',
+  'KEX ONLINE':'KEX ON',
+  'KEX FRUIT':'KEX OFF',
+  'MSBEST':'BEST',
+  'INTER':'INTER&ODM',
+  'ODM':'INTER&ODM',
+  'FLASHBULKY':'FLASH',
+  'FLASHFRUIT':'FLASH',
+  'DOPFLASH':'DOP FLASH',
+  'DOPLEX':'DOP LEX',
+  'DOPKEX':'DOP KEX'
+};
+var CAR_COLORS_FALLBACK=['#7f8c8d','#FFE600','#e74c3c','#e67e22','#2c3e50','#FFCC00','#2980b9','#d35400','#95a5a6','#1a5276','#6c3483','#e91e8c','#27ae60'];
 
 function getCarrierColor(nameOrIdx){
-  if(typeof nameOrIdx==='string'&&CAR_COLOR_MAP[nameOrIdx]) return CAR_COLOR_MAP[nameOrIdx];
+  if(typeof nameOrIdx==='string'){
+    var key=String(nameOrIdx).trim().toUpperCase();
+    key=CAR_COLOR_ALIASES[key]||key;
+    if(CG_COLORS[key]) return CG_COLORS[key];
+    return CG_COLORS.DEFAULT;
+  }
   var idx=typeof nameOrIdx==='number'?nameOrIdx:0;
   return CAR_COLORS_FALLBACK[idx%CAR_COLORS_FALLBACK.length];
 }
