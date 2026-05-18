@@ -440,6 +440,7 @@ function getTrackingData(token) {
       };
       if (_canAccessRow(session, rowObj)) rows.push(rowObj);
     }
+    logActivity(session.username, session.role, 'VIEW_TRACKING_DATA', 'risk rows=' + rows.length + ' cutoff=' + curCutoff);
     return { ok: true, data: rows, cutoff: _trackingCutoffMeta() };
   } catch(e) {
     return { ok: false, error: e.message };
@@ -898,6 +899,7 @@ function getGrowthTrackingData(token) {
       };
       if (_canAccessRow(session, rowObj)) rows.push(rowObj);
     }
+    logActivity(session.username, session.role, 'VIEW_GROWTH_TRACKING_DATA', 'growth rows=' + rows.length + ' cutoff=' + curCutoff);
     return { ok: true, data: rows, cutoff: _trackingCutoffMeta() };
   } catch(e) {
     return { ok: false, error: e.message };

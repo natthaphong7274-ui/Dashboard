@@ -11,6 +11,10 @@ function getAllData(token, options) {
 
   // ── AUTO-DISCOVER: สร้าง MONTH_SHEETS จากชีตที่มีอยู่จริง ──
   MONTH_SHEETS = buildMonthSheets(ss);
+  var discoveredMonthCount = MONTH_SHEETS.length;
+  if (DASH_HOME_MONTH_CUTOFF && MONTH_SHEETS.length > DASH_HOME_MONTH_CUTOFF) {
+    MONTH_SHEETS = MONTH_SHEETS.slice(Math.max(0, MONTH_SHEETS.length - DASH_HOME_MONTH_CUTOFF));
+  }
   CARRIER_MONTHS = MONTH_SHEETS.filter(function(m){ return m.hasCarrier; })
     .map(function(m){ return { key:m.monthKey, label:m.label }; });
 
@@ -38,6 +42,7 @@ function getAllData(token, options) {
   var scopeSignature = [
     ss.getId ? ss.getId() : 'active',
     DATA_YEAR,
+    'homeCutoff=' + DASH_HOME_MONTH_CUTOFF,
     session.role || '-',
     session.username || '-',
     (session.zones || []).slice().sort().join(','),
@@ -229,7 +234,8 @@ function getAllData(token, options) {
                  carriers:CARRIERS, carrierMonths:CARRIER_MONTHS, dataYear:DATA_YEAR,
                  dataQuality:dataQuality, sheetHealth:sheetHealth,
                  userInfo: session.ok ? { username:session.username, role:session.role, zones:session.zones } : null,
-                 cacheMeta:{ hit:false, ttlSeconds:DASH_CACHE_TTL_SECONDS } };
+                 cacheMeta:{ hit:false, ttlSeconds:DASH_CACHE_TTL_SECONDS },
+                 cutOffMeta:{ monthsLoaded:MONTH_SHEETS.length, monthsDiscovered:discoveredMonthCount, homeMonthCutoff:DASH_HOME_MONTH_CUTOFF } };
   var cacheWrite = _cachePutJson(dataCacheKey, result, DASH_CACHE_TTL_SECONDS);
   result.cacheMeta.writeOk = !!(cacheWrite && cacheWrite.ok);
   result.cacheMeta.chunks = cacheWrite && cacheWrite.chunks;
@@ -252,8 +258,11 @@ function _maskSensitiveRowForSession(row, session) {
   var out = {};
   Object.keys(row).forEach(function(k){ out[k] = row[k]; });
   if (session && session.role !== 'Director' && session.role !== 'AM') {
-    ['Phone','phone','Tel','เบอร์โทร'].forEach(function(k) {
+    ['Phone','phone','Tel','Telephone','Mobile','เบอร์โทร','เบอร์โทรศัพท์'].forEach(function(k) {
       if (out[k] !== undefined && out[k] !== '') out[k] = _maskPhoneForRole(out[k], session.role);
+    });
+    ['Email','email','E-mail','Line','LINE','Line ID','lineId'].forEach(function(k) {
+      if (out[k] !== undefined && out[k] !== '') out[k] = '***';
     });
   }
   return out;

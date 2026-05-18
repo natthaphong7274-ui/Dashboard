@@ -295,8 +295,8 @@ function loadData(forceRefresh){
 
       buildMonthUI(); buildFilters(); renderKPI(); renderAllCharts(); renderTable();
       _renderQualityHealthPanel();
-      loadTrackingData();
-      loadGrowthTrackingData();
+      _trackingLoaded=false;
+      _growthTrackingLoaded=false;
       loadMonthlyTargets();
       var n=new Date();
       document.getElementById('lupd').textContent='อัปเดต '+n.getHours()+':'+String(n.getMinutes()).padStart(2,'0');
@@ -664,8 +664,8 @@ function swMain(v){
   if(v==='ov'){ renderKPI(); renderAllCharts(); } // ★ render charts เมื่อเปิด tab ภาพรวม
   if(v==='ls') renderTable();
   if(v==='cr') loadAndRenderCarrier();
-  if(v==='risk') loadRiskThreshold(function(){ renderRisk(); });
-  if(v==='growth') loadGrowthThreshold(function(){ renderGrowth(); });
+  if(v==='risk'){ loadTrackingData(); loadRiskThreshold(function(){ renderRisk(); }); }
+  if(v==='growth'){ loadGrowthTrackingData(); loadGrowthThreshold(function(){ renderGrowth(); }); }
   if(v==='usermgmt') loadUserStatus();
   applyRoleVisualizationRules();
   _refreshDashboardPolling();
@@ -3048,11 +3048,8 @@ function lsSort(f,d,btn){
 }
 function tSort(f){tSortF=f;tSortD=tSortD==='desc'?'asc':'desc';tPg=1;renderTable();}
 function exportCSV(){
-  if(!_currentUser || !sessionStorage.getItem('DASH_TOKEN')){
-    renderError('home_content','Unauthorized export request','loadData');
-    _clientLog('EXPORT_DENIED','CSV export without active session');
-    return;
-  }
+  var metaGuard = _exportGuard('Customer CSV');
+  if(!metaGuard)return;
   if(!tRows.length)return;
   var m=getTM(),mp=getTMP();
   var cols=['Agent Code','Agent Name','Phone','Zone Name','Package','Province','AREA'];
@@ -3114,6 +3111,26 @@ function _exportGuard(reportName){
   if(!_currentUser || !sessionStorage.getItem('DASH_TOKEN')){
     renderError('home_content','Unauthorized export request','loadData');
     _clientLog('EXPORT_DENIED',reportName+' without active session');
+    return null;
+  }
+  if(['Director','AM'].indexOf(_currentUser.role||'')<0){
+    renderError('home_content','Export is limited to Director/AM roles','exportGuard');
+    _clientLog('EXPORT_DENIED',reportName+' denied for role '+(_currentUser.role||'-'));
+    return null;
+  }
+  var scope=(_currentUser.zones&&_currentUser.zones.length)?_currentUser.zones.join('|'):'All';
+  return {
+    user:_currentUser.displayName||_currentUser.username||'-',
+    username:_currentUser.username||'-',
+    role:_currentUser.role||'-',
+    scope:scope,
+    generatedAt:_formatWatermarkTime(new Date())
+  };
+}
+function _reportAccessGuard(reportName){
+  if(!_currentUser || !sessionStorage.getItem('DASH_TOKEN')){
+    renderError('home_content','Unauthorized report request','loadData');
+    _clientLog('REPORT_DENIED',(reportName||'Report')+' without active session');
     return null;
   }
   var scope=(_currentUser.zones&&_currentUser.zones.length)?_currentUser.zones.join('|'):'All';
@@ -3243,23 +3260,34 @@ function exportWeeklySummary(){
   _clientLog('EXPORT_WEEKLY_SUMMARY','tasks='+tasks.length+' | scope='+meta.scope+' | generatedAt='+meta.generatedAt);
 }
 
+function _ensureReportTrackingData(cb){
+  var pending = 0;
+  function done(){ pending--; if(pending<=0 && cb)cb(); }
+  if(!_trackingLoaded){ pending++; loadTrackingData(done); }
+  if(!_growthTrackingLoaded){ pending++; loadGrowthTrackingData(done); }
+  if(pending===0 && cb)cb();
+}
+
 var _reportCenterTab='summary';
 var _reportCenterModel=null;
 var _reportCenterBdView='ranking';
 var _reportCenterBdTrendSearch='';
 var _reportCenterBdTrendLimit='all';
 function openReportCenter(){
-  var meta=_exportGuard('Report Center'); if(!meta)return;
+  var meta=_reportAccessGuard('Report Center'); if(!meta)return;
   var overlay=document.getElementById('rcOverlay');
   if(!overlay)return;
-  _reportCenterModel=_buildReportCenterModel(meta);
   overlay.classList.add('open');
   var sub=document.getElementById('rc_sub');
-  if(sub){
-    sub.textContent='Month '+_reportCenterModel.m.en+' '+DATA_YEAR+' | Role '+meta.role+' | Scope '+meta.scope;
-  }
-  switchReportCenterTab(_reportCenterTab||'summary');
-  _clientLog('OPEN_REPORT_CENTER','scope='+meta.scope+' | month='+_reportCenterModel.m.key);
+  if(sub)sub.textContent='Preparing scoped report data...';
+  _ensureReportTrackingData(function(){
+    _reportCenterModel=_buildReportCenterModel(meta);
+    if(sub){
+      sub.textContent='Month '+_reportCenterModel.m.en+' '+DATA_YEAR+' | Role '+meta.role+' | Scope '+meta.scope;
+    }
+    switchReportCenterTab(_reportCenterTab||'summary');
+    _clientLog('OPEN_REPORT_CENTER','scope='+meta.scope+' | month='+_reportCenterModel.m.key);
+  });
 }
 function closeReportCenter(){
   var overlay=document.getElementById('rcOverlay');
@@ -6006,6 +6034,8 @@ function _stopRiskPoll() {
 // ── Growth Threshold Polling — เช็คค่าเกณฑ์กลุ่มเติบโตจาก server ทุก 30 วิ ──
 var _growthPollInterval = null;
 var GROWTH_POLL_MS = 60 * 1000;
+var _trackingLoaded = false;
+var _growthTrackingLoaded = false;
 
 function _startGrowthPoll() {
   _stopGrowthPoll();
@@ -6533,11 +6563,12 @@ function _trkToast(msg, isError){
 }
 
 // โหลด tracking data (Risk/Loss) จาก Google Sheets
-function loadTrackingData(){
+function loadTrackingData(cb){
   var token=sessionStorage.getItem('DASH_TOKEN')||'';
   google.script.run
     .withSuccessHandler(function(res){
       if(res&&res.ok&&res.data){
+        _trackingLoaded=true;
         _trkSetCutoffMeta(res.cutoff);
         res.data.forEach(function(row){
           if(row.key)_trkData[row.key]={
@@ -6549,19 +6580,22 @@ function loadTrackingData(){
         });
         if(document.getElementById('mainRisk')&&document.getElementById('mainRisk').style.display!=='none') loadRiskThreshold(function(){ renderRisk(); });
       }
+      if(cb)cb(res);
     })
     .withFailureHandler(function(e){
       console.warn('loadTrackingData failed:',e&&e.message?e.message:e);
+      if(cb)cb(null);
     })
     .getTrackingData(token);
 }
 
 // โหลด growth tracking data จาก TrackingGrowth sheet
-function loadGrowthTrackingData(){
+function loadGrowthTrackingData(cb){
   var token=sessionStorage.getItem('DASH_TOKEN')||'';
   google.script.run
     .withSuccessHandler(function(res){
       if(res&&res.ok&&res.data){
+        _growthTrackingLoaded=true;
         _trkSetCutoffMeta(res.cutoff);
         res.data.forEach(function(row){
           if(row.key)_trkData[row.key]={
@@ -6574,9 +6608,11 @@ function loadGrowthTrackingData(){
         var growthPanel=document.getElementById('mainGrowth');
         if(growthPanel&&growthPanel.style.display!=='none') loadGrowthThreshold(function(){ renderGrowth(); });
       }
+      if(cb)cb(res);
     })
     .withFailureHandler(function(e){
       console.warn('loadGrowthTrackingData failed:',e&&e.message?e.message:e);
+      if(cb)cb(null);
     })
     .getGrowthTrackingData(token);
 }

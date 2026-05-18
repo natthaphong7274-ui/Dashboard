@@ -21,6 +21,8 @@ var BRUTE_TTL_MS      = 10 * 60 * 1000; // soft block window: 10 minutes
 var DASH_CACHE_TTL_SECONDS = 300;       // Phase 7.1: 5-minute CacheService TTL
 var DASH_CACHE_CHUNK_CHARS = 25000;     // keep chunks safely below CacheService item limits
 var DASH_CACHE_MAX_CHUNKS  = 80;        // guard against runaway payloads
+var DASH_HOME_MONTH_CUTOFF = 6;         // Phase 7.2: keep recent months for initial dashboard payload
+var DASH_TREND_MONTH_CUTOFF = 12;       // reserved for WoW/trend-heavy modules
 
 // ── Spreadsheet ──────────────────────────────────────────────
 var LOG_SHEET         = 'ActivityLog';  // ชื่อ sheet สำหรับ Activity Log
