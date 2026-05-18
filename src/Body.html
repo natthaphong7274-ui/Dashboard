@@ -199,7 +199,7 @@
   <div id="mainOv" style="display:none">
     <div class="ops-page-head ov-page-head">
       <div>
-        <div class="ops-eyebrow">Overview command</div>
+        <div class="ops-eyebrow">Overview</div>
         <h2>ภาพรวมสถานการณ์</h2>
         <p>สรุป performance ตามเดือนและ scope ปัจจุบัน เพื่อเห็นสัญญาณหลักก่อนลงรายละเอียด</p>
       </div>
@@ -207,37 +207,6 @@
         <span>Revenue</span>
         <span>Volume</span>
         <span>Avg/day</span>
-      </div>
-    </div>
-    <div class="ov-tab-bar" id="secTabs">
-      <!-- Group 1: Performance -->
-      <div class="ov-tab-group">
-        <span class="ov-tab-group-label">Performance</span>
-        <div class="ov-tab-group-btns">
-          <button class="stab active" id="stab_revenue" onclick="swSec('revenue',this)">Revenue</button>
-          <button class="stab" id="stab_vol" onclick="swSec('vol',this)">Volume</button>
-          <button class="stab" id="stab_avgrev" onclick="swSec('avgrev',this)">Avg Rev/วัน</button>
-          <button class="stab" id="stab_avgvol" onclick="swSec('avgvol',this)">Avg Vol/วัน</button>
-          <button class="stab" id="stab_avgpiece" onclick="swSec('avgpiece',this)">Avg Rev/ชิ้น</button>
-        </div>
-      </div>
-      <div class="ov-tab-divider"></div>
-      <!-- Group 2: Breakdown -->
-      <div class="ov-tab-group">
-        <span class="ov-tab-group-label">Breakdown</span>
-        <div class="ov-tab-group-btns">
-          <button class="stab" id="stab_bd" onclick="swSec('bd',this)">BD Zone</button>
-          <button class="stab" id="stab_area" onclick="swSec('area',this)">พื้นที่</button>
-          <button class="stab" id="stab_acc" onclick="swSec('acc',this)">Account</button>
-          <button class="stab" id="stab_pkg" onclick="swSec('pkg',this)">Package</button>
-        </div>
-      </div>
-      <div class="ov-tab-divider"></div>
-      <!-- Group 3: Compare -->
-      <div class="ov-tab-group">
-        <div class="ov-tab-group-btns">
-          <button class="stab cmp-tab" id="stab_compare" onclick="swSec('compare',this)">⚖️ เปรียบเทียบ</button>
-        </div>
       </div>
     </div>
 
@@ -277,6 +246,37 @@
           </div>
           <div class="overview-trend-chart"><canvas id="c_ov_trend_avg_rev_piece"></canvas></div>
           <div class="overview-trend-note" id="ov_trend_note_avg_rev_piece"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ov-tab-bar" id="secTabs">
+      <!-- Group 1: Performance -->
+      <div class="ov-tab-group">
+        <span class="ov-tab-group-label">Performance</span>
+        <div class="ov-tab-group-btns">
+          <button class="stab active" id="stab_revenue" onclick="swSec('revenue',this)">Revenue</button>
+          <button class="stab" id="stab_vol" onclick="swSec('vol',this)">Volume</button>
+          <button class="stab" id="stab_avgrev" onclick="swSec('avgrev',this)">Avg Rev/วัน</button>
+          <button class="stab" id="stab_avgvol" onclick="swSec('avgvol',this)">Avg Vol/วัน</button>
+          <button class="stab" id="stab_avgpiece" onclick="swSec('avgpiece',this)">Avg Rev/ชิ้น</button>
+        </div>
+      </div>
+      <div class="ov-tab-divider"></div>
+      <!-- Group 2: Breakdown -->
+      <div class="ov-tab-group">
+        <span class="ov-tab-group-label">Breakdown</span>
+        <div class="ov-tab-group-btns">
+          <button class="stab" id="stab_bd" onclick="swSec('bd',this)">BD Zone</button>
+          <button class="stab" id="stab_area" onclick="swSec('area',this)">พื้นที่</button>
+          <button class="stab" id="stab_acc" onclick="swSec('acc',this)">Account</button>
+          <button class="stab" id="stab_pkg" onclick="swSec('pkg',this)">Package</button>
+        </div>
+      </div>
+      <div class="ov-tab-divider"></div>
+      <!-- Group 3: Compare -->
+      <div class="ov-tab-group">
+        <div class="ov-tab-group-btns">
+          <button class="stab cmp-tab" id="stab_compare" onclick="swSec('compare',this)">⚖️ เปรียบเทียบ</button>
         </div>
       </div>
     </div>

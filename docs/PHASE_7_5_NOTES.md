@@ -28,6 +28,8 @@ Branch: `codex/phase-7.5`
 - เพิ่มแถว `Avg Performance Trend` ใต้ KPI cards เป็นกราฟแท่ง+เส้น 3 ใบ ได้แก่ `Avg Rev/day trend`, `Avg Vol/day trend` และ `Avg Rev/ชิ้น trend`
 - กราฟ trend ใช้ 6 เดือนล่าสุดจาก helper เดือนเดิม: แท่งคือค่าเฉลี่ยรายเดือน และเส้นคือ % MoM จากเดือนก่อนหน้า
 - ปรับ visual ของ trend charts ให้เบาลงและอ่านง่ายขึ้น: แท่งใช้สีอ่อนพร้อมขอบ, เส้น MoM ใช้สีเข้ม, ซ่อน legend ซ้ำใน canvas และเพิ่ม summary ค่าล่าสุดใต้กราฟ
+- เปลี่ยนหัวหน้า `Overview command` เป็น `Overview` เพราะเป็น label บอก context ไม่ใช่ปุ่มหรือ command ที่กดได้
+- ย้ายแถบ tab `Performance/Breakdown/Compare` ลงมาอยู่ใต้แถว `Avg Performance Trend` เพื่อให้ควบคุมเฉพาะ chart/detail section ด้านล่าง
 
 ## UX Decision: Card หรือ Graph
 
