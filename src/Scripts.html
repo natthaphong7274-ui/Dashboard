@@ -4346,6 +4346,7 @@ var carMultiViewMode='barline';
 var carMultiMetric='avd';
 var carMultiTopN=5;
 var carMultiCarrier='';
+var carMultiGrowth=false;
 function setCarMultiViewMode(mode,btn){
   carMultiViewMode=mode;
   var btns=btn?btn.parentElement.querySelectorAll('.stab'):[];
@@ -4370,6 +4371,13 @@ function setCarMultiTopN(n,btn){
 }
 function setCarMultiCarrier(name){
   carMultiCarrier=name||'';
+  renderCarrierComparison();
+}
+function setCarMultiGrowth(on,btn){
+  carMultiGrowth=!!on;
+  var btns=btn?btn.parentElement.querySelectorAll('.stab'):[];
+  Array.from(btns).forEach(function(b){b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
   renderCarrierComparison();
 }
 
@@ -4614,11 +4622,15 @@ function renderCarrierComparison(){
         +'<div class="carrier-cmp-control"><span>Carrier</span>'
           +'<select class="carrier-cmp-select" onchange="setCarMultiCarrier(this.value)">'+carrierOptions+'</select>'
         +'</div>'
+        +'<div class="carrier-cmp-control"><span>Growth</span>'
+          +'<button class="stab '+(!carMultiGrowth?'active':'')+'" onclick="setCarMultiGrowth(false,this)">Off</button>'
+          +'<button class="stab '+(carMultiGrowth?'active':'')+'" onclick="setCarMultiGrowth(true,this)">Line</button>'
+        +'</div>'
       +'</div>'
       +'</div>'
       +'<div class="carrier-cmp-context"><span>'+_uiText(meta.label)+'</span><span>'+_uiText(scopeText)+'</span><span>'+_uiText(monthText)+'</span></div>'
       +insightsHtml
-      +'<div class="carrier-cmp-chart-head"><div><b>Monthly pattern</b><span>Grouped by carrier, values use the selected metric</span></div><em>'+_uiText(meta.short)+'</em></div>'
+      +'<div class="carrier-cmp-chart-head"><div><b>Monthly pattern</b><span>Grouped by carrier, values use the selected metric'+(carMultiGrowth?' with MoM growth line':'')+'</span></div><em>'+_uiText(carMultiGrowth?meta.short+' + MoM %':meta.short)+'</em></div>'
       +'<div class="carrier-cmp-chart"><canvas id="cx_car_month_matrix"></canvas></div>'
       +table;
     setTimeout(function(){
@@ -4630,14 +4642,25 @@ function renderCarrierComparison(){
           labels:mData.map(function(m){return m.key.toUpperCase();}),
           datasets:chartCars.map(function(name){
             var cc=getCarrierColor(name);
-            return{label:name,data:mData.map(function(m){return meta.fn(findStat(m,name))||0;}),backgroundColor:cc,borderColor:_darkenHex(cc,.12),borderWidth:1,borderRadius:6,borderSkipped:false,maxBarThickness:28};
-          })
+            return{type:'bar',label:name,data:mData.map(function(m){return meta.fn(findStat(m,name))||0;}),backgroundColor:cc,borderColor:_darkenHex(cc,.12),borderWidth:1,borderRadius:6,borderSkipped:false,maxBarThickness:28,yAxisID:'y',order:2};
+          }).concat(carMultiGrowth?chartCars.map(function(name){
+            var cc=getCarrierColor(name);
+            var vals=mData.map(function(m){return meta.fn(findStat(m,name))||0;});
+            var growth=vals.map(function(v,i){return i===0||!vals[i-1]?null:((v-vals[i-1])/Math.abs(vals[i-1]))*100;});
+            return{type:'line',label:name+' MoM %',data:growth,borderColor:_darkenHex(cc,.16),backgroundColor:_darkenHex(cc,.16),borderWidth:2,pointRadius:3,pointHoverRadius:5,pointBackgroundColor:'#f8fafc',pointBorderColor:_darkenHex(cc,.16),pointBorderWidth:1.5,borderDash:[5,4],tension:.3,yAxisID:'y1',order:1,spanGaps:false};
+          }):[])
         },
         options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-          plugins:{legend:{display:true,position:'top',labels:{font:{size:10,weight:'700'},boxWidth:10,usePointStyle:true}},
-            tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+meta.fmt(ctx.raw||0);}}}},
+          plugins:{legend:{display:true,position:'top',labels:{font:{size:10,weight:'700'},boxWidth:10,usePointStyle:true,
+              filter:function(item){return carMultiGrowth||item.text.indexOf('MoM %')<0;}}},
+            tooltip:{callbacks:{label:function(ctx){
+              if(ctx.dataset.yAxisID==='y1')return ctx.dataset.label+': '+(ctx.raw===null?'-':((ctx.raw>=0?'+':'')+ctx.raw.toFixed(1)+'%'));
+              return ctx.dataset.label+': '+meta.fmt(ctx.raw||0);
+            }}}},
           scales:{x:{ticks:{font:{size:10,weight:'800'},color:'#64748b'},grid:{display:false}},
-            y:{beginAtZero:true,ticks:{font:{size:10},color:'#64748b',callback:function(v){return meta.fmt(v);}},grid:{color:'#edf2f7',drawBorder:false}}}
+            y:{beginAtZero:true,ticks:{font:{size:10},color:'#64748b',callback:function(v){return meta.fmt(v);}},grid:{color:'#edf2f7',drawBorder:false}},
+            y1:{display:carMultiGrowth,position:'right',ticks:{font:{size:10},color:'#64748b',callback:function(v){return v+'%';}},grid:{display:false},border:{display:false}}
+          }
         }
       });
     },60);
