@@ -216,19 +216,88 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   background:#fff;
   padding:10px 12px;
 }
+.overview-trend-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:8px;
+}
 .overview-trend-card-title{
   color:var(--pr);
   font-size:12px;
   font-weight:900;
-  margin-bottom:8px;
+}
+.overview-trend-legend{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  color:var(--t2);
+  font-size:10px;
+  font-weight:800;
+}
+.overview-trend-legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
+.overview-trend-legend i{
+  display:inline-block;
+  width:10px;
+  height:10px;
+}
+.overview-trend-legend .bar{
+  border-radius:3px;
+  background:rgba(30,58,95,.18);
+  border:1px solid rgba(30,58,95,.34);
+}
+.overview-trend-legend .line{
+  height:2px;
+  border-radius:999px;
+  background:var(--pr);
 }
 .overview-trend-chart{
   position:relative;
-  height:220px;
+  height:200px;
 }
 .overview-trend-chart canvas{
   width:100%!important;
   height:100%!important;
+}
+.overview-trend-note{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:26px;
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px solid #edf2f7;
+  color:var(--t2);
+  font-size:11px;
+  font-weight:800;
+}
+.overview-trend-note-main{
+  color:var(--tx);
+  font-variant-numeric:tabular-nums;
+}
+.overview-trend-note-delta{
+  border-radius:999px;
+  padding:4px 8px;
+  font-variant-numeric:tabular-nums;
+}
+.overview-trend-note-delta.up{
+  background:#dcfce7;
+  color:#166534;
+}
+.overview-trend-note-delta.down{
+  background:#fee2e2;
+  color:#b42318;
+}
+.overview-trend-note-delta.flat{
+  background:#f4f7f8;
+  color:var(--t2);
 }
 @media(max-width:1100px){
   .overview-trend-grid{

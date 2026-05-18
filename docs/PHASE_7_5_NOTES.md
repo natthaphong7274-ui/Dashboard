@@ -27,6 +27,7 @@ Branch: `codex/phase-7.5`
 - เปลี่ยน mini chart ใต้ KPI หน้า `ภาพรวม` จากกราฟแท่ง+เส้นเป็น MoM summary strip แบบ `เดือนก่อน -> เดือนนี้` พร้อม diff และ % เพื่อให้อ่านการเติบโตได้เร็วขึ้น
 - เพิ่มแถว `Avg Performance Trend` ใต้ KPI cards เป็นกราฟแท่ง+เส้น 3 ใบ ได้แก่ `Avg Rev/day trend`, `Avg Vol/day trend` และ `Avg Rev/ชิ้น trend`
 - กราฟ trend ใช้ 6 เดือนล่าสุดจาก helper เดือนเดิม: แท่งคือค่าเฉลี่ยรายเดือน และเส้นคือ % MoM จากเดือนก่อนหน้า
+- ปรับ visual ของ trend charts ให้เบาลงและอ่านง่ายขึ้น: แท่งใช้สีอ่อนพร้อมขอบ, เส้น MoM ใช้สีเข้ม, ซ่อน legend ซ้ำใน canvas และเพิ่ม summary ค่าล่าสุดใต้กราฟ
 
 ## UX Decision: Card หรือ Graph
 

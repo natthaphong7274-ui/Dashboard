@@ -1023,11 +1023,11 @@ function renderOverviewTrendPanel(curKey, seriesMap){
   if(range){
     range.textContent=months.length?(months[0].en+' - '+months[months.length-1].en):'';
   }
-  _renderOverviewComboTrend('c_ov_trend_avg_rev_day',seriesMap&&seriesMap.avgRevDay,'var(--c-ard)',function(v){return fmtS(Math.round(v));});
-  _renderOverviewComboTrend('c_ov_trend_avg_vol_day',seriesMap&&seriesMap.avgVolDay,'var(--c-avd)',fmtF);
-  _renderOverviewComboTrend('c_ov_trend_avg_rev_piece',seriesMap&&seriesMap.avgRevPiece,'var(--c-apc)',fmtF);
+  _renderOverviewComboTrend('c_ov_trend_avg_rev_day',seriesMap&&seriesMap.avgRevDay,'var(--c-ard)',function(v){return fmtS(Math.round(v));},'ov_trend_note_avg_rev_day');
+  _renderOverviewComboTrend('c_ov_trend_avg_vol_day',seriesMap&&seriesMap.avgVolDay,'var(--c-avd)',fmtF,'ov_trend_note_avg_vol_day');
+  _renderOverviewComboTrend('c_ov_trend_avg_rev_piece',seriesMap&&seriesMap.avgRevPiece,'var(--c-apc)',fmtF,'ov_trend_note_avg_rev_piece');
 }
-function _renderOverviewComboTrend(id,series,color,fmtFn){
+function _renderOverviewComboTrend(id,series,color,fmtFn,noteId){
   var el=document.getElementById(id);
   if(!el)return;
   clearEmpty(id);dc(id);
@@ -1035,20 +1035,25 @@ function _renderOverviewComboTrend(id,series,color,fmtFn){
   var values=(series&&series.values)||[];
   if(values.length<2 || !values.some(function(v){return N(v)>0;})){
     setEmpty(id,'warning','ยังไม่มีข้อมูล trend เพียงพอ');
+    _setOverviewTrendNote(noteId,null);
     return;
   }
   fmtFn=fmtFn||fmtS;
   var chartColor=_cssColor(color);
+  var barFill=_colorAlpha(chartColor,.22);
+  var barBorder=_colorAlpha(chartColor,.58);
+  var lineColor=_darkenHex(chartColor,.16);
   var growth=values.map(function(v,i){
     if(i===0||!values[i-1])return null;
     return ((v-values[i-1])/Math.abs(values[i-1]))*100;
   });
+  _setOverviewTrendNote(noteId,{labels:labels,values:values,growth:growth,fmt:fmtFn});
   CH[id]=new Chart(el.getContext('2d'),{
     data:{
       labels:labels,
       datasets:[
-        {type:'bar',label:'Actual',data:values,backgroundColor:chartColor,borderRadius:5,borderSkipped:false,maxBarThickness:32,yAxisID:'y'},
-        {type:'line',label:'MoM %',data:growth,borderColor:chartColor,backgroundColor:chartColor,tension:.34,pointRadius:3,pointHoverRadius:5,borderWidth:2,yAxisID:'y1'}
+        {type:'bar',label:'Actual',data:values,backgroundColor:barFill,borderColor:barBorder,borderWidth:1.2,borderRadius:7,borderSkipped:false,maxBarThickness:24,barPercentage:.58,categoryPercentage:.7,yAxisID:'y'},
+        {type:'line',label:'MoM %',data:growth,borderColor:lineColor,backgroundColor:lineColor,tension:.28,pointRadius:3.5,pointHoverRadius:5.5,pointBackgroundColor:'#fff',pointBorderColor:lineColor,pointBorderWidth:2,borderWidth:2.4,yAxisID:'y1'}
       ]
     },
     options:{
@@ -1056,7 +1061,7 @@ function _renderOverviewComboTrend(id,series,color,fmtFn){
       maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{display:true,position:'top',labels:{font:{size:10,weight:'700'},boxWidth:10,usePointStyle:true}},
+        legend:{display:false},
         tooltip:{callbacks:{
           label:function(ctx){
             if(ctx.dataset.type==='line')return 'MoM '+(ctx.raw===null?'-':ctx.raw.toFixed(1)+'%');
@@ -1065,12 +1070,47 @@ function _renderOverviewComboTrend(id,series,color,fmtFn){
         }}
       },
       scales:{
-        x:{ticks:{font:{size:10}},grid:{display:false}},
-        y:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return fmtFn(v);}},grid:{color:'#eef3f7'}},
-        y1:{position:'right',ticks:{font:{size:10},callback:function(v){return v+'%';}},grid:{display:false}}
+        x:{ticks:{font:{size:10,weight:'700'},color:'#64748b'},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{font:{size:10},color:'#64748b',maxTicksLimit:4,callback:function(v){return fmtFn(v);}},grid:{color:'#edf2f7',drawBorder:false}},
+        y1:{position:'right',ticks:{font:{size:10},color:'#64748b',maxTicksLimit:4,callback:function(v){return v+'%';}},grid:{display:false},border:{display:false}}
       }
     }
   });
+}
+function _setOverviewTrendNote(noteId,data){
+  var el=noteId?document.getElementById(noteId):null;
+  if(!el)return;
+  if(!data){el.innerHTML='';return;}
+  var lastIdx=data.values.length-1;
+  var label=data.labels[lastIdx]||'Current';
+  var value=data.values[lastIdx]||0;
+  var g=data.growth[lastIdx];
+  var state=g>0?'up':(g<0?'down':'flat');
+  var arrow=g>0?'▲':(g<0?'▼':'•');
+  var gText=g===null?'-':(arrow+' '+Math.abs(g).toFixed(1)+'% MoM');
+  el.innerHTML='<span class="overview-trend-note-main">'+_uiText(label)+' '+_uiText(data.fmt(value))+'</span>'
+    +'<span class="overview-trend-note-delta '+state+'">'+_uiText(gText)+'</span>';
+}
+function _colorAlpha(color,alpha){
+  var c=String(color||'').trim();
+  var hex=c.match(/^#([0-9a-f]{6})$/i);
+  if(hex){
+    var n=parseInt(hex[1],16);
+    return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+alpha+')';
+  }
+  var rgb=c.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/i);
+  if(rgb)return 'rgba('+rgb[1]+','+rgb[2]+','+rgb[3]+','+alpha+')';
+  return c;
+}
+function _darkenHex(color,amount){
+  var c=String(color||'').trim();
+  var hex=c.match(/^#([0-9a-f]{6})$/i);
+  if(!hex)return c;
+  var n=parseInt(hex[1],16);
+  var r=Math.max(0,Math.round(((n>>16)&255)*(1-amount)));
+  var g=Math.max(0,Math.round(((n>>8)&255)*(1-amount)));
+  var b=Math.max(0,Math.round((n&255)*(1-amount)));
+  return '#'+[r,g,b].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
 }
 function _cssColor(color){
   if(!color)return '#2d699f';
