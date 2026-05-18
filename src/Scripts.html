@@ -4813,18 +4813,37 @@ function renderCarrierSection(){
     // ★ ข้อ 4: เปลี่ยนเป็น Avg แทน total
     var avdDiff=c.avgVolDay-c.avgVolDayPrev;
     var avdPct=c.avgVolDayPrev>0?((avdDiff/Math.abs(c.avgVolDayPrev))*100).toFixed(1):null;
+    var ardDiff=c.avgRevDay-c.avgRevDayPrev;
+    var ardPct=c.avgRevDayPrev>0?((ardDiff/Math.abs(c.avgRevDayPrev))*100).toFixed(1):null;
     var arvDiff=c.avgRevVol-c.avgRevVolPrev;
     var arvPct=c.avgRevVolPrev>0?((arvDiff/Math.abs(c.avgRevVolPrev))*100).toFixed(1):null;
-    kHtml+=_kpiTrendCard({label:c.name,value:fmtS(c.vCur),sub:pct+'% | Avg Vol/วัน '+fmtF(c.avgVolDay)+' | Rev/ชิ้น '+fmtF(c.avgRevVol),color:c.color,icon:'🚚',fmt:fmtS,
-      series:_carrierMetricSeries(curKey,c.name,function(d){return d.vol;}),
-      trend:(prevLabel?
-          '<div class="ktrend '+(avdDiff>=0?'tup':'tdn')+'">'
-          +(avdDiff>=0?'▲':'▼')+fmtF(Math.abs(avdDiff))+(avdPct?' ('+Math.abs(avdPct)+'%)':'')+' Avg Vol/วัน vs '+prevKey
-          +'</div>'
-          +'<div class="ktrend '+(arvDiff>=0?'tup':'tdn')+'" style="font-size:9px;margin-top:1px">'
-          +(arvDiff>=0?'▲':'▼')+fmtF(Math.abs(arvDiff))+(arvPct?' ('+Math.abs(arvPct)+'%)':'')+' Rev/ชิ้น vs '+prevKey
-          +'</div>'
-        :'')});
+    function metricLine(label,value){
+      return '<span><b>'+label+'</b> '+value+'</span>';
+    }
+    function trendLine(label,diff,pct,fmtFn){
+      if(!prevLabel)return '';
+      fmtFn=fmtFn||fmtF;
+      var up=diff>=0;
+      return '<div class="carrier-card-trend '+(up?'tup':'tdn')+'">'
+        +(up?'▲':'▼')+fmtFn(Math.abs(diff))+(pct?' ('+Math.abs(pct)+'%)':'')+' '+label+' vs '+prevKey
+        +'</div>';
+    }
+    kHtml+='<div class="kcard carrier-focus-card" style="--kc:'+c.color+'">'
+      +'<div class="kico">🚚</div>'
+      +'<div class="klbl">'+_uiText(c.name)+'</div>'
+      +'<div class="kval">'+fmtS(c.vCur)+'</div>'
+      +'<div class="carrier-card-metrics">'
+        +metricLine('Share',pct+'%')
+        +metricLine('Avg Vol/day',fmtF(c.avgVolDay))
+        +metricLine('Avg Rev/day',fmtS(Math.round(c.avgRevDay)))
+        +metricLine('Rev/ชิ้น',fmtF(c.avgRevVol))
+      +'</div>'
+      +'<div class="carrier-card-trends">'
+        +trendLine('Avg Vol/day',avdDiff,avdPct,fmtF)
+        +trendLine('Avg Rev/day',ardDiff,ardPct,function(v){return fmtS(Math.round(v));})
+        +trendLine('Rev/ชิ้น',arvDiff,arvPct,fmtF)
+      +'</div>'
+      +'</div>';
   });
   document.getElementById('carrier_kgrid').innerHTML=kHtml;
   var extraGrid=document.getElementById('carrier_kgrid2');

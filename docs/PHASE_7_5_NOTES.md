@@ -52,6 +52,8 @@ Branch: `codex/phase-7.5`
 - แยก KPI รวมออกจากการ์ดรายขนส่ง: `carrier_summary_kgrid` ใช้สำหรับ Volume/Revenue/Avg รวม ส่วน `carrier_kgrid` ใช้สำหรับ Top carrier cards เท่านั้น
 - เพิ่ม `Carrier Avg Trend` เป็นกราฟแท่ง+เส้น 3 ใบ ได้แก่ `Avg Rev/day`, `Avg Vol/day` และ `Avg Rev/Vol` โดยใช้ 6 carrier months ล่าสุด
 - เอา MoM comparison ออกจาก KPI รวม `Volume`/`Revenue` ของหน้า `ขนส่ง` เช่นเดียวกับหน้า `ภาพรวม` เพื่อเลี่ยงการตีความ MTD ผิด
+- แยกการ์ดรายขนส่งออกจากกราฟจริง: การ์ดรายขนส่งไม่แสดง mini chart แล้ว แต่แสดง metric สำคัญเป็นข้อความแทน
+- เพิ่ม `Avg Rev/day` ลงในการ์ดรายขนส่ง พร้อม trend เทียบเดือนก่อนหน้า ร่วมกับ `Avg Vol/day` และ `Rev/ชิ้น`
 
 ### Responsive & Accessibility
 
