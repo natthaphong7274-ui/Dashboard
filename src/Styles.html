@@ -117,6 +117,57 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .kcard-trend .ksub{min-height:24px;line-height:1.25;}
 .kmini-chart{height:42px;margin-top:auto;padding-top:6px;}
 .kmini-chart canvas{width:100%!important;height:100%!important;}
+.kmini-summary{
+  margin-top:auto;
+  padding-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.kmini-flow{
+  display:grid;
+  grid-template-columns:auto 1fr auto auto 1fr;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+  color:var(--t2);
+  font-size:10px;
+  font-weight:800;
+}
+.kmini-flow strong{
+  color:var(--tx);
+  font-size:11px;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.kmini-flow b{
+  color:#8aa0aa;
+  font-size:12px;
+}
+.kmini-delta{
+  display:inline-flex;
+  width:max-content;
+  max-width:100%;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:11px;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.kmini-summary.up .kmini-delta{
+  background:#dcfce7;
+  color:#166534;
+}
+.kmini-summary.down .kmini-delta{
+  background:#fee2e2;
+  color:#b42318;
+}
+.kmini-summary.flat .kmini-delta,
+.kmini-summary.flat{
+  color:var(--t2);
+}
 .kcard-mini.kcard-trend{min-height:148px;}
 .tup{color:var(--gn);}.tdn{color:var(--rd);}
 .spanel{display:none;}.spanel.active{display:block;}

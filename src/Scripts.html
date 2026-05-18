@@ -903,16 +903,16 @@ function renderKPI(){
      trend:mp?'<div class="ktrend '+(avgDiff>=0?'tup':'tdn')+'">'+(avgDiff>=0?'▲':'▼')+fmtS(Math.abs(avgDiff))+' '+pill(avgPct)+' vs '+mp.en+'</div>':''},
   ].map(function(k){
     if(k.series){
-      return _kpiTrendCard({label:k.l,value:k.v,sub:k.s,color:k.c,icon:k.i,trend:k.trend,series:k.series,fmt:k.fmt});
+      return _kpiTrendCard({label:k.l,value:k.v,sub:k.s,color:k.c,icon:k.i,trend:k.trend,series:k.series,fmt:k.fmt,summaryMode:'mom'});
     }
     return '<div class="kcard" style="--kc:'+k.c+'"><div class="kico">'+k.i+'</div>'
       +'<div class="klbl">'+_metricLabelHtml(k.l)+'</div><div class="kval">'+k.v+'</div>'
       +'<div class="ksub">'+k.s+'</div>'+(k.trend||'')+'</div>';
   }).join('');
   // Secondary KPI cards stay in the same grid so overview scans as one command row.
-  html+=_kpiTrendCard({label:'AVG REV/ชิ้น '+m.en,value:fmtF(apV),sub:'Revenue ÷ Volume รวม',color:'var(--c-apc)',icon:'🏷️',series:apSeries,fmt:fmtF,
+  html+=_kpiTrendCard({label:'AVG REV/ชิ้น '+m.en,value:fmtF(apV),sub:'Revenue ÷ Volume รวม',color:'var(--c-apc)',icon:'🏷️',series:apSeries,fmt:fmtF,summaryMode:'mom',
     trend:mp?'<div class="ktrend '+(apDiff>=0?'tup':'tdn')+'">'+(apDiff>=0?'▲':'▼')+fmtF(Math.abs(apDiff))+' '+pill(apPct)+' vs '+mp.en+'</div>':''});
-  html+=_kpiTrendCard({label:'AVG VOL/วัน '+m.en,value:fmtF(avdV),sub:'Volume ÷ '+mDay+' วัน',color:'var(--c-avd)',icon:'📦',series:avdSeries,fmt:fmtF,
+  html+=_kpiTrendCard({label:'AVG VOL/วัน '+m.en,value:fmtF(avdV),sub:'Volume ÷ '+mDay+' วัน',color:'var(--c-avd)',icon:'📦',series:avdSeries,fmt:fmtF,summaryMode:'mom',
     trend:mp?'<div class="ktrend '+(avdDiff>=0?'tup':'tdn')+'">'+(avdDiff>=0?'▲':'▼')+fmtF(Math.abs(avdDiff))+' '+pill(avdPct)+' vs '+mp.en+'</div>':''});
   document.getElementById('kgrid').innerHTML=html;
   var extraEl=document.getElementById('kgrid_extra');
@@ -928,19 +928,43 @@ function _resetKpiTrendCards(){
 function _kpiTrendCard(cfg){
   var id=cfg.id||('kpi_trend_'+(++_kpiTrendSeq));
   var cls=cfg.mini?'kcard-mini kcard-trend':'kcard kcard-trend';
-  _pendingKpiTrendCharts.push({
-    id:id,
-    labels:(cfg.series&&cfg.series.labels)||[],
-    values:(cfg.series&&cfg.series.values)||[],
-    color:cfg.color||'var(--ac)',
-    fmt:cfg.fmt||fmtS
-  });
+  var summaryHtml='';
+  if(cfg.summaryMode==='mom'){
+    summaryHtml=_kpiMomSummary(cfg.series,cfg.fmt||fmtS);
+  } else {
+    _pendingKpiTrendCharts.push({
+      id:id,
+      labels:(cfg.series&&cfg.series.labels)||[],
+      values:(cfg.series&&cfg.series.values)||[],
+      color:cfg.color||'var(--ac)',
+      fmt:cfg.fmt||fmtS
+    });
+  }
   return '<div class="'+cls+'" style="--kc:'+cfg.color+'"><div class="kico">'+(cfg.icon||'')+'</div>'
     +'<div class="klbl">'+_metricLabelHtml(cfg.label)+'</div>'
     +'<div class="kval">'+cfg.value+'</div>'
     +'<div class="ksub">'+(cfg.sub||'')+'</div>'
-    +(cfg.trend||'')
-    +'<div class="kmini-chart"><canvas id="'+id+'"></canvas></div>'
+    +(cfg.summaryMode==='mom'?summaryHtml:(cfg.trend||'')+'<div class="kmini-chart"><canvas id="'+id+'"></canvas></div>')
+    +'</div>';
+}
+function _kpiMomSummary(series,fmtFn){
+  var labels=(series&&series.labels)||[];
+  var values=(series&&series.values)||[];
+  fmtFn=fmtFn||fmtS;
+  if(values.length<2)return '<div class="kmini-summary flat"><span>ยังไม่มีเดือนก่อนหน้า</span></div>';
+  var cur=values[values.length-1]||0;
+  var prev=values[values.length-2]||0;
+  var curLabel=labels[labels.length-1]||'Current';
+  var prevLabel=labels[labels.length-2]||'Previous';
+  var diff=cur-prev;
+  var pct=prev?((diff/Math.abs(prev))*100):null;
+  var state=diff>0?'up':(diff<0?'down':'flat');
+  var sign=diff>0?'+':(diff<0?'-':'');
+  var arrow=diff>0?'▲':(diff<0?'▼':'•');
+  var pctText=pct===null?'':(' ('+Math.abs(pct).toFixed(1)+'%)');
+  return '<div class="kmini-summary '+state+'">'
+    +'<div class="kmini-flow"><span>'+_uiText(prevLabel)+'</span><strong>'+_uiText(fmtFn(prev))+'</strong><b>→</b><span>'+_uiText(curLabel)+'</span><strong>'+_uiText(fmtFn(cur))+'</strong></div>'
+    +'<div class="kmini-delta">'+arrow+' '+sign+_uiText(fmtFn(Math.abs(diff)))+_uiText(pctText)+'</div>'
     +'</div>';
 }
 function _flushKpiTrendCards(){
