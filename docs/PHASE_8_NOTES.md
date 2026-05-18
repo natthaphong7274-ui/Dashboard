@@ -27,12 +27,14 @@ Phase 8 เริ่มงาน Dashboard Logic & Calculation Refinement โด
   - tooltip และ label ช่วยอธิบายว่า `Avg Rev/day` เป็นค่าเฉลี่ยต่อวันของทั้งกลุ่ม ไม่ใช่ผลรวม avg จากชีต
 - เพิ่ม config สำหรับ Loss Baseline
   - `LOSS_BASELINE_MONTH_KEY = 'mar'`
-  - `getLossBaselineMonthKey(currentMonthKey)` เพื่อไม่ hard-code baseline ใน Phase 9
+  - `getLossBaselineMonthKey(currentMonthKey)` และ helper ฝั่ง frontend เพื่อไม่ hard-code baseline
+  - risk page, tracking summary, map status และ risk counters หลักเริ่มอ้าง baseline จาก config จริงแล้ว
 
 ## Notes
 
-- งานนี้เป็นก้อนแรกของ Phase 8 ยังไม่ได้ปิดทั้ง Phase
-- WoW Comparison ยังต้องดูแหล่งข้อมูลรายวัน/รายสัปดาห์เพิ่มเติม เพราะข้อมูล KPI หลักปัจจุบันเป็นรายเดือน
+- Phase 8 ฝั่ง monthly logic ถือว่าปิดแล้วสำหรับข้อมูลที่มีใน repo ตอนนี้
+- WoW Comparison ยังไม่ถูกเปิดใช้งาน เพราะยังไม่พบแหล่งข้อมูลรายวัน/รายสัปดาห์ 8-12 สัปดาห์ที่พอทำแบบวันชนวันได้โดยไม่ misleading
+- เลือกไม่ใส่ WoW แบบจำลองจากข้อมูลรายเดือน เพื่อไม่ให้ dashboard แสดง insight ที่ดูเหมือนถูกแต่ฐานข้อมูลไม่รองรับจริง
 
 ## Verification
 

@@ -30,8 +30,9 @@ var DATA_YEAR = '2026';
 var LOSS_BASELINE_MONTH_KEY = 'mar';
 function getLossBaselineMonthKey(currentMonthKey) {
   var configured = String(LOSS_BASELINE_MONTH_KEY || '').toLowerCase();
-  if (_MONTH_ORDER.indexOf(configured) >= 0) return configured;
   var currentIdx = _MONTH_ORDER.indexOf(String(currentMonthKey || '').toLowerCase());
+  var configuredIdx = _MONTH_ORDER.indexOf(configured);
+  if (configuredIdx >= 0 && (currentIdx < 0 || configuredIdx < currentIdx)) return configured;
   return currentIdx > 0 ? _MONTH_ORDER[currentIdx - 1] : 'mar';
 }
 

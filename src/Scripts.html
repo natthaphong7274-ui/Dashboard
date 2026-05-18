@@ -199,6 +199,37 @@ function avgVolDayTotal(rows,m){
 function monthDivisorThaiLabel(m){
   return getDayDivisorMeta(m&&m.key).thLabel;
 }
+function getMonthByKey(key){
+  return (MONTHS||[]).find(function(m){ return m.key === key; }) || null;
+}
+function getPreviousMonthMeta(monthOrKey){
+  var key = typeof monthOrKey === 'string' ? monthOrKey : (monthOrKey && monthOrKey.key);
+  var idx = (MONTHS||[]).findIndex(function(m){ return m.key === key; });
+  return idx > 0 ? MONTHS[idx - 1] : null;
+}
+function getRiskBaselineMonth(currentMonth){
+  var currentKey = typeof currentMonth === 'string' ? currentMonth : (currentMonth && currentMonth.key);
+  if(!currentKey) return null;
+  var baselineKey = (typeof getLossBaselineMonthKey === 'function')
+    ? getLossBaselineMonthKey(currentKey)
+    : '';
+  var baselineMonth = getMonthByKey(baselineKey);
+  var currentIdx = (MONTHS||[]).findIndex(function(m){ return m.key === currentKey; });
+  var baselineIdx = baselineMonth ? (MONTHS||[]).findIndex(function(m){ return m.key === baselineMonth.key; }) : -1;
+  if (baselineMonth && baselineIdx >= 0 && (currentIdx < 0 || baselineIdx < currentIdx)) return baselineMonth;
+  return getPreviousMonthMeta(currentKey);
+}
+function riskDelta(r, currentMonth, baselineMonth){
+  return baselineMonth ? (N(r[baselineMonth.colAvg]) - N(r[currentMonth.colAvg])) : 0;
+}
+function growthDelta(r, currentMonth, baselineMonth){
+  return baselineMonth ? (N(r[currentMonth.colAvg]) - N(r[baselineMonth.colAvg])) : 0;
+}
+function riskRowsForBaseline(rows, currentMonth, baselineMonth, threshold){
+  if(!currentMonth || !baselineMonth) return [];
+  var cut = typeof threshold === 'number' ? threshold : (_riskThreshold || 0);
+  return rows.filter(function(r){ return riskDelta(r, currentMonth, baselineMonth) > cut; });
+}
 function grpAvgRevDay(rows,groupCol,m){
   var g={};
   rows.forEach(function(r){
@@ -3362,14 +3393,15 @@ function _bdOwnerForReport(r){
 }
 function _buildReportTasks(rows,m,mp){
   var out=[];
+  var riskBase = getRiskBaselineMonth(m);
   if(!mp)return out;
   rows.forEach(function(r){
     var code=_rowCode(r);
-    var risk=(N(r[mp.colAvg])-N(r[m.colAvg]))>(_riskThreshold||0);
+    var risk=riskBase ? riskDelta(r,m,riskBase)>(_riskThreshold||0) : false;
     var growth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);
     if(risk){
       var rs=_trackingStatusFor('risk',code,m);
-      out.push({type:'risk',code:code,name:r[COL.agentName]||'',bd:_bdOwnerForReport(r),zone:r[COL.zoneName]||'',rev:N(r[m.colRev]),prevRev:N(r[mp.colRev]),status:rs,done:_isDoneTracking('risk',rs),success:_isSuccessTracking('risk',rs)});
+      out.push({type:'risk',code:code,name:r[COL.agentName]||'',bd:_bdOwnerForReport(r),zone:r[COL.zoneName]||'',rev:N(r[m.colRev]),prevRev:riskBase?N(r[riskBase.colRev]):0,status:rs,done:_isDoneTracking('risk',rs),success:_isSuccessTracking('risk',rs)});
     }
     if(growth){
       var gs=_trackingStatusFor('growth',code,m);
@@ -3391,12 +3423,13 @@ function exportTrackingReport(){
 }
 function _buildBDPerformanceRows(rows,m,mp){
   var map={};
+  var riskBase = getRiskBaselineMonth(m);
   rows.forEach(function(r){
     var bd=_bdOwnerForReport(r),code=_rowCode(r);
     if(!map[bd])map[bd]={bd:bd,zone:r[COL.zoneName]||'',agents:0,rev:0,prevRev:0,tasks:0,done:0,success:0,risk:0,riskSaved:0};
     var d=map[bd]; d.agents++; d.rev+=N(r[m.colRev]); if(mp)d.prevRev+=N(r[mp.colRev]);
     if(mp){
-      var isRisk=(N(r[mp.colAvg])-N(r[m.colAvg]))>(_riskThreshold||0);
+      var isRisk=riskBase ? riskDelta(r,m,riskBase)>(_riskThreshold||0) : false;
       var isGrowth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);
       if(isRisk){var rs=_trackingStatusFor('risk',code,m);d.tasks++;d.risk++;if(_isDoneTracking('risk',rs))d.done++;if(_isSuccessTracking('risk',rs)){d.success++;d.riskSaved++;}}
       if(isGrowth){var gs=_trackingStatusFor('growth',code,m);d.tasks++;if(_isDoneTracking('growth',gs))d.done++;if(_isSuccessTracking('growth',gs))d.success++;}
@@ -5807,22 +5840,18 @@ function setRiskThreshold(){
 }
 
 function renderRisk(){
-  var m=getMC(),mp=getMP();
+  var m=getMC(),mp=getMP(),riskBase=getRiskBaselineMonth(getMC()),riskBasePrev=getPreviousMonthMeta(riskBase);
   if(!m||!m.colRev)return;
 
-  if(!mp){
+  if(!riskBase){
     var tbl=document.getElementById('risk_tbl');
-    if(tbl)tbl.innerHTML='<div style="padding:20px;color:var(--t2)">ต้องเลือกเดือนที่มีเดือนก่อนเพื่อเปรียบเทียบ (Mar ขึ้นไป)</div>';
+    if(tbl)tbl.innerHTML='<div style="padding:20px;color:var(--t2)">ต้องเลือกเดือนที่มี baseline เปรียบเทียบได้ก่อน</div>';
     return;
   }
 
   // ── rows: Avg ลดลง > threshold ──
-  var rows = FR.filter(function(r){
-    var ardC=N(r[m.colAvg]);
-    var ardP=N(r[mp.colAvg]);
-    return (ardP-ardC)>_riskThreshold;
-  }).sort(function(a,b){
-    return (N(b[mp.colAvg])-N(b[m.colAvg]))-(N(a[mp.colAvg])-N(a[m.colAvg]));
+  var rows = riskRowsForBaseline(FR, m, riskBase, _riskThreshold).sort(function(a,b){
+    return riskDelta(b, m, riskBase) - riskDelta(a, m, riskBase);
   });
 
   // ── badges ──
@@ -5831,45 +5860,32 @@ function renderRisk(){
   var lbl=document.getElementById('risk_tbl_label');
   if(lbl)lbl.textContent=rows.length+' ราย';
   var pageCnt=document.getElementById('risk_page_cnt');
-  if(pageCnt)pageCnt.textContent='เกณฑ์ > '+_riskThreshold+' บาท/วัน | แสดง '+Math.min(rows.length,300)+' ราย';
+  if(pageCnt)pageCnt.textContent='เกณฑ์ > '+_riskThreshold+' บาท/วัน | เทียบ '+m.en+' vs '+riskBase.en+' | แสดง '+Math.min(rows.length,300)+' ราย';
   var titleEl=document.getElementById('risk_tbl_title');
-  if(titleEl)titleEl.textContent='📋 รายชื่อกลุ่มเสี่ยง';
+  if(titleEl)titleEl.textContent='📋 รายชื่อกลุ่มเสี่ยง ('+m.en+' vs '+riskBase.en+')';
   var zTitle=document.getElementById('risk_chart_zone_title');
-  if(zTitle)zTitle.textContent='🔴 เสี่ยง ราย Zone';
+  if(zTitle)zTitle.textContent='🔴 เสี่ยง ราย Zone ('+m.en+' vs '+riskBase.en+')';
 
   // ── Status Comparison Cards ──
   var sc=document.getElementById('risk_status_cards');
   if(sc){
-    var totalAvgLossC=rows.reduce(function(s,r){return s+(N(r[mp.colAvg])-N(r[m.colAvg]));},0);
-    var totalRevLostC=rows.reduce(function(s,r){return s+Math.abs(N(r[mp.colRev])-N(r[m.colRev]));},0);
+    var totalAvgLossC=rows.reduce(function(s,r){return s+riskDelta(r,m,riskBase);},0);
+    var totalRevLostC=rows.reduce(function(s,r){return s+Math.abs(N(r[riskBase.colRev])-N(r[m.colRev]));},0);
     var totalVolCurC=rows.reduce(function(s,r){return s+N(r[m.colVol]);},0);
-    var totalVolPrevC=rows.reduce(function(s,r){return s+N(r[mp.colVol]);},0);
+    var totalVolPrevC=rows.reduce(function(s,r){return s+N(r[riskBase.colVol]);},0);
     var totalVolLostC=Math.max(0,totalVolPrevC-totalVolCurC);
     var avgDropPerRow=rows.length>0?Math.round(totalAvgLossC/rows.length):0;
 
-    // prev month rows
-    var rowsPrev=FR.filter(function(r){
-      var ardC2=N(r[m.colAvg]),ardP2=N(r[mp.colAvg]);
-      return (ardP2-ardC2)>_riskThreshold;
-    });
-    // we don't have prev-prev month data easily, so show prev count vs current
-    // For prev month count: need month before mp if available
-    var mpp=null;
-    var mpIdx=MONTHS.findIndex(function(x){return x.key===mp.key;});
-    if(mpIdx>0)mpp=MONTHS[mpIdx-1];
-
-    var prevCount=rowsPrev.length; // same threshold applied to mp vs mpp if available
+    var prevCount=0;
     var prevRevLost=0, prevVolLost=0, prevAvgDrop=0;
-    if(mpp){
-      var rowsPrevPrev=FR.filter(function(r){
-        return (N(r[mpp.colAvg])-N(r[mp.colAvg]))>_riskThreshold;
-      });
+    if(riskBasePrev){
+      var rowsPrevPrev=riskRowsForBaseline(FR, riskBase, riskBasePrev, _riskThreshold);
       prevCount=rowsPrevPrev.length;
-      prevRevLost=rowsPrevPrev.reduce(function(s,r){return s+Math.abs(N(r[mpp.colRev])-N(r[mp.colRev]));},0);
-      var ppVolCur=rowsPrevPrev.reduce(function(s,r){return s+N(r[mp.colVol]);},0);
-      var ppVolPrev=rowsPrevPrev.reduce(function(s,r){return s+N(r[mpp.colVol]);},0);
+      prevRevLost=rowsPrevPrev.reduce(function(s,r){return s+Math.abs(N(r[riskBasePrev.colRev])-N(r[riskBase.colRev]));},0);
+      var ppVolCur=rowsPrevPrev.reduce(function(s,r){return s+N(r[riskBase.colVol]);},0);
+      var ppVolPrev=rowsPrevPrev.reduce(function(s,r){return s+N(r[riskBasePrev.colVol]);},0);
       prevVolLost=Math.max(0,ppVolPrev-ppVolCur);
-      prevAvgDrop=rowsPrevPrev.length>0?rowsPrevPrev.reduce(function(s,r){return s+(N(r[mpp.colAvg])-N(r[mp.colAvg]));},0)/rowsPrevPrev.length:0;
+      prevAvgDrop=rowsPrevPrev.length>0?rowsPrevPrev.reduce(function(s,r){return s+riskDelta(r,riskBase,riskBasePrev);},0)/rowsPrevPrev.length:0;
     }
 
     function _scCard(label, curVal, prevVal, curLabel, prevLabel, isHighBad, unitSuffix, descFn){
@@ -5910,7 +5926,7 @@ function renderRisk(){
     html+=_scCard(
       'กลุ่มเสี่ยง',
       rows.length, prevCount,
-      m.en, mp.en,
+      m.en, riskBase.en,
       true, ' ราย',
       function(diff,pct,worse){
         var absDiff=Math.abs(diff);
@@ -5922,7 +5938,7 @@ function renderRisk(){
 
     // Card 2: Revenue หาย (+ Avg Rev/วัน)
     var rkDayC=getDAY1ForMonth(m.key)||1;
-    var rkDayP=getDAY1ForMonth(mp.key)||1;
+    var rkDayP=getDAY1ForMonth(riskBase.key)||1;
     var curRevStr=fmtS(Math.round(totalRevLostC));
     var prevRevStr=fmtS(Math.round(prevRevLost));
     var rkAvgRevDayC=rkDayC>0?totalRevLostC/rkDayC:0;
@@ -5947,7 +5963,7 @@ function renderRisk(){
         +'<div style="font-size:24px;font-weight:500;line-height:1;color:'+rcc+'">'+curRevStr+'</div>'
         +'<div style="font-size:10px;color:'+rcc+';margin-top:2px;font-weight:600">≈ '+rkAvgRevDayStr+'</div></div>'
         +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
-        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div>'
+        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+riskBase.en+'</div>'
         +'<div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevRevStr+'</div>'
         +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">≈ '+rkAvgRevDayPStr+'</div></div>'
       +'</div>'
@@ -5982,7 +5998,7 @@ function renderRisk(){
         +'<div style="font-size:24px;font-weight:500;line-height:1;color:'+vcc+'">'+curVolStr+' ชิ้น</div>'
         +'<div style="font-size:10px;color:'+vcc+';margin-top:2px;font-weight:600">≈ '+rkAvgVolDayStr+'</div></div>'
         +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
-        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div>'
+        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+riskBase.en+'</div>'
         +'<div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevVolStr+' ชิ้น</div>'
         +'<div style="font-size:10px;color:#94a3b8;margin-top:2px">≈ '+rkAvgVolDayPStr+'</div></div>'
       +'</div>'
@@ -6007,11 +6023,11 @@ function renderRisk(){
       ?'Avg drop/รายมากขึ้น <strong>+'+fmtF(Math.abs(avgDiff))+' บ/วัน (+'+avgPct+'%)</strong> จากเดือนก่อน'
       :'Avg drop/รายน้อยลง <strong>'+fmtF(Math.abs(avgDiff))+' บ/วัน (-'+avgPct+'%)</strong> จากเดือนก่อน';
     html+='<div style="background:var(--color-background-primary,#fff);border:0.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;flex:1;min-width:180px;border-top:3px solid '+abc+'">'
-      +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Avg drop / ราย</div>'
-      +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">'
+        +'<div style="font-size:11px;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Avg drop / ราย</div>'
+        +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">'
         +'<div><div style="font-size:10px;color:#94a3b8">'+m.en+'</div><div style="font-size:24px;font-weight:500;line-height:1;color:'+acc+'">'+curAvgStr+' บ/วัน</div></div>'
         +'<div style="width:1px;background:#e2e8f0;align-self:stretch;margin:0 4px"></div>'
-        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+mp.en+'</div><div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevAvgStr+' บ/วัน</div></div>'
+        +'<div style="padding-bottom:2px"><div style="font-size:10px;color:#94a3b8">'+riskBase.en+'</div><div style="font-size:14px;font-weight:500;color:var(--t2)">'+prevAvgStr+' บ/วัน</div></div>'
       +'</div>'
       +'<div style="display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border-radius:8px;background:'+avbg+';color:'+avtxt+';font-size:12px;line-height:1.5">'
         +'<svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:2px"><path d="'+aarrow+'" stroke="'+avtxt+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -6025,12 +6041,7 @@ function renderRisk(){
   // ── Charts ──
   setTimeout(function(){
     // prev month rows (mp vs mpp หรือ mp เทียบ m)
-    var rowsPrev=mp?FR.filter(function(r){
-      var mpp2=null;
-      var mpIdx2=MONTHS.findIndex(function(x){return x.key===mp.key;});
-      if(mpIdx2>0)mpp2=MONTHS[mpIdx2-1];
-      return mpp2?(N(r[mpp2.colAvg])-N(r[mp.colAvg]))>_riskThreshold:false;
-    }):[];
+    var rowsPrev=riskBase && riskBasePrev ? riskRowsForBaseline(FR, riskBase, riskBasePrev, _riskThreshold) : [];
 
     // helper: build grouped bar chart options
     function _groupedOpts(colorCur, colorPrev){
@@ -6048,9 +6059,7 @@ function renderRisk(){
     var rz={},rzP={};
     rows.forEach(function(r){var z=String(r['Zone Name']||'?');rz[z]=(rz[z]||0)+1;});
     // prev month: rows filtered by mp vs mpp
-    var mpIdx3=mp?MONTHS.findIndex(function(x){return x.key===mp.key;}):-1;
-    var mpp3=mpIdx3>0?MONTHS[mpIdx3-1]:null;
-    var rowsPrevZone=mpp3?FR.filter(function(r){return (N(r[mpp3.colAvg])-N(r[mp.colAvg]))>_riskThreshold;}):[];
+    var rowsPrevZone=riskBase && riskBasePrev ? riskRowsForBaseline(FR, riskBase, riskBasePrev, _riskThreshold) : [];
     rowsPrevZone.forEach(function(r){var z=String(r['Zone Name']||'?');rzP[z]=(rzP[z]||0)+1;});
     var rzArr=Object.entries(rz).sort(function(a,b){return b[1]-a[1];}).slice(0,12);
     dc('c_risk_zone');var el=document.getElementById('c_risk_zone');
@@ -6341,8 +6350,8 @@ function renderRisk(){
       var z = String(r['Zone Name']||'?');
       if(!zoneMap[z]) zoneMap[z] = {count:0,revLost:0,avgDrop:0};
       zoneMap[z].count++;
-      zoneMap[z].revLost += Math.abs(N(r[mp.colRev])-N(r[m.colRev]));
-      zoneMap[z].avgDrop += (N(r[mp.colAvg])-N(r[m.colAvg]));
+      zoneMap[z].revLost += Math.abs(N(r[riskBase.colRev])-N(r[m.colRev]));
+      zoneMap[z].avgDrop += riskDelta(r,m,riskBase);
     });
     var zoneSorted = Object.entries(zoneMap).sort(function(a,b){return b[1].count-a[1].count;});
     var zsHtml = '<table class="mt" style="width:100%"><thead><tr>'
@@ -7660,7 +7669,7 @@ function switchTsmTab(tab, btn){
 }
 
 function renderTsmModal(){
-  var m = getMC(), mp = getMP();
+  var m = getMC(), mp = getMP(), riskBase = getRiskBaselineMonth(getMC());
   if(!m) return;
 
   var role = (_currentUser && _currentUser.role) || 'Director';
@@ -7674,9 +7683,7 @@ function renderTsmModal(){
   if(bdView)  bdView.style.display  = isBD ? 'block' : 'none';
 
   // ── ดึง rows เหมือนกับ renderRisk() เป๊ะ ──
-  var riskRows = mp ? FR.filter(function(r){
-    return (N(r[mp.colAvg]) - N(r[m.colAvg])) > _riskThreshold;
-  }) : [];
+  var riskRows = riskBase ? riskRowsForBaseline(FR, m, riskBase, _riskThreshold) : [];
 
   // ── นับสถานะ ──
   var cnt = { total:0, none:0, contact:0, solving:0, success:0, fail:0 };
@@ -7701,7 +7708,7 @@ function renderTsmModal(){
 
   // ── sub text ──
   var subEl = document.getElementById('tsm_sub');
-  if(subEl) subEl.textContent = 'Risk — เดือน ' + m.en + ' | ทั้งหมด ' + cnt.total + ' ราย';
+  if(subEl) subEl.textContent = 'Risk — เดือน ' + m.en + ' | baseline ' + (riskBase ? riskBase.en : '-') + ' | ทั้งหมด ' + cnt.total + ' ราย';
 
   // ── KPI Cards — BD เห็นต่าง: เน้น "เหลือต้องโทร" ──
   var krow = document.getElementById('tsm_krow');
@@ -7712,7 +7719,7 @@ function renderTsmModal(){
         var code = String(r['Agent Code']||'');
         var trkKey = 'risk_' + code + '_' + m.key;
         var s = (_trkData[trkKey]||{}).status || '';
-        return (!s||s===''||s==='wait') && mp && (N(r[mp.colAvg])-N(r[m.colAvg])) > _riskThreshold*2;
+        return (!s||s===''||s==='wait') && riskBase && riskDelta(r, m, riskBase) > _riskThreshold*2;
       }).length;
       krow.innerHTML =
         _tsmCard('tsm-kc-total',   cnt.total,   '🏷️ ทั้งหมด','#3b4a6b') +
@@ -7783,7 +7790,7 @@ function renderTsmModal(){
   }
 
   // ── BD view: Top5 + Action plan ──
-  if(isBD && mp){
+  if(isBD && riskBase){
     // เรียงตาม Avg ลดลงมากสุดก่อน และยังไม่ได้โทร
     var pendForBD = riskRows.filter(function(r){
       var code = String(r['Agent Code']||'');
@@ -7791,7 +7798,7 @@ function renderTsmModal(){
       var s = (_trkData[trkKey]||{}).status || '';
       return !s||s===''||s==='wait';
     }).sort(function(a,b){
-      return (N(b[mp.colAvg])-N(b[m.colAvg]))-(N(a[mp.colAvg])-N(a[m.colAvg]));
+      return riskDelta(b, m, riskBase) - riskDelta(a, m, riskBase);
     });
 
     // Top 5
@@ -7801,7 +7808,7 @@ function renderTsmModal(){
         top5El.innerHTML='<div style="color:var(--gn);font-weight:700;padding:12px 0">🎉 โทรครบทุกรายแล้ว!</div>';
       } else {
         top5El.innerHTML = pendForBD.slice(0,5).map(function(r,i){
-          var diff = Math.round(N(r[mp.colAvg])-N(r[m.colAvg]));
+          var diff = Math.round(riskDelta(r, m, riskBase));
           var urgColor = diff > _riskThreshold*2 ? 'var(--rd)' : '#f59e0b';
           var badge = diff > _riskThreshold*2
             ? '<span style="font-size:9px;background:#fee2e2;color:var(--rd);padding:1px 6px;border-radius:20px;font-weight:700">🔥 ด่วนมาก</span>'
@@ -7825,7 +7832,7 @@ function renderTsmModal(){
     var actEl = document.getElementById('tsm_bd_action');
     if(actEl){
       var totalPend = pendForBD.length;
-      var ultraUrgent = pendForBD.filter(function(r){ return (N(r[mp.colAvg])-N(r[m.colAvg])) > _riskThreshold*2; }).length;
+      var ultraUrgent = pendForBD.filter(function(r){ return riskDelta(r, m, riskBase) > _riskThreshold*2; }).length;
       var normal = totalPend - ultraUrgent;
       var done = cnt.contact + cnt.solving + cnt.success + cnt.fail;
       var pctDone2 = cnt.total ? Math.round(done/cnt.total*100) : 0;
@@ -8088,9 +8095,7 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
   var pendCnt = document.getElementById('tsm_pending_count');
   if(pendEl){
     // riskRows อาจไม่อยู่ใน scope นี้ — สร้างใหม่ที่นี่
-    var riskRowsLocal = mp ? FR.filter(function(r){
-      return (N(r[mp.colAvg]) - N(r[m.colAvg])) > (typeof _riskThreshold !== 'undefined' ? _riskThreshold : 0);
-    }) : [];
+    var riskRowsLocal = riskBase ? riskRowsForBaseline(FR, m, riskBase, (typeof _riskThreshold !== 'undefined' ? _riskThreshold : 0)) : [];
     var pendRows = riskRowsLocal.filter(function(r){
       var code = String(r['Agent Code']||'');
       var trkKey = 'risk_' + code + '_' + m.key;
@@ -8098,8 +8103,8 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
       return !s || s === '' || s === 'wait';
     }).sort(function(a,b){
       // เรียง: Avg ลดลงมากที่สุดก่อน (ด่วนที่สุด)
-      var da = mp ? N(a[mp.colAvg])-N(a[m.colAvg]) : 0;
-      var db = mp ? N(b[mp.colAvg])-N(b[m.colAvg]) : 0;
+      var da = riskBase ? riskDelta(a, m, riskBase) : 0;
+      var db = riskBase ? riskDelta(b, m, riskBase) : 0;
       return db - da;
     });
     if(pendCnt) pendCnt.textContent = pendRows.length + ' ราย';
@@ -8107,7 +8112,7 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
       pendEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--gn);font-weight:700">🎉 ติดต่อครบทุกรายแล้ว!</div>';
     } else {
       var pRows = pendRows.map(function(r, i){
-        var diff = mp ? Math.round(N(r[mp.colAvg])-N(r[m.colAvg])) : 0;
+        var diff = riskBase ? Math.round(riskDelta(r, m, riskBase)) : 0;
         var isUrgent = diff > _riskThreshold*2;
         var urgBg = isUrgent ? 'background:#fff5f5' : '';
         return '<tr style="'+urgBg+'">'
@@ -8621,7 +8626,7 @@ window.debugProvMatch = function(){
 };
 
 function buildProvinceData(){
-  var m = getMC(), mp = getMP();
+  var m = getMC(), mp = getRiskBaselineMonth(getMC());
   var pvMap = {};
 
   // ★ BD role: กรองเฉพาะข้อมูลใน zone ของตัวเอง
@@ -8652,7 +8657,6 @@ function buildProvinceData(){
     pvMap[mapKey].total++;
     if (_isActiveAgent(r, m)) pvMap[mapKey].active++;
     pvMap[mapKey].rev += (parseFloat(r[m.colRev])||0);
-    var mp = getMP();
     if(mp) pvMap[mapKey].prevRev += (parseFloat(r[mp.colRev])||0);
     // T03: loss/inactive counters removed
     if(!pvMap[mapKey].zone && r[COL.zoneName]) pvMap[mapKey].zone = String(r[COL.zoneName]||'').trim();
@@ -10783,9 +10787,10 @@ function _renderHomeDirector(m, mp) {
   }).sort(function(a,b){ return b.rev - a.rev; });
 
   // ── growth count for Director ──
+  var riskBaseHome = getRiskBaselineMonth(m);
   var dirGrowthRows = mp ? FR.filter(function(r){ return (N(r[m.colAvg])-N(r[mp.colAvg]))>_growthThreshold; }) : [];
   var dirGrowthRevGain = dirGrowthRows.reduce(function(s,r){ return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev])); },0);
-  var dirRiskCount = mp ? FR.filter(function(r){ return (N(r[mp.colAvg])-N(r[m.colAvg]))>_riskThreshold; }).length : 0;
+  var dirRiskCount = riskBaseHome ? riskRowsForBaseline(FR, m, riskBaseHome, _riskThreshold).length : 0;
 
   // ── Director layout variables ──
   var dirTargetMeta = _targetFromConfig(m.key, prevRev, _targetTotalPrevRev(m.key), null);
@@ -11679,6 +11684,7 @@ function _phase4Pct(n,d,emptyVal){
 }
 function _phase4BdRows(rows,m,mp){
   var map={};
+  var riskBase = getRiskBaselineMonth(m);
   rows.forEach(function(r){
     var bd=_phase4BdName(r), code=String(r[COL.agentCode]||'').trim(), zone=String(r[COL.zoneName]||'');
     if(!map[bd])map[bd]={name:bd,zone:zone,total:0,rev:0,prevRev:0,complete:0,followTotal:0,followDone:0,success:0,riskTotal:0,riskSaved:0};
@@ -11687,7 +11693,7 @@ function _phase4BdRows(rows,m,mp){
     if(String(r[COL.agentCode]||'').trim()&&String(r[COL.agentName]||'').trim()&&String(r[COL.zoneName]||'').trim()&&String(r[COL.phone]||r['phone']||r['Tel']||'').trim())d.complete++;
     if(zone&&String(d.zone).indexOf(zone)<0)d.zone=d.zone?d.zone+','+zone:zone;
     var risk=false,growth=false;
-    if(mp){risk=(N(r[mp.colAvg])-N(r[m.colAvg]))>(_riskThreshold||0);growth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);}
+    if(mp){risk=riskBase ? riskDelta(r,m,riskBase)>(_riskThreshold||0) : false;growth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);}
     var rs=code?_phase4TaskStatus('risk_'+code+'_'+m.key):'', gs=code?_phase4TaskStatus('growth_'+code+'_'+m.key):'';
     if(risk){d.riskTotal++;d.followTotal++;if(['contact','solving','success','fail'].indexOf(rs)>=0)d.followDone++;if(rs==='success'){d.riskSaved++;d.success++;}}
     if(growth){d.followTotal++;if(['contacted','data_collected','rewarded','upsold','unreachable'].indexOf(gs)>=0)d.followDone++;if(['rewarded','upsold'].indexOf(gs)>=0)d.success++;}
@@ -12064,9 +12070,10 @@ function _renderHomeAM(m, mp) {
   }).sort(function(a,b){ return b.rev - a.rev; });
 
   // ── Growth & risk rows ──
+  var riskBaseAm = getRiskBaselineMonth(m);
   var amGrowthRows  = mp ? myRows.filter(function(r){ return (N(r[m.colAvg])-N(r[mp.colAvg]))>_growthThreshold; }) : [];
   var amGrowthRevGain = amGrowthRows.reduce(function(s,r){ return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev])); },0);
-  var amRiskCount   = mp ? myRows.filter(function(r){ return (N(r[mp.colAvg])-N(r[m.colAvg]))>_riskThreshold; }).length : 0;
+  var amRiskCount   = riskBaseAm ? riskRowsForBaseline(myRows, m, riskBaseAm, _riskThreshold).length : 0;
 
   // ── BD-level breakdown (per BD user in zone) ──
   var bdUserMap = {};
@@ -13350,9 +13357,10 @@ function _renderHomeBD(m, mp) {
     + '</div>';
 
   // ── growth count for BD ──
+  var riskBaseBd = getRiskBaselineMonth(m);
   var bdGrowthRows = mp ? myRows.filter(function(r){ return (N(r[m.colAvg])-N(r[mp.colAvg]))>_growthThreshold; }) : [];
   var bdGrowthRevGain = bdGrowthRows.reduce(function(s,r){ return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev])); },0);
-  var bdRiskCount = mp ? myRows.filter(function(r){ return (N(r[mp.colAvg])-N(r[m.colAvg]))>_riskThreshold; }).length : 0;
+  var bdRiskCount = riskBaseBd ? riskRowsForBaseline(myRows, m, riskBaseBd, _riskThreshold).length : 0;
 
   html += _homeOperationalPanel({
     role:'bd',
