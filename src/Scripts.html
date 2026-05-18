@@ -10182,6 +10182,9 @@ function _renderHomeDirector(m, mp) {
   var momRev = _homeMoM(totRev, prevRev);
   var momVol = _homeMoM(totVol, prevVol);
   var runRate = Math.round(totRev / Math.max(TODAY_DATE - 1, 1));
+  var avgVolPerDay = Math.round(totVol / Math.max(TODAY_DATE - 1, 1));
+  var avgRevMoM = prevRev > 0 ? _homeMoM(runRate, Math.round(prevRev / 30)) : null;
+  var avgVolMoM = prevVol > 0 ? _homeMoM(avgVolPerDay, Math.round(prevVol / 30)) : null;
   var daysInMonth = 30;
   var daysLeft = Math.max(0, daysInMonth - (TODAY_DATE > 0 ? TODAY_DATE : 1) + 1);
 
@@ -10381,8 +10384,8 @@ function _renderHomeDirector(m, mp) {
     sideTitle:'Country focus',
     sideSub:'สรุปเฉพาะจุดที่ควรตัดสินใจวันนี้',
     stats:[
-      {label:'Revenue MTD', value:'฿'+fmtS(Math.round(totRev)), sub:(momRev!==null ? (parseFloat(momRev)>=0?'+':'')+momRev+'% MoM' : 'current month'), tone:(momRev!==null && parseFloat(momRev)<0?'danger':'good')},
-      {label:'Volume MTD', value:fmtInt(totVol), sub:(momVol!==null ? (parseFloat(momVol)>=0?'+':'')+momVol+'% MoM' : 'all carriers'), tone:(momVol!==null && parseFloat(momVol)<0?'warn':'neutral')},
+      {label:'Avg Rev/day', value:'฿'+fmtS(runRate), sub:(avgRevMoM!==null ? (parseFloat(avgRevMoM)>=0?'+':'')+avgRevMoM+'% vs prev avg' : 'MTD avg, Day-1'), tone:(avgRevMoM!==null && parseFloat(avgRevMoM)<0?'danger':'good')},
+      {label:'Avg Vol/day', value:fmtInt(avgVolPerDay), sub:(avgVolMoM!==null ? (parseFloat(avgVolMoM)>=0?'+':'')+avgVolMoM+'% vs prev avg' : 'MTD avg, Day-1'), tone:(avgVolMoM!==null && parseFloat(avgVolMoM)<0?'warn':'neutral')},
       {label:'Target pace', value:dirHasTarget ? targetPct+'%' : '-', sub:dirHasTarget ? ('Need ฿'+fmtS(Math.round(needAmt))) : 'target not set', tone:dirHasTarget ? (targetPct>=80?'good':'warn') : 'neutral'},
       {label:'Escalation', value:dropZones.length+' zones', sub:dirRiskCount+' risk agents', tone:dropZones.length?'warn':'good'}
     ],
@@ -11481,6 +11484,7 @@ function _renderHomeAM(m, mp) {
   var momRev    = _homeMoM(totRev, prevRev);
   var momVol    = _homeMoM(totVol, prevVol);
   var runRate   = Math.round(totRev / Math.max(TODAY_DATE - 1, 1));
+  var avgRevMoM = prevRev > 0 ? _homeMoM(runRate, Math.round(prevRev / 30)) : null;
   var daysInMonth = 30;
   var daysLeft    = Math.max(0, daysInMonth - (TODAY_DATE > 0 ? TODAY_DATE : 1) + 1);
   var dayPct      = Math.round((TODAY_DATE - 1) / daysInMonth * 100);
@@ -11672,7 +11676,7 @@ function _renderHomeAM(m, mp) {
     sideTitle:'Zone focus',
     sideSub:'สรุปทีมและงานที่ควรขยับวันนี้',
     stats:[
-      {label:'Revenue MTD', value:'฿'+fmtS(Math.round(totRev)), sub:(momRev!==null ? (parseFloat(momRev)>=0?'+':'')+momRev+'% MoM' : 'current month'), tone:(momRev!==null && parseFloat(momRev)<0?'danger':'good')},
+      {label:'Avg Rev/day', value:'฿'+fmtS(runRate), sub:(avgRevMoM!==null ? (parseFloat(avgRevMoM)>=0?'+':'')+avgRevMoM+'% vs prev avg' : 'MTD avg, Day-1'), tone:(avgRevMoM!==null && parseFloat(avgRevMoM)<0?'danger':'good')},
       {label:'Active agents', value:fmtInt(totActive)+'/'+fmtInt(totLeads), sub:'Conv '+convRate+'%', tone:parseFloat(convRate)>=80?'good':'warn'},
       {label:'Zone target', value:zoneHasTarget ? zonePct+'%' : '-', sub:zoneHasTarget ? ('Need ฿'+fmtS(Math.round(needAmt))) : 'target not set', tone:zoneHasTarget ? (zonePct>=80?'good':'warn') : 'neutral'},
       {label:'BD support', value:bdUsers.filter(function(b){return b.mom!==null && parseFloat(b.mom)<0;}).length+' people', sub:amRiskCount+' risk agents', tone:amRiskCount?'warn':'good'}
@@ -12691,6 +12695,11 @@ function _renderHomeBD(m, mp) {
   var prevTotRev = prevRev;
   var prevTotVol = mp ? myRows.reduce(function(s,r){return s+N(r[mp.colVol]);},0) : 0;
   var momVol = _homeMoM(totVol, prevTotVol);
+  var dayElapsed = Math.max(TODAY_DATE - 1, 1);
+  var runRate = Math.round(totRev / dayElapsed);
+  var volRunRate = Math.round(totVol / dayElapsed);
+  var avgRevMoM = prevTotRev > 0 ? _homeMoM(runRate, Math.round(prevTotRev / 30)) : null;
+  var avgVolMoM = prevTotVol > 0 ? _homeMoM(volRunRate, Math.round(prevTotVol / 30)) : null;
 
   var actionList = [];
 
@@ -12849,8 +12858,8 @@ function _renderHomeBD(m, mp) {
     sideTitle:'Today queue',
     sideSub:'งานที่ควรเริ่มก่อนในพอร์ตของคุณ',
     stats:[
-      {label:'Revenue MTD', value:'฿'+fmtS(Math.round(totRev)), sub:(momRev!==null ? (parseFloat(momRev)>=0?'+':'')+momRev+'% MoM' : 'current month'), tone:(momRev!==null && parseFloat(momRev)<0?'danger':'good')},
-      {label:'Volume MTD', value:fmtInt(totVol), sub:(momVol!==null ? (parseFloat(momVol)>=0?'+':'')+momVol+'% MoM' : 'all accounts'), tone:(momVol!==null && parseFloat(momVol)<0?'warn':'neutral')},
+      {label:'Avg Rev/day', value:'฿'+fmtS(runRate), sub:(avgRevMoM!==null ? (parseFloat(avgRevMoM)>=0?'+':'')+avgRevMoM+'% vs prev avg' : 'MTD avg, Day-1'), tone:(avgRevMoM!==null && parseFloat(avgRevMoM)<0?'danger':'good')},
+      {label:'Avg Vol/day', value:fmtInt(volRunRate), sub:(avgVolMoM!==null ? (parseFloat(avgVolMoM)>=0?'+':'')+avgVolMoM+'% vs prev avg' : 'MTD avg, Day-1'), tone:(avgVolMoM!==null && parseFloat(avgVolMoM)<0?'warn':'neutral')},
       {label:'Target pace', value:bdHasTarget ? bdTargetPct+'%' : '-', sub:bdHasTarget ? ('Need ฿'+fmtS(Math.round(bdNeedAmt))) : 'target not set', tone:bdHasTarget ? (bdTargetPct>=80?'good':'warn') : 'neutral'},
       {label:'Action queue', value:actionList.length+' tasks', sub:bdRiskCount+' risk, '+bdGrowthRows.length+' growth', tone:actionList.length?'warn':'good'}
     ],
