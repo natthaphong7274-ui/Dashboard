@@ -3915,6 +3915,19 @@ function getCarrierColor(nameOrIdx){
   return CAR_COLORS_FALLBACK[idx%CAR_COLORS_FALLBACK.length];
 }
 
+function renderCarrierColorLegend(stats){
+  var el=document.getElementById('carrier_color_legend');
+  if(!el)return;
+  var rows=(stats||[]).filter(function(c){return c&&(c.vCur>0||c.rCur>0);}).slice(0,12);
+  if(!rows.length){el.innerHTML='';return;}
+  el.innerHTML=rows.map(function(c){
+    return '<span class="carrier-legend-item" title="'+_uiText(c.name)+'">'
+      +'<span class="carrier-legend-swatch" style="background:'+_uiText(c.color)+'"></span>'
+      +'<span>'+_uiText(c.name)+'</span>'
+      +'</span>';
+  }).join('');
+}
+
 function carCol(carrier,type,monthLabel){ return carrier+' '+type+' ('+DATA_YEAR+'-'+monthLabel+')'; }
 function getCarMonthLabel(key){ var cm=CARRIER_MONTHS.find(function(c){return c.key===key;}); return cm?cm.label:null; }
 
@@ -4533,6 +4546,7 @@ function renderCarrierSection(){
   _resetKpiTrendCards();
   if(!CARRIERS.length){
     document.getElementById('carrier_kgrid').innerHTML='<div style="padding:20px;color:var(--t2)">ไม่พบข้อมูลขนส่ง</div>';
+    renderCarrierColorLegend([]);
     return;
   }
 
@@ -4604,6 +4618,7 @@ function renderCarrierSection(){
   var totalAvgVolDayPrev=dayDivPrev>0?totalVolPrev/dayDivPrev:0;  // ★
   var totalAvgRevVol=totalVol>0?totalRev/totalVol:0;
   var totalAvgRevVolPrev=totalVolPrev>0?totalRevPrev/totalVolPrev:0;
+  renderCarrierColorLegend(carrierStats);
 
   // ── Day badge ──
   var db=document.getElementById('car_day_badge');

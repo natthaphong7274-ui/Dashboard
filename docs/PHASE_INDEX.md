@@ -17,6 +17,7 @@ branch นี้รวมงานตั้งแต่ Phase 0 ถึง Phase 
 | Phase 5 | [PHASE_5_NOTES.md](./PHASE_5_NOTES.md) | เพิ่ม Report Center พร้อม preview, Tracking Report, BD Performance Report และ Weekly Summary export |
 | Phase 6 | [PHASE_6_NOTES.md](./PHASE_6_NOTES.md) | เพิ่ม performance polling control, data quality/sheet health, dynamic year, masking, token hardening และ conflict protection |
 | Phase 7 | [PHASE_7_NOTES.md](./PHASE_7_NOTES.md) | Performance & Security Hardening: Cache Layer, Data Cut-off, Lazy Loading, Masking Review, Export Guard และ Audit Log |
+| Phase 7.5 | [PHASE_7_5_NOTES.md](./PHASE_7_5_NOTES.md) | Audit และ polish หน้า ภาพรวม/ขนส่ง: overview context, carrier color legend, focus state และ responsive touch target |
 
 ## วิธีอ่าน
 

@@ -1,0 +1,48 @@
+# Phase 7.5 Notes
+
+Branch: `codex/phase-7.5`
+
+## Scope
+
+รอบนี้เป็นงาน audit และ patch หน้า **ภาพรวม** กับ **ขนส่ง** ด้วยแนวทาง product UI จาก skill `impeccable` โดยเน้นให้ dashboard อ่านเร็วขึ้น ใช้งานซ้ำทุกวันได้มั่นคงขึ้น และไม่รื้อโครงสร้างใหญ่ของ Phase 7 ที่ทำไว้แล้ว
+
+## Audit Summary
+
+- หน้า `ภาพรวม` มีข้อมูลครบ แต่ผู้ใช้ยังต้องเริ่มอ่านจาก tab/kpi ทันทีโดยไม่มี context สั้น ๆ ว่ากำลังดูอะไร
+- หน้า `ขนส่ง` ใช้สี carrier standard แล้ว แต่ยังไม่มี legend สีบนหน้า ทำให้ต้องจำเองว่าสีไหนคือขนส่งไหน
+- ปุ่ม tab และ controls บางจุดมีขนาดค่อนข้างเล็กสำหรับ mobile/touch และ focus state ยังไม่ชัดพอ
+- card หลักอ่านได้ดี แต่ hover/focus feedback ยังไม่สม่ำเสมอระหว่างหน้า `ภาพรวม` กับ `ขนส่ง`
+
+## Changes
+
+### Overview
+
+- เพิ่ม `ops-page-head` ในหน้า `ภาพรวม` เพื่อบอก context ของหน้าว่าเป็นภาพรวมสถานการณ์ตามเดือนและ scope ปัจจุบัน
+- เพิ่ม meta pills สั้น ๆ สำหรับ `Revenue`, `Volume`, `Avg/day` เพื่อช่วยให้ผู้ใช้เห็น metric หลักก่อนเข้า tab
+- ปรับ CSS เฉพาะ `#mainOv` ให้ tab และ card มี focus/hover feedback ชัดขึ้น
+
+### Carrier
+
+- เพิ่มพื้นที่ `carrier_color_legend` ใต้ KPI ขนส่ง
+- เพิ่ม `renderCarrierColorLegend(stats)` เพื่อสร้าง legend จาก carrier ที่มีข้อมูลจริงในเดือน/ตัวกรองปัจจุบัน
+- legend ใช้สีจาก `getCarrierColor()` จึงสอดคล้องกับ `CG_COLORS` และ alias ที่ตั้งไว้ก่อนหน้า
+- กรณีไม่มีข้อมูลหรือไม่มี carrier จะซ่อน legend อัตโนมัติ
+
+### Responsive & Accessibility
+
+- เพิ่ม `focus-visible` สำหรับ tab, select และ input ในหน้า `ภาพรวม`/`ขนส่ง`
+- เพิ่ม minimum height ของ tab/control เป็น 36px บน desktop และ 44px บน mobile
+- ทำ carrier legend ให้ scroll แนวนอนได้บนหน้าจอเล็ก เพื่อลดปัญหาล้นหรือเบียด chart
+
+## Files Touched
+
+- `src/Body.html`
+- `src/Scripts.html`
+- `src/Styles.html`
+- `docs/PHASE_7_5_NOTES.md`
+
+## Verification
+
+- ต้องตรวจ syntax ของ script blocks ใน `src/Scripts.html`
+- ต้องตรวจ `git diff --check`
+- Manual QA ที่ยังควรทำ: เปิดหน้า `ภาพรวม`, เปิดหน้า `ขนส่ง`, เปลี่ยนเดือน carrier, ใช้ carrier filter และตรวจว่า legend เปลี่ยนตามข้อมูล/ตัวกรอง

@@ -197,6 +197,18 @@
   </div>
 
   <div id="mainOv" style="display:none">
+    <div class="ops-page-head ov-page-head">
+      <div>
+        <div class="ops-eyebrow">Overview command</div>
+        <h2>ภาพรวมสถานการณ์</h2>
+        <p>สรุป performance ตามเดือนและ scope ปัจจุบัน เพื่อเห็นสัญญาณหลักก่อนลงรายละเอียด</p>
+      </div>
+      <div class="ops-head-meta" aria-label="Overview context">
+        <span>Revenue</span>
+        <span>Volume</span>
+        <span>Avg/day</span>
+      </div>
+    </div>
     <div class="ov-tab-bar" id="secTabs">
       <!-- Group 1: Performance -->
       <div class="ov-tab-group">
@@ -474,6 +486,7 @@
     <!-- KPI Cards -->
     <div class="kgrid" id="carrier_kgrid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));margin-bottom:4px"></div>
     <div class="kpi-extra-row" id="carrier_kgrid2" style="margin-bottom:12px"></div>
+    <div class="carrier-color-legend" id="carrier_color_legend" aria-label="Carrier color legend"></div>
 
     <!-- ── Section Tabs — styled ── -->
     <div style="background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:6px;margin-bottom:12px;display:flex;gap:4px;flex-wrap:wrap;box-shadow:0 1px 6px rgba(0,0,0,.06);">
