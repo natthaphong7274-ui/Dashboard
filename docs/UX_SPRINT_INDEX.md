@@ -17,7 +17,7 @@ Branch: `UX_Sprint-3`
 | UX Sprint 7 | ทำแล้ว | [UX_SPRINT_7_NOTES.md](./UX_SPRINT_7_NOTES.md) | ย้าย inline style ที่ซ้ำบ่อยไปเป็น class กลาง และเปลี่ยนรหัสสีที่ตายตัวให้ดึงจาก Theme CSS |
 | UX Sprint 8 | วางแผนแล้ว | `TBD` | ปรับ motion และ performance รวมถึง reduced motion และการควบคุม render/polling |
 | UX Sprint 9 | วางแผนแล้ว | `TBD` | วางแนวทางลดการใช้ Classic UI และกำหนดให้ V2 เป็นเป้าหมายหลักของ feature ใหม่ |
-| UX Sprint 9.5 | Done, pending manual QA | [UX_SPRINT_9_5_NOTES.md](./UX_SPRINT_9_5_NOTES.md) | Changed Map Focus side metrics from MTD totals to daily pace metrics: `Avg Rev/day` and `Avg Vol/day`, with comparison against previous-month daily averages. |
+| UX Sprint 9.5 | ทำแล้ว, รอ manual QA | [UX_SPRINT_9_5_NOTES.md](./UX_SPRINT_9_5_NOTES.md) | เปลี่ยน metric ในแผงขวาของ Map Focus จากยอด MTD รวม เป็น daily pace metrics: `Avg Rev/day` และ `Avg Vol/day` พร้อมเทียบกับค่าเฉลี่ยต่อวันของเดือนก่อน |
 
 ## วิธีอ่าน
 

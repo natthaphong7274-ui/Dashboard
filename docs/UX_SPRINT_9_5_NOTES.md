@@ -4,26 +4,26 @@ Branch: `UX_Sprint-9.5`
 
 ## Scope
 
-Changed the Home Map Focus side metrics from month-to-date totals to daily average pace metrics, so Director, AM, and BD users can read today's operating pace without mentally normalizing MTD values.
+ปรับ metric ในแผงขวาของ Home Map Focus จากยอดสะสมแบบ month-to-date ให้เป็นค่าเฉลี่ยต่อวัน เพื่อให้ผู้ใช้ Director, AM และ BD อ่าน pace การทำงานของวันนี้ได้ทันทีโดยไม่ต้องแปลงค่า MTD ในหัวเอง
 
 ## UX Rationale
 
-The Map Focus panel is a decision surface for "what should move today." MTD totals are useful for monthly reporting, but they can be misleading in a daily command view because they grow with the calendar. `Avg Rev/day` and `Avg Vol/day` align better with the screen context `Avg / Day-1`, target pace, escalation, and follow-up decisions.
+แผง Map Focus เป็นพื้นที่ตัดสินใจว่า "วันนี้ควรขยับอะไรต่อ" ยอด MTD เหมาะกับรายงานรายเดือน แต่ในหน้าจอ command view รายวันอาจทำให้ตีความผิดได้ เพราะตัวเลขโตตามจำนวนวันที่ผ่านไปในเดือน ส่วน `Avg Rev/day` และ `Avg Vol/day` สอดคล้องกับบริบทหน้าจอ `Avg / Day-1`, target pace, escalation และการตัดสินใจ follow-up มากกว่า
 
 ## Changes
 
-- Replaced `Revenue MTD` with `Avg Rev/day` in Map Focus stats.
-- Replaced `Volume MTD` with `Avg Vol/day` where the map side panel shows volume.
-- Calculated current daily averages using the current MTD value divided by elapsed days (`TODAY_DATE - 1`, with a minimum divisor of 1).
-- Compared daily averages against the previous month's daily average instead of comparing raw MTD totals.
-- Updated side stat subtext to use `vs prev avg` when previous-month data is available.
-- Kept existing tone behavior conceptually the same: negative daily-average movement still warns or marks danger.
+- เปลี่ยน `Revenue MTD` เป็น `Avg Rev/day` ใน stat ของ Map Focus
+- เปลี่ยน `Volume MTD` เป็น `Avg Vol/day` ในจุดที่แผงขวาของแผนที่แสดง volume
+- คำนวณค่าเฉลี่ยต่อวันจากค่า MTD ปัจจุบัน หารด้วยจำนวนวันที่ผ่านไป (`TODAY_DATE - 1` และบังคับ divisor ขั้นต่ำเป็น 1)
+- เปรียบเทียบค่าเฉลี่ยต่อวันกับค่าเฉลี่ยต่อวันของเดือนก่อน แทนการเทียบยอด MTD ดิบ
+- ปรับ subtext ของ stat ให้ใช้ `vs prev avg` เมื่อมีข้อมูลเดือนก่อน
+- คงแนวคิดเรื่องสีสถานะเดิมไว้: ถ้าค่าเฉลี่ยต่อวันลดลงยังแสดงเป็น warning หรือ danger ตามบริบทเดิม
 
 ## Surfaces Updated
 
-- Director `Country focus`: now shows `Avg Rev/day` and `Avg Vol/day`.
-- AM `Zone focus`: now shows `Avg Rev/day` in place of `Revenue MTD`.
-- BD `Today queue`: now shows `Avg Rev/day` and `Avg Vol/day`.
+- Director `Country focus`: แสดง `Avg Rev/day` และ `Avg Vol/day`
+- AM `Zone focus`: แสดง `Avg Rev/day` แทน `Revenue MTD`
+- BD `Today queue`: แสดง `Avg Rev/day` และ `Avg Vol/day`
 
 ## Files Touched
 
@@ -31,13 +31,13 @@ The Map Focus panel is a decision surface for "what should move today." MTD tota
 
 ## Verification
 
-- Ran a script-block syntax check against `src/Scripts.html`.
-- Confirmed all parsed `<script>...</script>` blocks compile with Node.
-- GitHub branch pushed: `UX_Sprint-9.5`.
+- ตรวจ syntax ของ script blocks ใน `src/Scripts.html`
+- ยืนยันว่า `<script>...</script>` ทุก block ที่ parse ได้ compile ผ่านด้วย Node
+- push branch `UX_Sprint-9.5` ขึ้น GitHub แล้ว
 
 ## Manual Testing Still Needed
 
-- Open Director Home and confirm `Country focus` shows daily averages, not MTD totals.
-- Open AM Home and confirm `Zone focus` label/value spacing still fits.
-- Open BD Home and confirm `Today queue` shows both daily average cards correctly.
-- Compare values against source data for one month to confirm `MTD / Day-1` matches the UI.
+- เปิด Director Home แล้วตรวจว่า `Country focus` แสดงค่าเฉลี่ยต่อวัน ไม่ใช่ยอด MTD รวม
+- เปิด AM Home แล้วตรวจว่า `Zone focus` ยังจัด label/value ได้ไม่ล้นหรือเบียดกัน
+- เปิด BD Home แล้วตรวจว่า `Today queue` แสดงการ์ดค่าเฉลี่ยต่อวันทั้งสองใบถูกต้อง
+- เทียบตัวเลขกับ source data อย่างน้อย 1 เดือน เพื่อยืนยันว่า `MTD / Day-1` ตรงกับ UI
