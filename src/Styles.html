@@ -325,6 +325,28 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   gap:10px;
   margin-bottom:10px;
 }
+.carrier-section-kicker{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:#64748b;
+  font-size:10px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  margin:6px 0 8px;
+}
+.carrier-section-kicker::before{
+  content:'';
+  width:7px;
+  height:7px;
+  border-radius:2px;
+  background:var(--ac);
+  opacity:.65;
+}
+.carrier-section-kicker.trend{
+  margin-top:14px;
+}
 .carrier-card-title{
   color:var(--tx,var(--pr));
   font-size:13px;
@@ -341,6 +363,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 }
 .carrier-focus-card{
   min-height:170px;
+}
+.carrier-focus-card::before{
+  height:4px;
+  background:var(--kc,var(--ac));
+}
+.carrier-share-track{
+  height:6px;
+  border-radius:999px;
+  background:#edf2f7;
+  overflow:hidden;
+  margin-top:8px;
+}
+.carrier-share-track i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:var(--kc,var(--ac));
+  opacity:.88;
 }
 .carrier-card-metrics{
   display:grid;
@@ -485,6 +525,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   padding:4px 9px!important;
   font-size:10.5px!important;
 }
+.carrier-cmp-context{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:0 0 10px;
+}
+.carrier-cmp-context span{
+  border:1px solid #d7e0e4;
+  border-radius:999px;
+  background:#f8fafc;
+  color:#475569;
+  font-size:10.5px;
+  font-weight:900;
+  padding:5px 9px;
+}
 .carrier-cmp-select{
   min-height:30px;
   border:1px solid #d7e0e4;
@@ -511,6 +566,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   border-radius:12px;
   background:var(--cd);
   padding:10px 12px;
+  min-height:78px;
 }
 .carrier-cmp-insight.up{background:linear-gradient(180deg,rgba(236,253,245,.72),rgba(255,255,255,.98));}
 .carrier-cmp-insight.down{background:linear-gradient(180deg,rgba(254,242,242,.72),rgba(255,255,255,.98));}
@@ -548,6 +604,35 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   background:#fbfdff;
   padding:10px;
   margin-bottom:10px;
+}
+.carrier-cmp-chart-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:10px;
+  margin:2px 0 8px;
+}
+.carrier-cmp-chart-head b{
+  display:block;
+  color:var(--tx);
+  font-size:13px;
+  font-weight:900;
+}
+.carrier-cmp-chart-head span{
+  display:block;
+  color:#64748b;
+  font-size:11px;
+  margin-top:1px;
+}
+.carrier-cmp-chart-head em{
+  color:#475569;
+  font-size:10.5px;
+  font-style:normal;
+  font-weight:900;
+  border:1px solid #d7e0e4;
+  border-radius:999px;
+  padding:5px 9px;
+  background:#f8fafc;
 }
 .carrier-cmp-chart canvas{
   width:100%!important;

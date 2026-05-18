@@ -4591,6 +4591,8 @@ function renderCarrierComparison(){
       table+='<td class="tdr '+cls+'">'+(d.diff>=0?'▲ ':'▼ ')+_uiText(meta.fmt(Math.abs(d.diff)))+'</td></tr>';
     });
     table+='</tbody></table></div>';
+    var scopeText=singleCarrier?('Carrier: '+singleCarrier):((carMultiTopN===0?'All carriers':'Top '+(carMultiTopN||5))+' by '+meta.short);
+    var monthText=mData.length?(mData[0].key.toUpperCase()+' - '+mData[mData.length-1].key.toUpperCase()):'';
     var insightsHtml='<div class="carrier-cmp-insights">'
       +(singleCarrier?(monthInsightCard('เดือนดีที่สุด',bestMonth,'up')+monthInsightCard('เดือนต่ำสุด',worstMonth,'down')):(insightCard('โตสุด',best,'up')+insightCard('ลดสุด',worst,'down')))
       +'</div>';
@@ -4614,7 +4616,9 @@ function renderCarrierComparison(){
         +'</div>'
       +'</div>'
       +'</div>'
+      +'<div class="carrier-cmp-context"><span>'+_uiText(meta.label)+'</span><span>'+_uiText(scopeText)+'</span><span>'+_uiText(monthText)+'</span></div>'
       +insightsHtml
+      +'<div class="carrier-cmp-chart-head"><div><b>Monthly pattern</b><span>Grouped by carrier, values use the selected metric</span></div><em>'+_uiText(meta.short)+'</em></div>'
       +'<div class="carrier-cmp-chart"><canvas id="cx_car_month_matrix"></canvas></div>'
       +table;
     setTimeout(function(){
@@ -4973,6 +4977,7 @@ function renderCarrierSection(){
       +'<div class="kico">🚚</div>'
       +'<div class="klbl">'+_uiText(c.name)+'</div>'
       +'<div class="kval">'+fmtS(c.vCur)+'</div>'
+      +'<div class="carrier-share-track" title="Volume share"><i style="width:'+Math.max(2,Math.min(100,pct))+'%"></i></div>'
       +'<div class="carrier-card-metrics">'
         +metricLine('Share',pct+'%')
         +metricLine('Avg Vol/day',fmtF(c.avgVolDay))
