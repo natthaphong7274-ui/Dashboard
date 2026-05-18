@@ -4345,6 +4345,7 @@ var carCmpMode='month';
 var carMultiViewMode='barline';
 var carMultiMetric='avd';
 var carMultiTopN=5;
+var carMultiCarrier='';
 function setCarMultiViewMode(mode,btn){
   carMultiViewMode=mode;
   var btns=btn?btn.parentElement.querySelectorAll('.stab'):[];
@@ -4361,9 +4362,14 @@ function setCarMultiMetric(metric,btn){
 }
 function setCarMultiTopN(n,btn){
   carMultiTopN=n;
+  carMultiCarrier='';
   var btns=btn?btn.parentElement.querySelectorAll('.stab'):[];
   Array.from(btns).forEach(function(b){b.classList.remove('active');});
   if(btn)btn.classList.add('active');
+  renderCarrierComparison();
+}
+function setCarMultiCarrier(name){
+  carMultiCarrier=name||'';
   renderCarrierComparison();
 }
 
@@ -4531,6 +4537,7 @@ function renderCarrierComparison(){
     });
     var showAll=carMultiTopN===0;
     var chartCars=showAll?allCars:allCars.slice(0,carMultiTopN||5);
+    if(carMultiCarrier&&allCars.indexOf(carMultiCarrier)>=0)chartCars=[carMultiCarrier];
     function findStat(m,name){return m.stats.find(function(c){return c.name===name;})||{name:name,color:getCarrierColor(name),v:0,r:0,avd:0,ard:0,arv:0};}
     function carDelta(name){
       var first=mData.length?findStat(mData[0],name):null;
@@ -4541,6 +4548,19 @@ function renderCarrierComparison(){
     }
     var deltas=chartCars.map(carDelta).sort(function(a,b){return b.diff-a.diff;});
     var best=deltas[0]||null,worst=deltas[deltas.length-1]||null;
+    var singleCarrier=chartCars.length===1?chartCars[0]:null;
+    var monthRows=singleCarrier?mData.map(function(m){
+      var stat=findStat(m,singleCarrier);
+      return{key:m.key,name:singleCarrier,color:getCarrierColor(singleCarrier),value:meta.fn(stat)||0,diff:0,pct:null};
+    }):[];
+    monthRows.forEach(function(row,i){
+      if(i===0)return;
+      var prev=monthRows[i-1].value||0;
+      row.diff=row.value-prev;
+      row.pct=prev?((row.diff/Math.abs(prev))*100):null;
+    });
+    var bestMonth=singleCarrier?monthRows.slice().sort(function(a,b){return b.value-a.value;})[0]:null;
+    var worstMonth=singleCarrier?monthRows.slice().sort(function(a,b){return a.value-b.value;})[0]:null;
     function insightCard(title,row,state){
       if(!row)return '';
       var pct=row.pct===null?'':(' ('+Math.abs(row.pct).toFixed(1)+'%)');
@@ -4550,6 +4570,17 @@ function renderCarrierComparison(){
         +'<div class="carrier-cmp-insight-sub">'+(row.diff>=0?'▲ ':'▼ ')+_uiText(meta.fmt(Math.abs(row.diff)))+pct+'</div>'
         +'</div>';
     }
+    function monthInsightCard(title,row,state){
+      if(!row)return '';
+      return '<div class="carrier-cmp-insight '+state+'">'
+        +'<div class="carrier-cmp-insight-label">'+title+'</div>'
+        +'<div class="carrier-cmp-insight-main"><span style="background:'+row.color+'"></span>'+_uiText(row.key.toUpperCase())+'</div>'
+        +'<div class="carrier-cmp-insight-sub">'+_uiText(meta.fmt(row.value))+'</div>'
+        +'</div>';
+    }
+    var carrierOptions='<option value="">ตาม Top/All</option>'+allCars.map(function(name){
+      return '<option value="'+_uiText(name)+'" '+(carMultiCarrier===name?'selected':'')+'>'+_uiText(name)+'</option>';
+    }).join('');
     var table='<div class="carrier-cmp-matrix-wrap"><table class="mt carrier-cmp-matrix"><thead><tr><th>ขนส่ง</th>';
     mData.forEach(function(m){table+='<th class="tdr">'+m.key.toUpperCase()+'</th>';});
     table+='<th class="tdr">Δ ล่าสุด</th></tr></thead><tbody>';
@@ -4560,6 +4591,9 @@ function renderCarrierComparison(){
       table+='<td class="tdr '+cls+'">'+(d.diff>=0?'▲ ':'▼ ')+_uiText(meta.fmt(Math.abs(d.diff)))+'</td></tr>';
     });
     table+='</tbody></table></div>';
+    var insightsHtml='<div class="carrier-cmp-insights">'
+      +(singleCarrier?(monthInsightCard('เดือนดีที่สุด',bestMonth,'up')+monthInsightCard('เดือนต่ำสุด',worstMonth,'down')):(insightCard('โตสุด',best,'up')+insightCard('ลดสุด',worst,'down')))
+      +'</div>';
     el.innerHTML='<div class="carrier-cmp-toolbar">'
       +'<div><div class="carrier-cmp-title">Carrier x Month Comparison</div><div class="carrier-cmp-sub">เทียบขนส่งแต่ละเจ้าข้ามเดือนด้วย metric เดียวกัน</div></div>'
       +'<div class="carrier-cmp-controls">'
@@ -4575,9 +4609,12 @@ function renderCarrierComparison(){
           +'<button class="stab '+(carMultiTopN===8?'active':'')+'" onclick="setCarMultiTopN(8,this)">Top 8</button>'
           +'<button class="stab '+(carMultiTopN===0?'active':'')+'" onclick="setCarMultiTopN(0,this)">All</button>'
         +'</div>'
+        +'<div class="carrier-cmp-control"><span>Carrier</span>'
+          +'<select class="carrier-cmp-select" onchange="setCarMultiCarrier(this.value)">'+carrierOptions+'</select>'
+        +'</div>'
       +'</div>'
       +'</div>'
-      +'<div class="carrier-cmp-insights">'+insightCard('โตสุด',best,'up')+insightCard('ลดสุด',worst,'down')+'</div>'
+      +insightsHtml
       +'<div class="carrier-cmp-chart"><canvas id="cx_car_month_matrix"></canvas></div>'
       +table;
     setTimeout(function(){
