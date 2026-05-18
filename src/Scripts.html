@@ -898,16 +898,16 @@ function renderKPI(){
   var html=[
     {l:'รายการ',v:FR.length.toLocaleString(),s:'จาก '+R.length+' รายการ',c:'var(--t2)',i:'📋'},
     // Revenue — แสดงยอดรวม ไม่เทียบเดือน (ยังไม่เต็มเดือน)
-    {l:'REVENUE '+m.en,v:fmtS(revV),s:'ยอด Revenue รวม',c:'var(--c-rev)',i:'💰',series:revSeries,fmt:fmtS},
+    {l:'REVENUE '+m.en,v:fmtS(revV),s:'ยอด Revenue MTD, ไม่เทียบ MoM',c:'var(--c-rev)',i:'💰',series:revSeries,fmt:fmtS,noCompare:true},
     // Volume — แสดงยอดรวม ไม่เทียบเดือน
-    {l:'VOLUME '+m.en,v:fmtS(volV),s:'จำนวน Volume รวม',c:'var(--c-vol)',i:'📦',series:volSeries,fmt:fmtS},
+    {l:'VOLUME '+m.en,v:fmtS(volV),s:'จำนวน Volume MTD, ไม่เทียบ MoM',c:'var(--c-vol)',i:'📦',series:volSeries,fmt:fmtS,noCompare:true},
     // Avg Rev/Day — เทียบกับเดือนก่อน ✅
     {l:'AVG REV/DAY '+m.en,v:fmtS(avgV),s:'Revenue ÷ '+mDay+' วัน',c:'var(--c-avg)',i:'📐',
      series:avgSeries,fmt:fmtS,
      trend:mp?'<div class="ktrend '+(avgDiff>=0?'tup':'tdn')+'">'+(avgDiff>=0?'▲':'▼')+fmtS(Math.abs(avgDiff))+' '+pill(avgPct)+' vs '+mp.en+'</div>':''},
   ].map(function(k){
     if(k.series){
-      return _kpiTrendCard({label:k.l,value:k.v,sub:k.s,color:k.c,icon:k.i,trend:k.trend,series:k.series,fmt:k.fmt,summaryMode:'mom'});
+      return _kpiTrendCard({label:k.l,value:k.v,sub:k.s,color:k.c,icon:k.i,trend:k.trend,series:k.series,fmt:k.fmt,summaryMode:k.noCompare?'none':'mom'});
     }
     return '<div class="kcard" style="--kc:'+k.c+'"><div class="kico">'+k.i+'</div>'
       +'<div class="klbl">'+_metricLabelHtml(k.l)+'</div><div class="kval">'+k.v+'</div>'
@@ -940,6 +940,8 @@ function _kpiTrendCard(cfg){
   var summaryHtml='';
   if(cfg.summaryMode==='mom'){
     summaryHtml=_kpiMomSummary(cfg.series,cfg.fmt||fmtS);
+  } else if(cfg.summaryMode==='none'){
+    summaryHtml='';
   } else {
     _pendingKpiTrendCharts.push({
       id:id,
@@ -953,7 +955,7 @@ function _kpiTrendCard(cfg){
     +'<div class="klbl">'+_metricLabelHtml(cfg.label)+'</div>'
     +'<div class="kval">'+cfg.value+'</div>'
     +'<div class="ksub">'+(cfg.sub||'')+'</div>'
-    +(cfg.summaryMode==='mom'?summaryHtml:(cfg.trend||'')+'<div class="kmini-chart"><canvas id="'+id+'"></canvas></div>')
+    +(cfg.summaryMode==='mom'?summaryHtml:(cfg.summaryMode==='none'?'':(cfg.trend||'')+'<div class="kmini-chart"><canvas id="'+id+'"></canvas></div>'))
     +'</div>';
 }
 function _kpiMomSummary(series,fmtFn){

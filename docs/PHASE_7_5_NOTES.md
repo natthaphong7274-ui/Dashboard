@@ -30,6 +30,8 @@ Branch: `codex/phase-7.5`
 - ปรับ visual ของ trend charts ให้เบาลงและอ่านง่ายขึ้น: แท่งใช้สีอ่อนพร้อมขอบ, เส้น MoM ใช้สีเข้ม, ซ่อน legend ซ้ำใน canvas และเพิ่ม summary ค่าล่าสุดใต้กราฟ
 - เปลี่ยนหัวหน้า `Overview command` เป็น `Overview` เพราะเป็น label บอก context ไม่ใช่ปุ่มหรือ command ที่กดได้
 - ย้ายแถบ tab `Performance/Breakdown/Compare` ลงมาอยู่ใต้แถว `Avg Performance Trend` เพื่อให้ควบคุมเฉพาะ chart/detail section ด้านล่าง
+- เอา MoM comparison ออกจาก KPI `Revenue MTD` และ `Volume MTD` เพราะเดือนปัจจุบันยังไม่ครบเดือน การเทียบกับเดือนก่อนแบบยอดรวมทำให้ตีความผิดได้
+- คงการเทียบ MoM ไว้กับ metric เฉลี่ย เช่น `Avg Rev/day`, `Avg Vol/day` และ `Avg Rev/ชิ้น` ซึ่งเทียบข้ามเดือนได้ยุติธรรมกว่า
 
 ## UX Decision: Card หรือ Graph
 
