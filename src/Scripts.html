@@ -196,6 +196,9 @@ function avgVolDayTotal(rows,m){
   var d=getDayDivisorMeta(m&&m.key).days;
   return d>0?sumCol(rows,m.colVol)/d:0;
 }
+function monthDivisorThaiLabel(m){
+  return getDayDivisorMeta(m&&m.key).thLabel;
+}
 function grpAvgRevDay(rows,groupCol,m){
   var g={};
   rows.forEach(function(r){
@@ -1902,10 +1905,10 @@ function renderAllCharts(){
     'rgba(21,94,117,0.7)',true);
   updT('t_pkg_vol','📦 Volume แยก Package ('+m.en+')');
   
-  var spka=grpSum(FR,COL.package,m.colAvg).slice(0,12);
+  var spka=grpAvgRevDay(FR,COL.package,m).slice(0,12);
   mkHBar('c_pkg_avg',spka.map(function(e){return e[0];}),spka.map(function(e){return Math.round(e[1]);}),
     'rgba(26,77,110,0.7)',true);
-  updT('t_pkg_avg','📐 Avg Rev/Day แยก Package ('+m.en+')');
+  updT('t_pkg_avg','📐 Avg Rev/Day แยก Package ('+m.en+', Revenue ÷ '+monthDivisorThaiLabel(m)+')');
   mkDonut('c_pkg_pie',spkc.map(function(e){return e[0];}),spkc.map(function(e){return e[1];}));
   
   var pkgPrevMap=null;
@@ -2094,11 +2097,11 @@ function rBDScore(m){
   var rfm={},rjm={},vmf={},vjm={},amf={},ajm={};
   grpSum(FR,'Zone Name',m.colRev).forEach(function(e){rfm[e[0]]=e[1];});
   grpSum(FR,'Zone Name',m.colVol).forEach(function(e){vmf[e[0]]=e[1];});
-  grpSum(FR,'Zone Name',m.colAvg).forEach(function(e){amf[e[0]]=e[1];});
+  grpAvgRevDay(FR,'Zone Name',m).forEach(function(e){amf[e[0]]=e[1];});
   if(mp){
     grpSum(FR,'Zone Name',mp.colRev).forEach(function(e){rjm[e[0]]=e[1];});
     grpSum(FR,'Zone Name',mp.colVol).forEach(function(e){vjm[e[0]]=e[1];});
-    grpSum(FR,'Zone Name',mp.colAvg).forEach(function(e){ajm[e[0]]=e[1];});
+    grpAvgRevDay(FR,'Zone Name',mp).forEach(function(e){ajm[e[0]]=e[1];});
   }
   // T03: lossM/inactM removed
   var apzMap={};grpAvgPiece(FR,'Zone Name',m).forEach(function(e){apzMap[e[0]]=e[1];});
@@ -2108,7 +2111,7 @@ function rBDScore(m){
   var sparkMaps=[];  // sparkMaps[i] = {zoneName: avgRevSum} สำหรับแต่ละเดือน
   (MONTHS||[]).forEach(function(mo){
     var sm={};
-    grpSum(FR,'Zone Name',mo.colAvg).forEach(function(e){sm[e[0]]=e[1];});
+    grpAvgRevDay(FR,'Zone Name',mo).forEach(function(e){sm[e[0]]=e[1];});
     sparkMaps.push(sm);
   });
   // ใช้แค่ 3 เดือนล่าสุด
@@ -2221,7 +2224,7 @@ function runCompare(){
   _clientLog('COMPARE','[ภาพรวม > เปรียบเทียบ] '+(mA.en||'') +' vs '+(mB.en||''));
   var revA=Math.round(sumCol(FR,mA.colRev)),revB=Math.round(sumCol(FR,mB.colRev));
   var volA=Math.round(sumCol(FR,mA.colVol)),volB=Math.round(sumCol(FR,mB.colVol));
-  var avgA=Math.round(sumCol(FR,mA.colAvg)),avgB=Math.round(sumCol(FR,mB.colAvg));
+  var avgA=Math.round(avgRevDayTotal(FR,mA)),avgB=Math.round(avgRevDayTotal(FR,mB));
   // Avg piece — Rev ÷ Vol
   var apA=volA>0?revA/volA:0,apB=volB>0?revB/volB:0;
   // Avg vol/day — ใช้ divisor ของแต่ละเดือน
@@ -2248,7 +2251,7 @@ function runCompare(){
   document.getElementById('cmp_kpi').innerHTML=
     cmpK('💰 Revenue',revA,revB,mA.en,mB.en)
    +cmpK('📦 Volume',volA,volB,mA.en,mB.en)
-   +cmpK('📐 Avg Rev/Day',avgA,avgB,mA.en,mB.en)
+   +cmpK('📐 Avg Rev/Day',avgA,avgB,mA.en+' (÷'+monthDivisorThaiLabel(mA)+')',mB.en+' (÷'+monthDivisorThaiLabel(mB)+')')
    +cmpK('🏷️ Avg Rev/ชิ้น (Rev÷Vol)',apA,apB,mA.en,mB.en,fmtF)
    +cmpK('📦 Avg Vol/วัน',avdA,avdB,mA.en+' (÷'+getDAY1ForMonth(mA.key)+'วัน)',mB.en+' (÷'+getDAY1ForMonth(mB.key)+'วัน)',fmtF);
 
@@ -2266,21 +2269,21 @@ function runCompare(){
   [mA,mB].forEach(function(mx){
     grpSum(FR,'Zone Name',mx.colRev).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['r'+mx.key]=e[1];});
     grpSum(FR,'Zone Name',mx.colVol).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['v'+mx.key]=e[1];});
-    grpSum(FR,'Zone Name',mx.colAvg).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['a'+mx.key]=e[1];});
+    grpAvgRevDay(FR,'Zone Name',mx).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['a'+mx.key]=e[1];});
     grpAvgPiece(FR,'Zone Name',mx).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['ap'+mx.key]=e[1];});
     grpAvgVolDay(FR,'Zone Name',mx).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['avd'+mx.key]=e[1];});
     grpSum(FR,'Package',mx.colRev).forEach(function(e){pkgs[e[0]]=pkgs[e[0]]||{};pkgs[e[0]]['r'+mx.key]=e[1];});
     grpSum(FR,'Package',mx.colVol).forEach(function(e){pkgs[e[0]]=pkgs[e[0]]||{};pkgs[e[0]]['v'+mx.key]=e[1];});
-    grpSum(FR,'Package',mx.colAvg).forEach(function(e){pkgs[e[0]]=pkgs[e[0]]||{};pkgs[e[0]]['a'+mx.key]=e[1];});
+    grpAvgRevDay(FR,'Package',mx).forEach(function(e){pkgs[e[0]]=pkgs[e[0]]||{};pkgs[e[0]]['a'+mx.key]=e[1];});
     grpAvgPiece(FR,'Package',mx).forEach(function(e){pkgs[e[0]]=pkgs[e[0]]||{};pkgs[e[0]]['ap'+mx.key]=e[1];});
     grpSum(FR,'Province',mx.colRev).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['r'+mx.key]=e[1];});
     grpSum(FR,'Province',mx.colVol).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['v'+mx.key]=e[1];});
-    grpSum(FR,'Province',mx.colAvg).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['a'+mx.key]=e[1];});
+    grpAvgRevDay(FR,'Province',mx).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['a'+mx.key]=e[1];});
     grpAvgPiece(FR,'Province',mx).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['ap'+mx.key]=e[1];});
     grpAvgVolDay(FR,'Province',mx).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['avd'+mx.key]=e[1];});
     grpSum(FR,'City',mx.colRev).forEach(function(e){citiesC[e[0]]=citiesC[e[0]]||{};citiesC[e[0]]['r'+mx.key]=e[1];});
     grpSum(FR,'City',mx.colVol).forEach(function(e){citiesC[e[0]]=citiesC[e[0]]||{};citiesC[e[0]]['v'+mx.key]=e[1];});
-    grpSum(FR,'City',mx.colAvg).forEach(function(e){citiesC[e[0]]=citiesC[e[0]]||{};citiesC[e[0]]['a'+mx.key]=e[1];});
+    grpAvgRevDay(FR,'City',mx).forEach(function(e){citiesC[e[0]]=citiesC[e[0]]||{};citiesC[e[0]]['a'+mx.key]=e[1];});
     grpAvgPiece(FR,'City',mx).forEach(function(e){citiesC[e[0]]=citiesC[e[0]]||{};citiesC[e[0]]['ap'+mx.key]=e[1];});
     grpAvgVolDay(FR,'City',mx).forEach(function(e){citiesC[e[0]]=citiesC[e[0]]||{};citiesC[e[0]]['avd'+mx.key]=e[1];});
   });
@@ -2655,7 +2658,7 @@ function runMultiCompare(){
     // Zone Name grouping (default)
     grpSum(FR,'Zone Name',m.colRev).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['r'+m.key]=e[1];});
     grpSum(FR,'Zone Name',m.colVol).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['v'+m.key]=e[1];});
-    grpSum(FR,'Zone Name',m.colAvg).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['a'+m.key]=e[1];});
+    grpAvgRevDay(FR,'Zone Name',m).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['a'+m.key]=e[1];});
     grpAvgPiece(FR,'Zone Name',m).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['ap'+m.key]=e[1];});
     var dd0=Math.max(1,getDAY1ForMonth(m.key))||1;
     grpSum(FR,'Zone Name',m.colVol).forEach(function(e){zones[e[0]]=zones[e[0]]||{};zones[e[0]]['avd'+m.key]=dd0>0?e[1]/dd0:0;});
@@ -2663,7 +2666,7 @@ function runMultiCompare(){
     // Province grouping
     grpSum(FR,'Province',m.colRev).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['r'+m.key]=e[1];});
     grpSum(FR,'Province',m.colVol).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['v'+m.key]=e[1];});
-    grpSum(FR,'Province',m.colAvg).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['a'+m.key]=e[1];});
+    grpAvgRevDay(FR,'Province',m).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['a'+m.key]=e[1];});
     grpAvgPiece(FR,'Province',m).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['ap'+m.key]=e[1];});
     var dd=Math.max(1,getDAY1ForMonth(m.key))||1;
     grpSum(FR,'Province',m.colVol).forEach(function(e){provs[e[0]]=provs[e[0]]||{};provs[e[0]]['avd'+m.key]=dd>0?e[1]/dd:0;});
@@ -2671,7 +2674,7 @@ function runMultiCompare(){
     // City grouping (เมื่อ filter Province)
     grpSum(FR,'City',m.colRev).forEach(function(e){cities[e[0]]=cities[e[0]]||{};cities[e[0]]['r'+m.key]=e[1];});
     grpSum(FR,'City',m.colVol).forEach(function(e){cities[e[0]]=cities[e[0]]||{};cities[e[0]]['v'+m.key]=e[1];});
-    grpSum(FR,'City',m.colAvg).forEach(function(e){cities[e[0]]=cities[e[0]]||{};cities[e[0]]['a'+m.key]=e[1];});
+    grpAvgRevDay(FR,'City',m).forEach(function(e){cities[e[0]]=cities[e[0]]||{};cities[e[0]]['a'+m.key]=e[1];});
     grpAvgPiece(FR,'City',m).forEach(function(e){cities[e[0]]=cities[e[0]]||{};cities[e[0]]['ap'+m.key]=e[1];});
     grpSum(FR,'City',m.colVol).forEach(function(e){cities[e[0]]=cities[e[0]]||{};cities[e[0]]['avd'+m.key]=dd>0?e[1]/dd:0;});
 
@@ -2718,7 +2721,7 @@ function runMultiCompare(){
   }
 
   var kpiHtml=sel.map(function(m,mi){
-    var rv=Math.round(sumCol(FR,m.colRev)),vl=Math.round(sumCol(FR,m.colVol)),av=Math.round(sumCol(FR,m.colAvg));
+    var rv=Math.round(sumCol(FR,m.colRev)),vl=Math.round(sumCol(FR,m.colVol)),av=Math.round(avgRevDayTotal(FR,m));
     var ap=vl>0?rv/vl:0,avd=getDAY1ForMonth(m.key)>0?vl/getDAY1ForMonth(m.key):0;
     var lc=0,ic=0; // T03: removed
     // ★ ข้อ 4: ใช้สีจาก MONTHS config
@@ -2727,7 +2730,7 @@ function runMultiCompare(){
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">'
       +'<div style="background:rgba(30,58,95,0.07);border-radius:8px;padding:7px;text-align:center;border:1px solid rgba(30,58,95,0.12)"><div class="cmp-knum" style="color:var(--pr)">'+fmtS(rv)+'</div><div class="cmp-ksubt">💰 Revenue</div></div>'
       +'<div style="background:rgba(21,94,117,0.07);border-radius:8px;padding:7px;text-align:center;border:1px solid rgba(21,94,117,0.12)"><div class="cmp-knum" style="color:var(--c-vol)">'+fmtS(vl)+'</div><div class="cmp-ksubt">📦 Volume</div></div>'
-      +'<div style="background:rgba(26,77,110,0.07);border-radius:8px;padding:7px;text-align:center;border:1px solid rgba(26,77,110,0.12)"><div class="cmp-knum" style="color:var(--c-avg)">'+fmtS(av)+'</div><div class="cmp-ksubt">📐 Avg Rev</div></div>'
+      +'<div style="background:rgba(26,77,110,0.07);border-radius:8px;padding:7px;text-align:center;border:1px solid rgba(26,77,110,0.12)"><div class="cmp-knum" style="color:var(--c-avg)">'+fmtS(av)+'</div><div class="cmp-ksubt">📐 Avg Rev/day</div></div>'
       +'<div style="background:rgba(74,29,150,0.07);border-radius:8px;padding:7px;text-align:center;border:1px solid rgba(74,29,150,0.12)"><div class="cmp-knum" style="color:var(--c-apc)">'+fmtF(ap)+'</div><div class="cmp-ksubt">🏷️ Avg Rev/ชิ้น</div></div>'
       +'<div style="background:rgba(14,116,144,0.07);border-radius:8px;padding:7px;text-align:center;border:1px solid rgba(14,116,144,0.12)"><div class="cmp-knum" style="color:var(--c-avd)">'+fmtF(avd)+'</div><div class="cmp-ksubt">📦 Avg Vol/วัน</div></div>'
       +'</div></div>';
@@ -2744,7 +2747,7 @@ function runMultiCompare(){
     +_makeCmpSectionHTML('mx_rev_ov','💰 Revenue ภาพรวม ทุกเดือน','mx_rev_ov','ch260')
     +_makeCmpSectionHTML('mx_rev_zone','📈 Revenue ราย '+zoneChartTitle+' (Line)','mx_rev_zone','ch400')
     +_makeCmpSectionHTML('mx_vol_zone','📈 Volume ราย '+zoneChartTitle+' (Line)','mx_vol_zone','ch400')
-    +_makeCmpSectionHTML('mx_avg_zone','📈 Avg Rev ราย '+zoneChartTitle+' (Line)','mx_avg_zone','ch400')
+    +_makeCmpSectionHTML('mx_avg_zone','📈 Avg Rev/day ราย '+zoneChartTitle+' (Line)','mx_avg_zone','ch400')
     +_makeCmpSectionHTML('mx_avd_zone','📦 Avg Vol/วัน ราย '+zoneChartTitle+' (Line)','mx_avd_zone','ch400')
     +_makeCmpSectionHTML('mx_ap_zone','🏷️ Avg Rev/ชิ้น ราย '+zoneChartTitle+' (Line)','mx_ap_zone','ch400','border:2px solid #e9d5ff')
     +_makeCmpSectionHTML('mx_pct_zone','📈 %Δ Revenue ราย '+zoneChartTitle+' (เดือนล่าสุด vs ก่อนหน้า)','mx_pct_zone','ch400')
@@ -8645,17 +8648,22 @@ function buildProvinceData(){
     var pvEN = sheetNameToGeo(pvTH); // แปลงเป็น EN ให้ตรงกับ GeoJSON key
     // ใช้ EN เป็น primary key ถ้า GeoJSON โหลดแล้ว, ไม่งั้นใช้ TH เป็น fallback
     var mapKey = (_mapGeoData && pvEN !== pvTH) ? pvEN : pvTH;
-    if(!pvMap[mapKey]) pvMap[mapKey] = {zone:'', bd:'', total:0, active:0, loss:0, inactive:0, rev:0, agents:[], pvTH:pvTH, pvEN:pvEN, avgCur:0, avgPrev:0}; // loss/inactive kept as 0 for compatibility
+    if(!pvMap[mapKey]) pvMap[mapKey] = {zone:'', bd:'', total:0, active:0, loss:0, inactive:0, rev:0, prevRev:0, agents:[], pvTH:pvTH, pvEN:pvEN, avgCur:0, avgPrev:0}; // loss/inactive kept as 0 for compatibility
     pvMap[mapKey].total++;
     if (_isActiveAgent(r, m)) pvMap[mapKey].active++;
     pvMap[mapKey].rev += (parseFloat(r[m.colRev])||0);
-    pvMap[mapKey].avgCur += (parseFloat(r[m.colAvg])||0);
     var mp = getMP();
-    if(mp) pvMap[mapKey].avgPrev += (parseFloat(r[mp.colAvg])||0);
+    if(mp) pvMap[mapKey].prevRev += (parseFloat(r[mp.colRev])||0);
     // T03: loss/inactive counters removed
     if(!pvMap[mapKey].zone && r[COL.zoneName]) pvMap[mapKey].zone = String(r[COL.zoneName]||'').trim();
     var agName = String(r[COL.agentName]||'').trim();
     if(agName && pvMap[mapKey].agents.indexOf(agName)<0) pvMap[mapKey].agents.push(agName);
+  });
+  var curDiv = Math.max(1, getDayDivisorMeta(m && m.key).days);
+  var prevDiv = mp ? Math.max(1, getDayDivisorMeta(mp.key).days) : 1;
+  Object.keys(pvMap).forEach(function(key){
+    pvMap[key].avgCur = curDiv > 0 ? pvMap[key].rev / curDiv : 0;
+    pvMap[key].avgPrev = mp ? (prevDiv > 0 ? pvMap[key].prevRev / prevDiv : 0) : 0;
   });
   return pvMap;
 }
@@ -9553,7 +9561,7 @@ function showCityDrill(cityName, d){
     +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Code</th>'
     +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Revenue</th>'
     +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Volume</th>'
-    +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Rev</th>'
+    +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Rev/day</th>'
     +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Vol/วัน</th>'
     +'<th style="padding:5px 8px;text-align:center;font-weight:700;color:var(--pr)">Status</th>'
     +'</tr></thead><tbody>'
@@ -9915,7 +9923,7 @@ function showMapDrill(pvTH, pvEN, d){
           +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Code</th>'
           +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Revenue</th>'
           +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Volume</th>'
-          +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Rev</th>'
+          +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Rev/day</th>'
           +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Vol/วัน</th>'
           +'<th style="padding:5px 8px;text-align:center;font-weight:700;color:var(--pr)">Status</th>'
         +'</tr></thead><tbody>'
@@ -11826,17 +11834,22 @@ function _bdRender() {
     var z = String(r[COL.zoneName] || '?');
     if (!zMap[z]) zMap[z] = { zone:z, rev:0, prevRev:0, growth:0, growthRevGain:0, total:0, prevTotal:0, avg:0, prevAvg:0 };
     zMap[z].rev     += N(r[m.colRev]);
-    zMap[z].avg     += N(r[m.colAvg]);
     zMap[z].total++;
     if (mp) {
       zMap[z].prevRev  += N(r[mp.colRev]);
-      zMap[z].prevAvg  += N(r[mp.colAvg]);
       zMap[z].prevTotal++;
     }
     if (mp && (N(r[m.colAvg]) - N(r[mp.colAvg])) > (_growthThreshold || 0)) {
       zMap[z].growth++;
       zMap[z].growthRevGain += Math.max(0, N(r[m.colRev]) - N(r[mp.colRev]));
     }
+  });
+
+  var curDays = Math.max(1, getDayDivisorMeta(m && m.key).days);
+  var prevDays = mp ? Math.max(1, getDayDivisorMeta(mp.key).days) : 1;
+  Object.keys(zMap).forEach(function(z){
+    zMap[z].avg = curDays > 0 ? zMap[z].rev / curDays : 0;
+    zMap[z].prevAvg = mp ? (prevDays > 0 ? zMap[z].prevRev / prevDays : 0) : 0;
   });
 
   var rows = Object.keys(zMap).map(function(z) { return zMap[z]; });

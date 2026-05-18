@@ -21,6 +21,10 @@ Phase 8 เริ่มงาน Dashboard Logic & Calculation Refinement โด
 - ปรับ section `Avg Rev/day`
   - chart ราย Zone, Package, Province และ ranking ใช้ `SUM(Revenue) ÷ days`
   - ลดความเสี่ยงที่ card กับ chart ใช้สูตรไม่ตรงกัน
+- ปรับ surface เพิ่มเติมที่ยังใช้ `colAvg` แบบรวมค่าอยู่
+  - compare ราย 2 เดือน และ compare หลายเดือน เปลี่ยน `Avg Rev/day` เป็น `Revenue ÷ จำนวนวัน`
+  - package summary, BD Zone score และ map province status ใช้ logic รวมแบบเดียวกันมากขึ้น
+  - tooltip และ label ช่วยอธิบายว่า `Avg Rev/day` เป็นค่าเฉลี่ยต่อวันของทั้งกลุ่ม ไม่ใช่ผลรวม avg จากชีต
 - เพิ่ม config สำหรับ Loss Baseline
   - `LOSS_BASELINE_MONTH_KEY = 'mar'`
   - `getLossBaselineMonthKey(currentMonthKey)` เพื่อไม่ hard-code baseline ใน Phase 9

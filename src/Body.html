@@ -328,23 +328,23 @@
 
     <!-- Avg Rev -->
     <div class="spanel" id="sp-avgrev">
-      <div class="sdiv"><h3>📐 Avg Rev/day <span class="metric-help" tabindex="0" title="Avg Rev from the source sheet. In grouped views, values are summed by the selected dimension." aria-label="Avg Rev from the source sheet. In grouped views, values are summed by the selected dimension.">?</span></h3></div>
+      <div class="sdiv"><h3>📐 Avg Rev/day <span class="metric-help" tabindex="0" title="คำนวณจาก Revenue รวม ÷ จำนวนวันที่ใช้จริงของเดือนนั้น ถ้าเป็นเดือนปัจจุบันจะใช้วันข้อมูลล่าสุด ไม่ใช่เต็มเดือน" aria-label="คำนวณจาก Revenue รวม หารด้วยจำนวนวันที่ใช้จริงของเดือนนั้น ถ้าเป็นเดือนปัจจุบันจะใช้วันข้อมูลล่าสุด ไม่ใช่เต็มเดือน">?</span></h3></div>
       <div class="g2">
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_avg_zone">Avg Rev ราย Zone</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_avg_zone">Avg Rev/day ราย Zone</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_avg_zone"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle">Avg Rev แยก Package</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle">Avg Rev/day แยก Package</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_avg_pkg"></canvas></div>
         </div>
       </div>
       <div class="g2">
         <div class="ccard">
-          <div class="chdr"><div class="ctitle">Avg Rev แยกจังหวัด</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle">Avg Rev/day แยกจังหวัด</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_avg_prov"></canvas></div>
         </div>
-        <div class="ccard"><div class="chdr"><div class="ctitle">Avg Rev Ranking</div></div><div style="max-height:270px;overflow-y:auto" id="avg_rank"></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle">Avg Rev/day Ranking</div></div><div style="max-height:270px;overflow-y:auto" id="avg_rank"></div></div>
       </div>
       <div class="ccard gfull" id="dp_avg_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_avg_zone"></span><span class="drill-close" onclick="closeDrill('dp_avg_zone')">✕ ปิด</span></div><div id="dpb_avg_zone"></div></div>
       <div class="ccard gfull" id="dp_avg_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_avg_pkg"></span><span class="drill-close" onclick="closeDrill('dp_avg_pkg')">✕ ปิด</span></div><div id="dpb_avg_pkg"></div></div>
@@ -407,7 +407,7 @@
         <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_vol">Volume ราย Zone</div></div><div class="ch300"><canvas id="c_bd_vol"></canvas></div></div>
       </div>
       <div class="g2">
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_avg">Avg Rev/day ราย Zone <span class="metric-help" tabindex="0" title="Avg Rev from the source sheet. In grouped views, values are summed by Zone." aria-label="Avg Rev from the source sheet. In grouped views, values are summed by Zone.">?</span></div></div><div class="ch260"><canvas id="c_bd_avg"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_avg">Avg Rev/day ราย Zone <span class="metric-help" tabindex="0" title="คำนวณจาก Revenue รวมของ Zone ÷ จำนวนวันที่ใช้จริงของเดือนนั้น เพื่อให้เทียบเดือนที่ยังไม่ครบได้ยุติธรรมกว่า" aria-label="คำนวณจาก Revenue รวมของโซน หารด้วยจำนวนวันที่ใช้จริงของเดือนนั้น เพื่อให้เทียบเดือนที่ยังไม่ครบได้ยุติธรรมกว่า">?</span></div></div><div class="ch260"><canvas id="c_bd_avg"></canvas></div></div>
         <div class="ccard gfull"><div class="chdr"><div class="ctitle">🏅 Zone Ranking</div></div><div id="bd_score"></div></div>
       </div>
     </div>
@@ -460,7 +460,7 @@
         <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_vol">Volume แยก Package</div></div><div class="ch220"><canvas id="c_pkg_vol"></canvas></div></div>
       </div>
       <div class="g2">
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_avg">Avg Rev แยก Package</div></div><div class="ch220"><canvas id="c_pkg_avg"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_avg">Avg Rev/day แยก Package</div></div><div class="ch220"><canvas id="c_pkg_avg"></canvas></div></div>
         <div class="ccard"><div class="chdr"><div class="ctitle">Package Distribution</div></div><div class="ch220"><canvas id="c_pkg_pie"></canvas></div></div>
       </div>
       <div class="ccard gfull"><div class="chdr"><div class="ctitle">Ranking ตาม Package (เรียง Revenue)</div></div><div style="max-height:240px;overflow-y:auto" id="pkg_rank"></div></div>
