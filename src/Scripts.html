@@ -1853,7 +1853,11 @@ function renderAllCharts(){
       'rgba(30,58,95,0.75)',true,{groupCol:COL.zoneName,metricCol:m.colRev,panelId:'dp_rev_zone',titleId:'dpt_rev_zone',bodyId:'dpb_rev_zone'});
     updT('t_rev_zone','💰 Revenue ราย Zone ('+m.en+')');
   }
-  mkRank('rev_rank',isBD?grpSum(FR,COL.agentName,m.colRev).slice(0,15):sz,'Revenue');
+  if(isBD){
+    mkCustomerRank('rev_rank',FR,function(r){return N(r[m.colRev]);},'Revenue',fmtS,mp?function(r){return N(r[mp.colRev]);}:null,'vs '+(mp?mp.en:''),'customer');
+  } else {
+    mkRank('rev_rank',sz,'Revenue');
+  }
   var sp=grpSum(FR,COL.package,m.colRev).slice(0,10);
   mkHBar('c_rev_pkg',sp.map(function(e){return e[0];}),sp.map(function(e){return Math.round(e[1]);}),
     'rgba(30,58,95,0.65)',true,{groupCol:COL.package,metricCol:m.colRev,panelId:'dp_rev_pkg',titleId:'dpt_rev_pkg',bodyId:'dpb_rev_pkg'});
@@ -1869,7 +1873,11 @@ function renderAllCharts(){
       'rgba(21,94,117,0.75)',true,{groupCol:COL.zoneName,metricCol:m.colVol,panelId:'dp_vol_zone',titleId:'dpt_vol_zone',bodyId:'dpb_vol_zone'});
     updT('t_vol_zone','📦 Volume ราย Zone ('+m.en+')');
   }
-  mkRank('vol_rank',isBD?grpSum(FR,COL.agentName,m.colVol).slice(0,15):svz,'Volume');
+  if(isBD){
+    mkCustomerRank('vol_rank',FR,function(r){return N(r[m.colVol]);},'Volume',fmtS,mp?function(r){return N(r[mp.colVol]);}:null,'vs '+(mp?mp.en:''),'customer');
+  } else {
+    mkRank('vol_rank',svz,'Volume');
+  }
   var svp=grpSum(FR,COL.package,m.colVol).slice(0,10);
   mkHBar('c_vol_pkg',svp.map(function(e){return e[0];}),svp.map(function(e){return Math.round(e[1]);}),
     'rgba(21,94,117,0.65)',true,{groupCol:COL.package,metricCol:m.colVol,panelId:'dp_vol_pkg',titleId:'dpt_vol_pkg',bodyId:'dpb_vol_pkg'});
@@ -1886,9 +1894,12 @@ function renderAllCharts(){
   }
   // Avg Rev Ranking — แสดง % vs เดือนก่อน
   var avgPrevMap=null;
-  var avgRankData=isBD?grpAvgRevDay(FR,COL.agentName,m).slice(0,15):saz;
   if(mp){var sazP=grpAvgRevDay(FR,isBD?COL.agentName:COL.zoneName,mp);avgPrevMap={};sazP.forEach(function(e){avgPrevMap[e[0]]=e[1];});}
-  mkRank('avg_rank',avgRankData,'Avg Rev/day',fmtS,avgPrevMap,'vs '+( mp?mp.en:''));
+  if(isBD){
+    mkCustomerRank('avg_rank',FR,function(r){return avgRevDay(r,m);},'Avg Rev/day',fmtS,mp?function(r){return avgRevDayPrev(r,mp);}:null,'vs '+(mp?mp.en:''),'customer');
+  } else {
+    mkRank('avg_rank',saz,'Avg Rev/day',fmtS,avgPrevMap,'vs '+( mp?mp.en:''));
+  }
   var sap=grpAvgRevDay(FR,COL.package,m).slice(0,10);
   mkHBar('c_avg_pkg',sap.map(function(e){return e[0];}),sap.map(function(e){return Math.round(e[1]);}),
     'rgba(26,77,110,0.65)',true);
@@ -2149,7 +2160,11 @@ function renderAvgPieceSection(){
   var avdPrevMap=null;
   if(mp){var avdzP=grpAvgVolDay(FR,primaryGroup,mp);avdPrevMap={};avdzP.forEach(function(e){avdPrevMap[e[0]]=e[1];});}
   if(document.getElementById('avd_rank')){
-    mkRank('avd_rank',avdz,'Avg Vol/วัน',fmtF,avdPrevMap,'vs '+(mp?mp.en:''));
+    if(isBD){
+      mkCustomerRank('avd_rank',FR,function(r){return avgVolDay(r,m);},'Avg Vol/วัน',fmtF,mp?function(r){return avgVolDayPrev(r,mp);}:null,'vs '+(mp?mp.en:''),'customer');
+    } else {
+      mkRank('avd_rank',avdz,'Avg Vol/วัน',fmtF,avdPrevMap,'vs '+(mp?mp.en:''));
+    }
   }
 
   // Ranking — Avg Rev/ชิ้น
