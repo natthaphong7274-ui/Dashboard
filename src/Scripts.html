@@ -38,6 +38,9 @@ var _chartsRendered = {};   // { tabKey: true } — ป้องกัน render
 // ===== FILTER STATE PERSISTENCE =====
 var _savedFilterState = {}; // เก็บค่า filter ข้าม tab
 // Drill-down sort state — แยกต่างหากสำหรับแต่ละ panel
+var _riskSubTab = 'overview';
+var _growthSubTab = 'overview';
+var _customerCardState = null;
 var DRILL_SORT={}; // { panelId: {field:'rev', dir:'desc'} }
 var PAL=['var(--pr)','var(--ac)','var(--or)','var(--pl)','#007A7A','var(--bd)','#5C3D8F','#00788C','#CC4A1A','#004A6E','#33B8B8','#F0A080'];
 var _watermarkTimer = null;
@@ -220,10 +223,10 @@ function getRiskBaselineMonth(currentMonth){
   return getPreviousMonthMeta(currentKey);
 }
 function riskDelta(r, currentMonth, baselineMonth){
-  return baselineMonth ? (N(r[baselineMonth.colAvg]) - N(r[currentMonth.colAvg])) : 0;
+  return baselineMonth ? (_rowAvgRevDay(r, baselineMonth) - _rowAvgRevDay(r, currentMonth)) : 0;
 }
 function growthDelta(r, currentMonth, baselineMonth){
-  return baselineMonth ? (N(r[currentMonth.colAvg]) - N(r[baselineMonth.colAvg])) : 0;
+  return baselineMonth ? (_rowAvgRevDay(r, currentMonth) - _rowAvgRevDay(r, baselineMonth)) : 0;
 }
 function riskRowsForBaseline(rows, currentMonth, baselineMonth, threshold){
   if(!currentMonth || !baselineMonth) return [];
@@ -426,6 +429,10 @@ function updMonthHint(){
 }
 function getMC(){return CUR_MONTH||MONTHS[0]||{};}
 function getMP(){return PREV_MONTH||null;}
+function getMonthMeta(key){
+  key=String(key||'');
+  return MONTHS.find(function(m){return String(m.key||'')===key;})||null;
+}
 function getTM(){
   var v=document.getElementById('tmonthSel')?document.getElementById('tmonthSel').value:'';
   if(!v)return getMC();
@@ -731,13 +738,48 @@ function swMain(v){
   if(v==='ov'){ renderKPI(); renderAllCharts(); } // ★ render charts เมื่อเปิด tab ภาพรวม
   if(v==='ls') renderTable();
   if(v==='cr') loadAndRenderCarrier();
-  if(v==='risk'){ loadTrackingData(); loadRiskThreshold(function(){ renderRisk(); }); }
-  if(v==='growth'){ loadGrowthTrackingData(); loadGrowthThreshold(function(){ renderGrowth(); }); }
+  if(v==='risk'){
+    loadTrackingData();
+    loadRiskThreshold(function(){
+      renderRisk();
+      swRiskSubTab(_riskSubTab);
+    });
+  }
+  if(v==='growth'){
+    loadGrowthTrackingData();
+    loadGrowthThreshold(function(){
+      renderGrowth();
+      swGrowthSubTab(_growthSubTab);
+    });
+  }
   if(v==='usermgmt') loadUserStatus();
   applyRoleVisualizationRules();
   _refreshDashboardPolling();
   var tabNames={home:'หน้าแรก',ov:'ภาพรวม',ls:'รายการลูกค้า',cr:'ขนส่ง',risk:'กลุ่มเสี่ยง',growth:'กลุ่มเติบโต',usermgmt:'จัดการผู้ใช้'};
   _clientLog('VIEW_TAB','เปิด Tab: '+(tabNames[v]||v));
+}
+function _setRiskGrowthSubtab(kind, mode){
+  var normalized=(mode==='work'?'work':'overview');
+  var overview=document.getElementById(kind+'_overview_pane');
+  var work=document.getElementById(kind+'_work_pane');
+  if(overview)overview.style.display=normalized==='overview'?'block':'none';
+  if(work)work.style.display=normalized==='work'?'block':'none';
+  ['overview','work'].forEach(function(key){
+    var btn=document.getElementById(kind+'_subtab_'+key);
+    if(btn)btn.classList.toggle('active',key===normalized);
+  });
+}
+function swRiskSubTab(mode,btn){
+  _riskSubTab=(mode==='work'?'work':'overview');
+  _setRiskGrowthSubtab('risk',_riskSubTab);
+  if(btn&&typeof btn.blur==='function')btn.blur();
+  _clientLog('VIEW_SUBTAB','[กลุ่มเสี่ยง] เปิดมุมมอง: '+(_riskSubTab==='work'?'ติดตามลูกค้า':'ภาพรวม'));
+}
+function swGrowthSubTab(mode,btn){
+  _growthSubTab=(mode==='work'?'work':'overview');
+  _setRiskGrowthSubtab('growth',_growthSubTab);
+  if(btn&&typeof btn.blur==='function')btn.blur();
+  _clientLog('VIEW_SUBTAB','[กลุ่มเติบโต] เปิดมุมมอง: '+(_growthSubTab==='work'?'ต่อยอดลูกค้า':'ภาพรวม'));
 }
 function swSec(sec,btn){
   document.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('active');});
@@ -1397,6 +1439,70 @@ function mkRank(elId, sorted, lbl, fmtFn, prevMap, pctLabel){
         +'</tr>';
     }).join('')+'</tbody></table>';
 }
+function mkCustomerRank(elId, rows, valueFn, lbl, fmtFn, prevValueFn, pctLabel, kind){
+  var el=document.getElementById(elId); if(!el) return;
+  fmtFn=fmtFn||fmtS;
+  if(!RANK_SORT[elId]) RANK_SORT[elId]={sortCol:'val',dir:'desc'};
+  var sc=RANK_SORT[elId].sortCol, sd=RANK_SORT[elId].dir;
+  var mul=sd==='desc'?-1:1;
+
+  var data=(rows||[]).map(function(r){
+    var val=N(valueFn(r));
+    var prev=prevValueFn?N(prevValueFn(r)):null;
+    var pct=(prev&&prev>0)?((val-prev)/Math.abs(prev)*100):null;
+    var code=String(r[COL.agentCode]||r['Agent Code']||'');
+    return{row:r,code:code,val:val,prev:prev,pct:pct};
+  }).filter(function(d){return d.val!==0 || d.prev!==0;});
+
+  if(!data.length){
+    el.innerHTML='<div class="empty-panel positive" style="padding:40px 10px"><div class="empty-icon">🛡️</div><div class="empty-text">ไม่มีรายชื่อในกลุ่มนี้</div><div class="empty-sub">สถานการณ์ปกติ / ไม่มีข้อมูลติดลบ</div></div>';
+    return;
+  }
+
+  data.sort(function(a,b){
+    if(sc==='name') return mul*a.code.localeCompare(b.code,'th');
+    if(sc==='pct'){
+      var pa=a.pct==null?-9999:a.pct, pb=b.pct==null?-9999:b.pct;
+      return mul*(pa-pb);
+    }
+    return mul*(a.val-b.val);
+  });
+
+  var mx=data.length?Math.max.apply(null,data.map(function(r){return Math.abs(r.val);})):1;
+  function thR(col,label,style){
+    var isA=sc===col;
+    var arr=isA?(sd==='desc'?' ▼':' ▲'):' ⇅';
+    var bg=isA?'background:rgba(0,63,92,0.08);border-radius:4px;':'';
+    return'<th style="cursor:pointer;'+bg+(style||'')+'" onclick="rankSort(\''+elId+'\',\''+col+'\')">'+label+arr+'</th>';
+  }
+
+  var hasPct=!!prevValueFn;
+  el.innerHTML='<table class="mt"><thead><tr>'
+    +'<th style="width:28px">#</th>'
+    +'<th style="width:38px;text-align:center">ดู</th>'
+    +thR('name','Agent / Customer')
+    +thR('val',lbl,'text-align:right')
+    +(hasPct?thR('pct','%'+(pctLabel||''),'text-align:right'):'')
+    +'</tr></thead><tbody>'
+    +data.slice(0,20).map(function(r,i){
+      var p=mx?Math.round(Math.abs(r.val)/mx*100):0;
+      var rc=i<3?['r1','r2','r3'][i]:'ro';
+      var pctCell='';
+      if(hasPct){
+        if(r.pct==null){pctCell='<td class="tdr" style="color:var(--t2);font-size:10px">—</td>';}
+        else{var cls=r.pct>0?'tdpos':r.pct<0?'tdneg':'';
+          pctCell='<td class="tdr '+cls+'" style="font-size:11px;font-weight:700">'+(r.pct>0?'▲':'▼')+Math.abs(r.pct).toFixed(1)+'%</td>';}
+      }
+      return'<tr>'
+        +'<td><span class="rn '+rc+'">'+(i+1)+'</span></td>'
+        +'<td style="text-align:center">'+_customerPopupButton(kind||'customer',r.row,(getMC()||{}).key)+'</td>'
+        +'<td>'+_customerDisplayPair(r.row)+'</td>'
+        +'<td class="tdr">'+fmtFn(r.val)
+          +'<div class="pb"><div class="pf" style="width:'+p+'%;background:var(--ac)"></div></div></td>'
+        +pctCell
+        +'</tr>';
+    }).join('')+'</tbody></table>';
+}
 function rankSort(elId,col){
   if(!RANK_SORT[elId])RANK_SORT[elId]={sortCol:'val',dir:'desc'};
   if(RANK_SORT[elId].sortCol===col){
@@ -1504,9 +1610,9 @@ function showDrill(groupCol, groupVal, metricCol, panelId, titleId, bodyId) {
     }
 
     var hdr = '<tr>'
-      +'<th style="min-width:28px">#</th>'
-      +'<th style="min-width:130px;cursor:pointer" onclick="drillSort(\''+panelId+'\',\'name\')">Agent Name'+(sf==='name'?(sd==='desc'?' ▼':' ▲'):' ⇅')+'</th>'
-      +'<th>Code</th><th>Zone</th><th>Pkg</th><th>Province</th>'
+      +'<th style="min-width:28px">#</th><th>ดู</th>'
+      +'<th style="min-width:130px;cursor:pointer" onclick="drillSort(\''+panelId+'\',\'name\')">Agent / Customer'+(sf==='name'?(sd==='desc'?' ▼':' ▲'):' ⇅')+'</th>'
+      +'<th>Zone</th><th>Pkg</th><th>Province</th>'
       +(mp?dth('💰 Rev<br>'+mp.en,'revP',panelId,sf,sd,'color:var(--t2)'):'')+dth('💰 Rev<br>'+m.en,'rev',panelId,sf,sd,'color:var(--ac)')
       +(mp?dth('📦 Vol<br>'+mp.en,'volP',panelId,sf,sd,'color:var(--t2)'):'')+dth('📦 Vol<br>'+m.en,'vol',panelId,sf,sd,'color:var(--or)')
       +dth('📐 Avg Rev<br>'+m.en,'avg',panelId,sf,sd,'color:var(--pr)')
@@ -1522,7 +1628,6 @@ function showDrill(groupCol, groupVal, metricCol, panelId, titleId, bodyId) {
       +'<div style="overflow-x:auto;max-height:420px;overflow-y:auto">'
       +'<table class="mt"><thead>'+hdr+'</thead><tbody>'
       +rows.slice(0,200).map(function(r,i){
-        var phone=r['Phone']||r['phone']||r['เบอร์โทร']||r['Tel']||'';
         var revC=N(r[m.colRev]),revP=mp?N(r[mp.colRev]):0;
         var diffRev=mp?Math.round(revC-revP):null,pctRev=mp&&revP?pctChg(revP,revC):null;
         var volC=N(r[m.colVol]),volP=mp?N(r[mp.colVol]):0;
@@ -1535,8 +1640,8 @@ function showDrill(groupCol, groupVal, metricCol, panelId, titleId, bodyId) {
         var rc=i<3?['r1','r2','r3'][i]:'ro';
         return'<tr>'
           +'<td><span class="rn '+rc+'">'+(i+1)+'</span></td>'
-          +'<td style="font-weight:700;white-space:nowrap">'+r['Agent Name']+(phone?'<div style="font-size:10px;color:var(--t2)">📱'+phone+'</div>':'')+'</td>'
-          +'<td style="font-size:10px;color:var(--t2)">'+String(r['Agent Code']||'-')+'</td>'
+          +'<td>'+_customerPopupButton('customer',r,m.key)+'</td>'
+          +'<td>'+_customerDisplayPair(r)+'</td>'
           +'<td style="font-size:11px">'+r['Zone Name']+'</td>'
           +'<td style="font-size:11px">'+r['Package']+'</td>'
           +'<td style="font-size:11px">'+r['Province']+'</td>'
@@ -1598,8 +1703,8 @@ function showAvgPieceDrill(groupCol, groupVal, panelId, titleId, bodyId) {
 
     b.innerHTML='<div style="max-height:360px;overflow-y:auto">'
       +'<table class="mt"><thead><tr>'
-      +'<th>#</th><th style="min-width:130px;cursor:pointer" onclick="drillSort(\''+panelId+'\',\'name\')">Agent Name'+(sf==='name'?(sd==='desc'?' ▼':' ▲'):'')+'</th>'
-      +'<th>Code</th><th>Zone</th><th>Pkg</th><th>Province</th>'
+      +'<th>#</th><th>ดู</th><th style="min-width:130px;cursor:pointer" onclick="drillSort(\''+panelId+'\',\'name\')">Agent / Customer'+(sf==='name'?(sd==='desc'?' ▼':' ▲'):'')+'</th>'
+      +'<th>Zone</th><th>Pkg</th><th>Province</th>'
       // Revenue
       +(mp?dth('💰 Rev<br>'+mp.en,'revP',panelId,sf,sd,'color:var(--t2)'):'')
       +dth('💰 Rev<br>'+m.en,'rev',panelId,sf,sd,'color:var(--ac)')
@@ -1619,7 +1724,6 @@ function showAvgPieceDrill(groupCol, groupVal, panelId, titleId, bodyId) {
       +(mp?dth('📦 Vol/วัน<br>'+mp.en+' (÷'+getDAY1ForMonth(mp.key)+'วัน)','avdP',panelId,sf,sd,'color:var(--t2)')+dth('Diff<br>Vol/วัน','diffAvd',panelId,sf,sd):'')
       +'</tr></thead><tbody>'
       +rows.slice(0,200).map(function(r,i){
-        var phone=r['Phone']||r['phone']||r['เบอร์โทร']||r['Tel']||'';
         var revC=N(r[m.colRev]),revP=mp?N(r[mp.colRev]):0;
         var diffRev=mp?Math.round(revC-revP):null,pctRev=mp&&revP?pctChg(revP,revC):null;
         var volC=N(r[m.colVol]),volP=mp?N(r[mp.colVol]):0;
@@ -1631,8 +1735,8 @@ function showAvgPieceDrill(groupCol, groupVal, panelId, titleId, bodyId) {
         var avd=avgVolDay(r,m),avdP=mp?avgVolDayPrev(r,mp):0,diffAvd=mp?avd-avdP:null;
         return'<tr>'
           +'<td style="color:var(--t2);font-size:10px">'+(i+1)+'</td>'
-          +'<td style="font-weight:700;white-space:nowrap">'+r['Agent Name']+(phone?'<div style="font-size:10px;color:var(--t2)">📱'+phone+'</div>':'')+'</td>'
-          +'<td style="font-size:10px;color:var(--t2)">'+String(r['Agent Code']||'-')+'</td>'
+          +'<td>'+_customerPopupButton('customer',r,m.key)+'</td>'
+          +'<td>'+_customerDisplayPair(r)+'</td>'
           +'<td style="font-size:11px">'+r['Zone Name']+'</td><td style="font-size:11px">'+r['Package']+'</td><td style="font-size:11px">'+r['Province']+'</td>'
           +(mp?'<td class="tdr" style="color:var(--t2)">'+fmtInt(revP)+'</td>':'')
           +'<td class="tdr" style="font-weight:700;color:var(--ac)">'+fmtInt(revC)+'</td>'
@@ -1671,8 +1775,8 @@ function showAvgVolDayDrill(groupCol, groupVal, panelId, titleId, bodyId) {
 
     b.innerHTML='<div style="max-height:360px;overflow-y:auto">'
       +'<table class="mt"><thead><tr>'
-      +'<th>#</th><th style="min-width:130px;cursor:pointer" onclick="drillSort(\''+panelId+'\',\'name\')">Agent Name'+(sf==='name'?(sd==='desc'?' ▼':' ▲'):'')+'</th>'
-      +'<th>Code</th><th>Zone</th><th>Pkg</th><th>Province</th>'
+      +'<th>#</th><th>ดู</th><th style="min-width:130px;cursor:pointer" onclick="drillSort(\''+panelId+'\',\'name\')">Agent / Customer'+(sf==='name'?(sd==='desc'?' ▼':' ▲'):'')+'</th>'
+      +'<th>Zone</th><th>Pkg</th><th>Province</th>'
       // Revenue
       +(mp?dth('💰 Rev<br>'+mp.en,'revP',panelId,sf,sd,'color:var(--t2)'):'')
       +dth('💰 Rev<br>'+m.en,'rev',panelId,sf,sd,'color:var(--ac)')
@@ -1691,7 +1795,6 @@ function showAvgVolDayDrill(groupCol, groupVal, panelId, titleId, bodyId) {
       +dth('🏷️ Avg/ชิ้น<br>'+m.en,'ap',panelId,sf,sd,'color:var(--c-apc)')
       +'</tr></thead><tbody>'
       +rows.slice(0,200).map(function(r,i){
-        var phone=r['Phone']||r['phone']||r['เบอร์โทร']||r['Tel']||'';
         var revC=N(r[m.colRev]),revP=mp?N(r[mp.colRev]):0;
         var diffRev=mp?Math.round(revC-revP):null,pctRev=mp&&revP?pctChg(revP,revC):null;
         var volC=N(r[m.colVol]),volP=mp?N(r[mp.colVol]):0,diffVol=mp?Math.round(volC-volP):null;
@@ -1701,8 +1804,8 @@ function showAvgVolDayDrill(groupCol, groupVal, panelId, titleId, bodyId) {
         var ap=avgPiece(r,m);
         return'<tr>'
           +'<td style="color:var(--t2);font-size:10px">'+(i+1)+'</td>'
-          +'<td style="font-weight:700;white-space:nowrap">'+r['Agent Name']+(phone?'<div style="font-size:10px;color:var(--t2)">📱'+phone+'</div>':'')+'</td>'
-          +'<td style="font-size:10px;color:var(--t2)">'+String(r['Agent Code']||'-')+'</td>'
+          +'<td>'+_customerPopupButton('customer',r,m.key)+'</td>'
+          +'<td>'+_customerDisplayPair(r)+'</td>'
           +'<td style="font-size:11px">'+r['Zone Name']+'</td><td style="font-size:11px">'+r['Package']+'</td><td style="font-size:11px">'+r['Province']+'</td>'
           // Revenue
           +(mp?'<td class="tdr" style="color:var(--t2)">'+fmtInt(revP)+'</td>':'')
@@ -1970,6 +2073,9 @@ function renderAvgPieceSection(){
   var apz=grpAvgPiece(FR,primaryGroup,m).slice(0,15);
   var apz_prev=mp?grpAvgPiece(FR,primaryGroup,mp):[];
   var apz_prevMap={};apz_prev.forEach(function(e){apz_prevMap[e[0]]=e[1];});
+  var apCustomerRank=FR.slice().sort(function(a,b){return avgPiece(b,m)-avgPiece(a,m);}).slice(0,20);
+  var apTopLabel=isBD?(apCustomerRank.length?String(apCustomerRank[0][COL.agentCode]||apCustomerRank[0]['Agent Code']||'-'):''):(apz.length?apz[0][0]:'');
+  var apTopValue=isBD?(apCustomerRank.length?avgPiece(apCustomerRank[0],m):0):(apz.length?apz[0][1]:0);
 
   // Avg piece per Package
   var app=grpAvgPiece(FR,'Package',m).slice(0,10);
@@ -1989,8 +2095,8 @@ function renderAvgPieceSection(){
     +'</div>'
     +'<div class="kcard" style="--kc:var(--c-apc)"><div class="kico">📊</div>'
     +'<div class="klbl">'+_metricLabelHtml('TOP '+primaryLabel+' — Avg Rev/ชิ้น')+'</div>'
-    +'<div class="kval" style="color:var(--c-apc);font-size:15px;">'+(apz.length?fmtF(apz[0][1]):'—')+'</div>'
-    +'<div class="ksub">'+(apz.length?apz[0][0]:'')+'</div></div>';
+    +'<div class="kval" style="color:var(--c-apc);font-size:15px;">'+(apTopValue?fmtF(apTopValue):'—')+'</div>'
+    +'<div class="ksub">'+apTopLabel+'</div></div>';
   document.getElementById('avgpiece_kgrid').innerHTML=kHtml;
 
   // Avg Vol/day KPI
@@ -2049,7 +2155,11 @@ function renderAvgPieceSection(){
   // Ranking — Avg Rev/ชิ้น
   var apPrevMap=null;
   if(mp){var apzP=grpAvgPiece(FR,primaryGroup,mp);apPrevMap={};apzP.forEach(function(e){apPrevMap[e[0]]=e[1];});}
-  mkRank('ap_rank',apz,'Avg Rev/ชิ้น',fmtF,apPrevMap,'vs '+(mp?mp.en:''));
+  if(isBD){
+    mkCustomerRank('ap_rank',FR,function(r){return avgPiece(r,m);},'Avg Rev/ชิ้น',fmtF,mp?function(r){return avgPiece(r,mp);}:null,'vs '+(mp?mp.en:''),'customer');
+  }else{
+    mkRank('ap_rank',apz,'Avg Rev/ชิ้น',fmtF,apPrevMap,'vs '+(mp?mp.en:''));
+  }
 }
 
 // ===== LOSS =====
@@ -2415,7 +2525,7 @@ function runCompare(){
       }
       document.getElementById('cmp_drill_title').textContent='👥 '+s.groupVal+' — '+rows.length+' ราย ('+s.mA.en+' vs '+s.mB.en+')';
       document.getElementById('cmp_drill_thead').innerHTML='<tr style="font-size:11px">'
-        +'<th>#</th>'+cthL('Agent Name','name')+'<th>Code</th><th>Zone</th><th>Pkg</th>'
+        +'<th>#</th><th>ดู</th>'+cthL('Agent / Customer','name')+'<th>Zone</th><th>Pkg</th>'
         +cth('💰 Rev<br>'+s.mA.en,'revA')
         +cth('💰 Rev<br>'+s.mB.en,'revB')
         +cth('Diff Rev','diffRev')
@@ -2432,8 +2542,8 @@ function runCompare(){
         var rc=i<3?['r1','r2','r3'][i]:'ro';
         return'<tr>'
           +'<td><span class="rn '+rc+'">'+(i+1)+'</span></td>'
-          +'<td style="font-weight:700">'+String(r['Agent Name']||'-')+'</td>'
-          +'<td>'+String(r['Agent Code']||'-')+'</td>'
+          +'<td>'+_customerPopupButton('customer',r,s.mB.key)+'</td>'
+          +'<td>'+_customerDisplayPair(r)+'</td>'
           +'<td>'+String(r['Zone Name']||'-')+'</td>'
           +'<td>'+String(r['Package']||'-')+'</td>'
           +'<td class="tdr" style="color:'+cA+'">'+fmtS(Math.round(rA))+'</td>'
@@ -3159,8 +3269,8 @@ function renderTable(){
     return'<th onclick="tSort(\''+field+'\')" style="cursor:pointer;'+bg+(extraStyle||'')+'">'+label+arrow+'</th>';
   }
   var th='<tr style="font-size:11px">'
-    +thSL('name','Agent Name')
-    +'<th>Code</th>'
+    +'<th>ดู</th>'
+    +thSL('name','Agent / Customer')
     +(hasPhone?'<th>📱 เบอร์</th>':'')
     +'<th>Zone</th><th>Pkg</th>'
     +(compact?'':'<th>Province</th>')
@@ -3202,9 +3312,9 @@ function renderTable(){
     // Avg Rev/ชิ้น = Rev ÷ Vol
     var ap=apM(r),apPrev=mp?avgPiecePrev(r,mp):0;
     var apDiff=mp?ap-apPrev:null,apPct=mp&&apPrev?pctChg(apPrev,ap):null;
-    return'<tr>'
-      +'<td style="font-weight:700">'+_esc(r['Agent Name']||'-')+'</td>'
-      +'<td style="color:var(--t2);font-size:11px">'+_esc(r['Agent Code']||'-')+'</td>'
+    return'<tr data-customer-work-key="customer_'+_esc(String(r['Agent Code']||''))+'_'+m.key+'">'
+      +'<td>'+_customerPopupButton('customer',r,m.key)+'</td>'
+      +'<td>'+_customerDisplayPair(r)+'</td>'
       +(hasPhone?'<td style="font-size:11px">'+_esc(r['Phone']||r['phone']||r['เบอร์โทร']||r['Tel']||'-')+'</td>':'')
       +'<td>'+_esc(r['Zone Name']||'-')+'</td><td>'+_esc(r['Package']||'-')+'</td>'
       +(compact?'':'<td>'+_esc(r['Province']||'-')+'</td>')
@@ -3398,7 +3508,7 @@ function _buildReportTasks(rows,m,mp){
   rows.forEach(function(r){
     var code=_rowCode(r);
     var risk=riskBase ? riskDelta(r,m,riskBase)>(_riskThreshold||0) : false;
-    var growth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);
+    var growth=growthDelta(r,m,mp)>(_growthThreshold||0);
     if(risk){
       var rs=_trackingStatusFor('risk',code,m);
       out.push({type:'risk',code:code,name:r[COL.agentName]||'',bd:_bdOwnerForReport(r),zone:r[COL.zoneName]||'',rev:N(r[m.colRev]),prevRev:riskBase?N(r[riskBase.colRev]):0,status:rs,done:_isDoneTracking('risk',rs),success:_isSuccessTracking('risk',rs)});
@@ -3430,7 +3540,7 @@ function _buildBDPerformanceRows(rows,m,mp){
     var d=map[bd]; d.agents++; d.rev+=N(r[m.colRev]); if(mp)d.prevRev+=N(r[mp.colRev]);
     if(mp){
       var isRisk=riskBase ? riskDelta(r,m,riskBase)>(_riskThreshold||0) : false;
-      var isGrowth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);
+      var isGrowth=growthDelta(r,m,mp)>(_growthThreshold||0);
       if(isRisk){var rs=_trackingStatusFor('risk',code,m);d.tasks++;d.risk++;if(_isDoneTracking('risk',rs))d.done++;if(_isSuccessTracking('risk',rs)){d.success++;d.riskSaved++;}}
       if(isGrowth){var gs=_trackingStatusFor('growth',code,m);d.tasks++;if(_isDoneTracking('growth',gs))d.done++;if(_isSuccessTracking('growth',gs))d.success++;}
     }
@@ -5422,8 +5532,8 @@ function renderCarrierTable(){
 
   // ★ ข้อ 4: header แสดง cur + prev + diff + %
   var thead='<tr style="font-size:10px">'
-    +'<th>#</th>'+thC('name','Agent')
-    +'<th>Code</th>'+thC('zone','Zone','')+'<th>Pkg</th>'
+    +'<th>#</th><th>ดู</th>'+thC('name','Agent / Customer')
+    +thC('zone','Zone','')+'<th>Pkg</th>'
     +thC('volTotal','Vol รวม','color:var(--c-vol)');
 
   if(filterCar){
@@ -5456,10 +5566,10 @@ function renderCarrierTable(){
   document.getElementById('car_tbody').innerHTML=slice.map(function(r,i){
     var rowVolCur=activeCars.reduce(function(s,c){return s+N(r[carCol(c,'Vol',curLabel)]);},0);
     var rc=i<3?['r1','r2','r3'][i]:'ro';
-    var cells='<tr>'
+    var cells='<tr data-customer-work-key="customer_'+_esc(String(r['Agent Code']||''))+'_'+(CUR_MONTH&&CUR_MONTH.key||'')+'">'
       +'<td><span class="rn '+rc+'">'+(((carPg-1)*carPgPer)+i+1)+'</span></td>'
-      +'<td style="font-weight:700;white-space:nowrap;min-width:120px">'+_esc(r['Agent Name']||'-')+'</td>'
-      +'<td style="color:var(--t2);font-size:10px">'+_esc(r['Agent Code']||'-')+'</td>'
+      +'<td>'+_customerPopupButton('customer',r,CUR_MONTH&&CUR_MONTH.key)+'</td>'
+      +'<td>'+_customerDisplayPair(r)+'</td>'
       +'<td style="white-space:nowrap">'+_esc(r['Zone Name']||'-')+'</td>'
       +'<td style="white-space:nowrap;font-size:10px">'+_esc(r['Package']||'-')+'</td>'
       +'<td class="tdr" style="font-weight:700;color:var(--c-vol)">'+fmtS(Math.round(rowVolCur))+'</td>';
@@ -5839,6 +5949,214 @@ function setRiskThreshold(){
   renderRisk();
 }
 
+function _riskGrowthStatusLabel(kind, status){
+  var riskMap={
+    '':'ยังไม่ได้อัปเดต',
+    wait:'รอดำเนินการ',
+    contact:'ติดต่อแล้ว รอตอบกลับ',
+    solving:'กำลังแก้ปัญหา',
+    success:'สำเร็จ',
+    fail:'ไม่สำเร็จ'
+  };
+  var growthMap={
+    '':'ยังไม่ได้อัปเดต',
+    wait:'รอดำเนินการ',
+    contacted:'ติดต่อแล้ว / รอสัมภาษณ์',
+    data_collected:'เก็บข้อมูลสำเร็จ',
+    rewarded:'มอบรางวัลแล้ว',
+    upsold:'Upsell สำเร็จ',
+    unreachable:'ติดต่อไม่ได้'
+  };
+  return (kind==='growth'?growthMap:riskMap)[status||''] || 'ยังไม่ได้อัปเดต';
+}
+function _riskGrowthReasonLabel(kind, value){
+  var riskMap={
+    '':'—',
+    price:'ราคาแพงไป',
+    slow:'รถรับช้า',
+    damage:'สินค้าเสียหาย',
+    service:'บริการไม่ดี',
+    competitor:'คู่แข่งดีกว่า',
+    closed:'ร้านปิด/หยุดกิจการ',
+    other:'สาเหตุอื่น'
+  };
+  var growthMap={
+    '':'—',
+    seasonal:'ฤดูกาลสินค้าเกษตร',
+    festival:'เทศกาล / แคมเปญพิเศษ',
+    competitor_closed:'คู่แข่งปิดตัว / มีปัญหา',
+    vip_customer:'ได้ลูกค้ารายใหญ่เพิ่ม',
+    ecommerce:'E-commerce / ไลฟ์สดยอดพุ่ง',
+    switched:'ย้ายค่ายมาจากคู่แข่ง',
+    promotion:'ตัวแทนทำโปรโมชันได้ดี',
+    expanded:'ขยายขีดความสามารถ',
+    word_of_mouth:'บริการดี / Word of Mouth',
+    other_growth:'ปัจจัยอื่นๆ'
+  };
+  return (kind==='growth'?growthMap:riskMap)[value||''] || '—';
+}
+function _customerDisplayPair(row){
+  var agentCode=String((row&&row[COL.agentCode])||row['Agent Code']||'-');
+  var customerCode=String((row&&row[COL.account21])||row['21.00']||'-');
+  return '<div class="risk-customer-code"><span>'+_esc(agentCode||'-')+'</span><small>/ '+_esc(customerCode||'-')+'</small></div>';
+}
+function _customerAnonAvatarHTML(kind){
+  var cls=kind==='growth'?' growth':'';
+  return '<div class="customer-card-avatar'+cls+'" aria-hidden="true">'
+    +'<div class="customer-avatar-face">'
+      +'<span class="customer-avatar-eye left"></span>'
+      +'<span class="customer-avatar-eye right"></span>'
+      +'<span class="customer-avatar-smile"></span>'
+    +'</div>'
+  +'</div>';
+}
+function _customerCardScoreTone(score, kind){
+  if(kind==='growth') return score>=75?'growth':'';
+  return score>=75?'risk':'';
+}
+function _rowAvgRevDay(row, month){
+  var days=month&&month.key?getDAY1ForMonth(month.key):0;
+  return days>0?N(row[month.colRev])/days:0;
+}
+function _rowAvgVolDay(row, month){
+  var days=month&&month.key?getDAY1ForMonth(month.key):0;
+  return days>0?N(row[month.colVol])/days:0;
+}
+function _customerPopupButton(kind,row,monthKey,label){
+  var code=String((row&&row[COL.agentCode])||row['Agent Code']||'');
+  var safeCode=_esc(code).replace(/'/g,'&#39;');
+  var safeMonth=_esc(monthKey||((getMC()||{}).key||''));
+  var text=label||'👁';
+  return '<button type="button" class="risk-eye-btn" onclick="openCustomerCardPopup(\''+(kind||'customer')+'\',\''+safeCode+'\',\''+safeMonth+'\')" title="เปิด customer card">'+text+'</button>';
+}
+function _findCustomerRowByCode(code){
+  code=String(code||'');
+  for(var i=0;i<FR.length;i++){
+    var row=FR[i];
+    if(String(row[COL.agentCode]||row['Agent Code']||'')===code)return row;
+  }
+  return null;
+}
+function _highlightCustomerWorkRow(trkKey){
+  if(!trkKey)return;
+  document.querySelectorAll('.customer-work-row-target').forEach(function(el){el.classList.remove('customer-work-row-target');});
+  var row=document.querySelector('[data-customer-work-key="'+trkKey.replace(/"/g,'&quot;')+'"]');
+  if(!row)return;
+  row.classList.add('customer-work-row-target');
+  try{ row.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){ row.scrollIntoView(); }
+  setTimeout(function(){ row.classList.remove('customer-work-row-target'); },2600);
+}
+function openCustomerCardPopup(kind, code, monthKey){
+  var m=(monthKey?getMonthMeta(monthKey):getMC())||getMC();
+  if(!m)return;
+  var row=_findCustomerRowByCode(code);
+  if(!row)return;
+  var isRisk=kind==='risk';
+  var isGrowth=kind==='growth';
+  var prev=isRisk?(getRiskBaselineMonth(m)||getMP()):getMP();
+  if(!prev)return;
+  var trkKind=isGrowth?'growth':(isRisk?'risk':'customer');
+  var trkKey=trkKind+'_'+String(code||'')+'_'+m.key;
+  var trk=(_trkData&&_trkData[trkKey])||{};
+  var ctx={month:m,prevMonth:prev,type:trkKind,daysLeft:Math.max(0,(daysInMonth(parseInt(m.key.slice(0,4),10),parseInt(m.key.slice(4,6),10))- (getDAY1ForMonth(m.key)||1)))};
+  var priority=calcPriorityScore(row,trk,ctx);
+  var curRev=N(row[m.colRev]),prevRev=N(row[prev.colRev]);
+  var curVol=N(row[m.colVol]),prevVol=N(row[prev.colVol]);
+  var curAvg=_rowAvgRevDay(row,m),prevAvg=_rowAvgRevDay(row,prev);
+  var curAvgVol=_rowAvgVolDay(row,m),prevAvgVol=_rowAvgVolDay(row,prev);
+  var curRevPiece=curVol>0?curRev/curVol:0,prevRevPiece=prevVol>0?prevRev/prevVol:0;
+  var diffRev=curRev-prevRev, diffVol=curVol-prevVol, diffAvg=curAvg-prevAvg;
+  var diffAvgVol=curAvgVol-prevAvgVol,diffRevPiece=curRevPiece-prevRevPiece;
+  var title=isRisk?'ลูกค้ากลุ่มเสี่ยง':(isGrowth?'ลูกค้าที่มีโอกาสต่อยอด':'Customer card');
+  var toneClass=_customerCardScoreTone(priority.score,trkKind);
+  var body=''
+    +'<div class="customer-card-hero">'
+      +_customerAnonAvatarHTML(trkKind)
+      +'<div>'
+        +'<div style="font-size:12px;font-weight:900;color:#0f172a">'+_customerDisplayPair(row)+'</div>'
+        +'<div style="font-size:12px;color:#475569;margin-top:6px">'+_esc((row[COL.agentName]||row['Agent Name']||'-'))+'</div>'
+        +'<div class="customer-card-meta">'
+          +'<span class="customer-card-chip '+(isRisk?'risk':isGrowth?'growth':'')+'">'+(isRisk?'กลุ่มเสี่ยง':isGrowth?'กลุ่มเติบโต':'ลูกค้า')+'</span>'
+          +'<span class="customer-card-chip">Zone '+_esc(row[COL.zoneName]||row['Zone Name']||'-')+'</span>'
+          +'<span class="customer-card-chip">Province '+_esc(row[COL.province]||row['Province']||'-')+'</span>'
+          +'<span class="customer-card-chip">Package '+_esc(row[COL.package]||row['Package']||'-')+'</span>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="customer-card-metrics">'
+      +'<div class="customer-card-metric"><div class="customer-card-metric-label">'+_esc(prev.en)+' Avg Rev/day</div><div class="customer-card-metric-value">'+fmtS(Math.round(prevAvg))+'</div><div class="customer-card-metric-sub">Revenue ÷ '+getDAY1ForMonth(prev.key)+' วัน</div></div>'
+      +'<div class="customer-card-metric"><div class="customer-card-metric-label">'+_esc(m.en)+' Avg Rev/day</div><div class="customer-card-metric-value">'+fmtS(Math.round(curAvg))+'</div><div class="customer-card-metric-sub">'+(diffAvg>=0?'+':'')+fmtS(Math.round(diffAvg))+' vs '+_esc(prev.en)+'</div></div>'
+      +'<div class="customer-card-metric"><div class="customer-card-metric-label">'+(isRisk?'Priority Score':(isGrowth?'Opportunity Score':'Customer Score'))+'</div><div class="customer-card-metric-value">'+priority.score+'</div><div class="customer-card-metric-sub">'+_esc(priority.reasons.join(' • ')||'ดูรายละเอียดในงานติดตาม')+'</div></div>'
+    +'</div>'
+    +'<div class="customer-card-grid">'
+      +'<div class="customer-card-section">'
+        +'<div class="customer-card-section-title">Customer Scope</div>'
+        +'<div class="customer-card-kv">'
+          +'<div class="k">Agent Code</div><div class="v">'+_esc(row[COL.agentCode]||row['Agent Code']||'-')+'</div>'
+          +'<div class="k">Customer Code</div><div class="v">'+_esc(row[COL.account21]||row['21.00']||'-')+'</div>'
+          +'<div class="k">City</div><div class="v">'+_esc(row[COL.city]||row['City']||'-')+'</div>'
+          +'<div class="k">Phone</div><div class="v">'+_esc(row[COL.phone]||row['Phone']||'-')+'</div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="customer-card-section">'
+        +'<div class="customer-card-section-title">Tracking</div>'
+        +'<div class="customer-card-kv">'
+          +'<div class="k">Status</div><div class="v">'+_esc(_riskGrowthStatusLabel(kind,trk.status||''))+'</div>'
+          +'<div class="k">'+(isRisk?'สาเหตุ':'ปัจจัยเติบโต')+'</div><div class="v">'+_esc(_riskGrowthReasonLabel(kind,trk.key_success||trk.reason||''))+'</div>'
+          +'<div class="k">Next Follow-up</div><div class="v">'+_esc(_nextFollowUpLabel(trk))+'</div>'
+          +'<div class="k">Updated</div><div class="v">'+_esc(trk.updatedAt||'-')+'</div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="customer-card-section">'
+        +'<div class="customer-card-section-title">Performance Delta</div>'
+        +'<div class="customer-card-kv">'
+          +'<div class="k">Avg Rev/day</div><div class="v">'+fmtS(Math.round(prevAvg))+' → '+fmtS(Math.round(curAvg))+' ('+(diffAvg>=0?'+':'')+fmtS(Math.round(diffAvg))+')</div>'
+          +'<div class="k">Avg Vol/day</div><div class="v">'+fmtF(prevAvgVol)+' → '+fmtF(curAvgVol)+' ('+(diffAvgVol>=0?'+':'')+fmtF(diffAvgVol)+')</div>'
+          +'<div class="k">Rev/ชิ้น</div><div class="v">'+fmtF(prevRevPiece)+' → '+fmtF(curRevPiece)+' ('+(diffRevPiece>=0?'+':'')+fmtF(diffRevPiece)+')</div>'
+          +'<div class="k">Revenue context</div><div class="v">'+fmtS(Math.round(prevRev))+' → '+fmtS(Math.round(curRev))+' ('+(diffRev>=0?'+':'')+fmtS(Math.round(diffRev))+')</div>'
+          +'<div class="k">Volume context</div><div class="v">'+fmtInt(Math.round(prevVol))+' → '+fmtInt(Math.round(curVol))+' ('+(diffVol>=0?'+':'')+fmtInt(Math.round(diffVol))+')</div>'
+          +'<div class="k">% Change</div><div class="v">'+(priority.pctRev==null?'—':(priority.pctRev>=0?'+':'')+priority.pctRev.toFixed(1)+'%')+'</div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="customer-card-section">'
+        +'<div class="customer-card-section-title">Notes</div>'
+        +'<div class="customer-card-kv">'
+          +'<div class="k">Tracker Note</div><div class="v">'+_esc(trk.note||'ยังไม่มีบันทึกเพิ่มเติม')+'</div>'
+          +'<div class="k">Focus</div><div class="v">'+_esc(priority.reasons.join(' • ')||'ติดตามตามสถานะล่าสุด')+'</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  var overlay=document.getElementById('customerCardOverlay');
+  var eyebrow=document.getElementById('customerCardEyebrow');
+  var titleEl=document.getElementById('customerCardTitle');
+  var bodyEl=document.getElementById('customerCardBody');
+  var actionBtn=document.getElementById('customerCardActionBtn');
+  if(eyebrow)eyebrow.textContent=title+' • '+m.en+' vs '+prev.en;
+  if(titleEl)titleEl.innerHTML=_customerDisplayPair(row);
+  if(bodyEl)bodyEl.innerHTML=body;
+  if(actionBtn)actionBtn.textContent=isRisk?'ไปหน้าติดตามลูกค้า':(isGrowth?'ไปหน้าต่อยอดลูกค้า':'ไปหน้ารายการลูกค้า');
+  _customerCardState={kind:kind,code:String(code||''),monthKey:m.key,trkKey:(kind==='customer'?'customer_'+String(code||'')+'_'+m.key:trkKey),tone:toneClass};
+  if(overlay)overlay.classList.add('open');
+  _clientLog('OPEN_CUSTOMER_CARD','kind='+kind+' | code='+String(code||''));
+}
+function closeCustomerCardPopup(){
+  var overlay=document.getElementById('customerCardOverlay');
+  if(overlay)overlay.classList.remove('open');
+}
+function goToCustomerWorkTab(){
+  if(!_customerCardState)return;
+  closeCustomerCardPopup();
+  if(_customerCardState.kind==='growth'){
+    swMain('growth');
+    swGrowthSubTab('work');
+  }else if(_customerCardState.kind==='customer'){
+    swMain('ls');
+  }else{
+    swMain('risk');
+    swRiskSubTab('work');
+  }
+  setTimeout(function(){ _highlightCustomerWorkRow(_customerCardState.trkKey); },180);
+}
 function renderRisk(){
   var m=getMC(),mp=getMP(),riskBase=getRiskBaselineMonth(getMC()),riskBasePrev=getPreviousMonthMeta(riskBase);
   if(!m||!m.colRev)return;
@@ -6378,49 +6696,57 @@ function renderRisk(){
   var tbl=document.getElementById('risk_tbl');
   if(!tbl)return;
 
-  tbl.innerHTML='<table class="mt"><thead><tr>'
-    +'<th>#</th><th>Agent Name</th><th>Code</th><th>Zone</th><th>Pkg</th><th>Province</th>'
-    +'<th class="tdr" style="color:var(--t2)">Avg Rev<br>'+mp.en+'</th>'
-    +'<th class="tdr" style="color:var(--c-ard)">Avg Rev<br>'+m.en+'</th>'
-    +'<th class="tdr" style="color:var(--rd)">Diff<br>Avg/วัน</th>'
-    +'<th class="tdr" style="color:var(--rd)">%Δ</th>'
-    +'<th class="tdr" style="color:var(--t2)">Rev '+mp.en+'</th>'
-    +'<th class="tdr" style="color:var(--c-rev)">Rev '+m.en+'</th>'
+  tbl.innerHTML='<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">'
+    +'<span class="risk-privacy-note">เฉพาะรหัสและ metric วิเคราะห์ในตารางหลัก</span>'
+    +'<span style="font-size:11px;color:var(--t2)">เปิด customer card ผ่านปุ่มรูปตาเพื่อดูข้อมูลตามสิทธิ์เดิม</span>'
+    +'</div><table class="mt"><thead><tr>'
+    +'<th>#</th><th>ดู</th><th>Agent / Customer</th><th>Province</th><th>Zone</th><th>Pkg</th>'
+    +'<th class="tdr" style="color:var(--t2)">Avg Rev/day<br>'+riskBase.en+'</th>'
+    +'<th class="tdr" style="color:var(--c-ard)">Avg Rev/day<br>'+m.en+'</th>'
+    +'<th class="tdr" style="color:var(--rd)">Avg Drop</th>'
+    +'<th class="tdr" style="color:var(--rd)">Lost Rev</th>'
+    +'<th class="tdr" style="color:var(--rd)">Lost Vol</th>'
+    +'<th class="tdr">Priority</th>'
     +'<th style="color:var(--pl);min-width:140px">สถานะติดตาม</th>'
     +'<th style="color:var(--rd);min-width:140px">สาเหตุ</th>'
     +'<th style="min-width:150px">หมายเหตุ</th>'
     +'</tr></thead><tbody>'
     +rows.slice(0,300).map(function(r,i){
-      var ardC=N(r[m.colAvg]),ardP=N(r[mp.colAvg]);
-      var diff=ardC-ardP;
-      var pct=ardP>0?((diff/Math.abs(ardP))*100).toFixed(1):null;
-      var revC=N(r[m.colRev]),revP=N(r[mp.colRev]);
+      var ardC=_rowAvgRevDay(r,m),ardP=_rowAvgRevDay(r,riskBase);
+      var avgDrop=Math.max(0,ardP-ardC);
+      var revC=N(r[m.colRev]),revP=N(r[riskBase.colRev]);
+      var revLost=Math.max(0,revP-revC);
+      var volC=N(r[m.colVol]),volP=N(r[riskBase.colVol]);
+      var volLost=Math.max(0,volP-volC);
       var rc=i<3?['r1','r2','r3'][i]:'ro';
       var code=String(r['Agent Code']||'');
+      var safeCode=code.replace(/'/g,'&#39;');
       var trkKey='risk_'+code+'_'+(m?m.key:'');
       var trk=_trkData[trkKey]||{status:'',reason:'',note:''};
       var sCls=_trkStatusCls(trk.status);
       var trkMeta={v21:String(r['21.00']||''),agentCode:code,package:String(r['Package']||''),agentName:String(r['Agent Name']||''),city:String(r['City']||''),province:String(r['Province']||''),zoneName:String(r['Zone Name']||'')};
+      var priority=calcPriorityScore(r,trk,{month:m,prevMonth:riskBase,type:'risk'});
       if(!_trkData[trkKey])_trkData[trkKey]={status:'',reason:'',note:'',updatedBy:'',updatedAt:''};
       Object.assign(_trkData[trkKey],trkMeta);
-        return'<tr>'
-          +'<td><span class="rn '+rc+'">'+(i+1)+'</span></td>'
-          +'<td style="font-weight:700;white-space:nowrap">'+_esc(r['Agent Name']||'-')+'</td>'
-          +'<td style="font-size:10px">'+_esc(code||'-')+'</td>'
-          +'<td style="font-size:11px">'+_esc(r['Zone Name']||'-')+'</td>'
-          +'<td style="font-size:11px">'+_esc(r['Package']||'-')+'</td>'
-          +'<td style="font-size:11px">'+_esc(r['Province']||'-')+'</td>'
+      return'<tr data-customer-work-key="'+trkKey+'">'
+        +'<td><span class="rn '+rc+'">'+(i+1)+'</span></td>'
+        +'<td><button type="button" class="risk-eye-btn" onclick="openCustomerCardPopup(\'risk\',\''+safeCode+'\',\''+m.key+'\')" title="เปิด customer card">👁</button></td>'
+        +'<td>'+_customerDisplayPair(r)+'</td>'
+        +'<td style="font-size:11px">'+_esc(r['Province']||'-')+'</td>'
+        +'<td style="font-size:11px">'+_esc(r['Zone Name']||'-')+'</td>'
+        +'<td style="font-size:11px">'+_esc(r['Package']||'-')+'</td>'
         +'<td class="tdr" style="color:var(--t2)">'+fmtS(Math.round(ardP))+'</td>'
         +'<td class="tdr" style="color:var(--c-ard);font-weight:700">'+fmtS(Math.round(ardC))+'</td>'
-        +'<td class="tdr tdneg">'+fmtS(Math.round(diff))+'</td>'
-        +'<td class="tdr">'+(pct?'<span class="tdneg">▼'+Math.abs(pct)+'%</span>':'—')+'</td>'
-        +'<td class="tdr" style="color:var(--t2)">'+fmtS(Math.round(revP))+'</td>'
-        +'<td class="tdr" style="color:var(--c-rev);font-weight:700">'+fmtS(Math.round(revC))+'</td>'
+        +'<td class="tdr tdneg">▼ '+fmtS(Math.round(avgDrop))+'</td>'
+        +'<td class="tdr tdneg">▼ '+fmtS(Math.round(revLost))+'</td>'
+        +'<td class="tdr tdneg">▼ '+fmtInt(Math.round(volLost))+'</td>'
+        +'<td class="tdr"><span style="display:inline-flex;min-width:34px;justify-content:center;padding:3px 8px;border-radius:999px;background:'+(priority.score>=75?'#fee2e2':priority.score>=50?'#fff7ed':'#e0f2fe')+';color:'+(priority.score>=75?'#b91c1c':priority.score>=50?'#b45309':'#0369a1')+';font-weight:900">'+priority.score+'</span></td>'
         +'<td><select class="trk-status '+sCls+'" data-trk="'+trkKey+'" data-field="status" onchange="_trkChange(this)">'+_trkStatusOptions(trk.status)+'</select></td>'
         +'<td>'+(trk.status==='fail'?'<select class="trk-reason" data-trk="'+trkKey+'" data-field="reason" onchange="_trkChange(this)">'+_trkReasonOptions(trk.reason)+'</select>':'<span style="color:var(--bd);font-size:11px">—</span>')+'</td>'
         +'<td><input class="trk-note" type="text" placeholder="โน้ต..." data-trk="'+trkKey+'" data-field="note" value="'+_esc(trk.note)+'" oninput="_trkChange(this)"></td>'
         +'</tr>';
     }).join('')+'</tbody></table>';
+  swRiskSubTab(_riskSubTab);
 }
 
 // ============================================================
@@ -6640,11 +6966,11 @@ function renderGrowth(){
 
   // rows: Avg เพิ่มขึ้น > threshold (กลับทิศกับ risk)
   var rows = FR.filter(function(r){
-    var ardC=N(r[m.colAvg]);
-    var ardP=N(r[mp.colAvg]);
+    var ardC=_rowAvgRevDay(r,m);
+    var ardP=_rowAvgRevDay(r,mp);
     return (ardC-ardP)>_growthThreshold;
   }).sort(function(a,b){
-    return (N(b[m.colAvg])-N(b[mp.colAvg]))-(N(a[m.colAvg])-N(a[mp.colAvg]));
+    return growthDelta(b,m,mp)-growthDelta(a,m,mp);
   });
 
   // badges
@@ -6662,7 +6988,7 @@ function renderGrowth(){
   // Status Comparison Cards
   var sc=document.getElementById('growth_status_cards');
   if(sc){
-    var totalAvgRiseC=rows.reduce(function(s,r){return s+(N(r[m.colAvg])-N(r[mp.colAvg]));},0);
+    var totalAvgRiseC=rows.reduce(function(s,r){return s+growthDelta(r,m,mp);},0);
     var totalRevGainC=rows.reduce(function(s,r){return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev]));},0);
     var avgRisePerRow=rows.length>0?Math.round(totalAvgRiseC/rows.length):0;
 
@@ -7004,49 +7330,57 @@ function renderGrowth(){
     // Table
     var tbl=document.getElementById('growth_tbl');
     if(!tbl)return;
-    tbl.innerHTML='<table class="mt"><thead><tr>'
-      +'<th>#</th><th>Agent Name</th><th>Code</th><th>Zone</th><th>Pkg</th><th>Province</th>'
-      +'<th class="tdr" style="color:var(--t2)">Avg Rev<br>'+mp.en+'</th>'
-      +'<th class="tdr" style="color:var(--gn)">Avg Rev<br>'+m.en+'</th>'
-      +'<th class="tdr" style="color:var(--gn)">Diff<br>Avg/วัน</th>'
-      +'<th class="tdr" style="color:var(--gn)">%Δ</th>'
-      +'<th class="tdr" style="color:var(--t2)">Rev '+mp.en+'</th>'
-      +'<th class="tdr" style="color:var(--c-rev)">Rev '+m.en+'</th>'
+    tbl.innerHTML='<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">'
+      +'<span class="risk-privacy-note" style="background:#ecfdf5;color:#047857">ตารางหลักเน้น action + metric ก่อน แล้วค่อยเปิด customer card</span>'
+      +'<span style="font-size:11px;color:var(--t2)">ยังคงใช้ scope และ masking เดิมของผู้ใช้ทุก role</span>'
+      +'</div><table class="mt"><thead><tr>'
+      +'<th>#</th><th>ดู</th><th>Agent / Customer</th><th>Province</th><th>Zone</th><th>Pkg</th>'
+      +'<th class="tdr" style="color:var(--t2)">Avg Rev/day<br>'+mp.en+'</th>'
+      +'<th class="tdr" style="color:var(--gn)">Avg Rev/day<br>'+m.en+'</th>'
+      +'<th class="tdr" style="color:var(--gn)">Avg Gain</th>'
+      +'<th class="tdr" style="color:var(--gn)">Revenue Gain</th>'
+      +'<th class="tdr" style="color:var(--gn)">Volume Gain</th>'
+      +'<th class="tdr">Score</th>'
       +'<th style="color:var(--pl);min-width:160px">สถานะติดตาม</th>'
       +'<th style="color:var(--gn);min-width:180px">ปัจจัยที่เติบโต</th>'
       +'<th style="min-width:150px">หมายเหตุ</th>'
       +'</tr></thead><tbody>'
       +rows.slice(0,300).map(function(r,i){
-        var ardC=N(r[m.colAvg]),ardP=N(r[mp.colAvg]);
-        var diff=ardC-ardP;
-        var pct=ardP>0?((diff/Math.abs(ardP))*100).toFixed(1):null;
+        var ardC=_rowAvgRevDay(r,m),ardP=_rowAvgRevDay(r,mp);
+        var avgGain=Math.max(0,ardC-ardP);
         var revC=N(r[m.colRev]),revP=N(r[mp.colRev]);
+        var revGain=Math.max(0,revC-revP);
+        var volC=N(r[m.colVol]),volP=N(r[mp.colVol]);
+        var volGain=Math.max(0,volC-volP);
         var rc=i<3?['r1','r2','r3'][i]:'ro';
         var code=String(r['Agent Code']||'');
+        var safeCode=code.replace(/'/g,'&#39;');
         var trkKey='growth_'+code+'_'+(m?m.key:'');
         var trk=_trkData[trkKey]||{status:'',reason:'',note:''};
         var sCls=_growthStatusCls(trk.status);
         var trkMeta={v21:String(r['21.00']||''),agentCode:code,package:String(r['Package']||''),agentName:String(r['Agent Name']||''),city:String(r['City']||''),province:String(r['Province']||''),zoneName:String(r['Zone Name']||'')};
+        var priority=calcPriorityScore(r,trk,{month:m,prevMonth:mp,type:'growth'});
         if(!_trkData[trkKey])_trkData[trkKey]={status:'',key_success:'',note:'',updatedBy:'',updatedAt:''};
         Object.assign(_trkData[trkKey],trkMeta);
-        return'<tr>'
+        return'<tr data-customer-work-key="'+trkKey+'">'
           +'<td><span class="rn '+rc+'">'+(i+1)+'</span></td>'
-          +'<td style="font-weight:700;white-space:nowrap">'+_esc(r['Agent Name']||'-')+'</td>'
-          +'<td style="font-size:10px">'+_esc(code||'-')+'</td>'
+          +'<td><button type="button" class="risk-eye-btn" onclick="openCustomerCardPopup(\'growth\',\''+safeCode+'\',\''+m.key+'\')" title="เปิด customer card">👁</button></td>'
+          +'<td>'+_customerDisplayPair(r)+'</td>'
+          +'<td style="font-size:11px">'+_esc(r['Province']||'-')+'</td>'
           +'<td style="font-size:11px">'+_esc(r['Zone Name']||'-')+'</td>'
           +'<td style="font-size:11px">'+_esc(r['Package']||'-')+'</td>'
-          +'<td style="font-size:11px">'+_esc(r['Province']||'-')+'</td>'
           +'<td class="tdr" style="color:var(--t2)">'+fmtS(Math.round(ardP))+'</td>'
           +'<td class="tdr" style="color:var(--gn);font-weight:700">'+fmtS(Math.round(ardC))+'</td>'
-          +'<td class="tdr" style="color:var(--gn);font-weight:700">+'+fmtS(Math.round(diff))+'</td>'
-          +'<td class="tdr">'+(pct?'<span style="color:var(--gn);font-weight:700">▲'+Math.abs(pct)+'%</span>':'—')+'</td>'
-          +'<td class="tdr" style="color:var(--t2)">'+fmtS(Math.round(revP))+'</td>'
-          +'<td class="tdr" style="color:var(--c-rev);font-weight:700">'+fmtS(Math.round(revC))+'</td>'
+          +'<td class="tdr" style="color:var(--gn);font-weight:700">▲ '+fmtS(Math.round(avgGain))+'</td>'
+          +'<td class="tdr" style="color:var(--gn);font-weight:700">▲ '+fmtS(Math.round(revGain))+'</td>'
+          +'<td class="tdr" style="color:var(--gn);font-weight:700">▲ '+fmtInt(Math.round(volGain))+'</td>'
+          +'<td class="tdr"><span style="display:inline-flex;min-width:34px;justify-content:center;padding:3px 8px;border-radius:999px;background:'+(priority.score>=75?'#dcfce7':priority.score>=50?'#ecfeff':'#e0f2fe')+';color:'+(priority.score>=75?'#166534':priority.score>=50?'#0f766e':'#0369a1')+';font-weight:900">'+priority.score+'</span></td>'
           +'<td><select class="trk-status '+sCls+'" data-trk="'+trkKey+'" data-field="status" onchange="_growthTrkChange(this)">'+_growthStatusOptions(trk.status)+'</select></td>'
           +'<td><select class="growth-reason" data-trk="'+trkKey+'" data-field="key_success" onchange="_growthTrkChange(this)">'+_growthReasonOptions(trk.key_success||trk.reason||'')+'</select></td>'
           +'<td><input class="trk-note" type="text" placeholder="โน้ต..." data-trk="'+trkKey+'" data-field="note" value="'+_esc(trk.note)+'" oninput="_growthTrkChange(this)"></td>'
           +'</tr>';
       }).join('')+'</tbody></table>';
+    swGrowthSubTab(_growthSubTab);
   },50);
 }
 
@@ -7815,8 +8149,9 @@ function renderTsmModal(){
             : '<span style="font-size:9px;background:#fff7ed;color:#f59e0b;padding:1px 6px;border-radius:20px;font-weight:700">⚠️ ติดตาม</span>';
           return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f4f8">'
             +'<div style="width:22px;height:22px;border-radius:50%;background:'+urgColor+';color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(i+1)+'</div>'
+            +_customerPopupButton('risk',r,m.key)
             +'<div style="flex:1;min-width:0">'
-              +'<div style="font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+r['Agent Name']+'</div>'
+              +'<div>'+_customerDisplayPair(r)+'</div>'
               +'<div style="font-size:10px;color:var(--t2)">'+r['Package']+'  •  '+r['Province']+'</div>'
             +'</div>'
             +'<div style="text-align:right;flex-shrink:0">'
@@ -7874,7 +8209,7 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
 
   // growth rows
   var growthRows = FR.filter(function(r){
-    return (N(r[m.colAvg]) - N(r[mp.colAvg])) > _growthThreshold;
+    return growthDelta(r,m,mp) > _growthThreshold;
   });
 
   // count status
@@ -8003,7 +8338,7 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
       var trkKey = 'growth_' + code + '_' + m.key;
       var s = (_trkData[trkKey]||{}).status || '';
       return !s||s===''||s==='wait';
-    }).sort(function(a,b){ return (N(b[m.colAvg])-N(b[mp.colAvg]))-(N(a[m.colAvg])-N(a[mp.colAvg])); });
+    }).sort(function(a,b){ return growthDelta(b,m,mp)-growthDelta(a,m,mp); });
 
     var gTop5El = document.getElementById('tsm_growth_bd_top5');
     if (gTop5El) {
@@ -8011,15 +8346,16 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
         gTop5El.innerHTML = '<div style="color:var(--t2);padding:12px 0;font-size:12px">ยังไม่มีกลุ่มเติบโตในเดือนนี้<br><span style="font-size:11px">เลือกเดือนที่มีข้อมูลเทียบได้</span></div>';
       } else {
         var topGrowth = growthRows.slice().sort(function(a,b){
-          return (N(b[m.colAvg])-N(b[mp.colAvg]))-(N(a[m.colAvg])-N(a[mp.colAvg]));
+          return growthDelta(b,m,mp)-growthDelta(a,m,mp);
         });
         gTop5El.innerHTML = topGrowth.slice(0,5).map(function(r,i) {
-          var diff = Math.round(N(r[m.colAvg])-N(r[mp.colAvg]));
+          var diff = Math.round(growthDelta(r,m,mp));
           var medals = ['🥇','🥈','🥉','🏅','🏅'];
           return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f4f8">'
             +'<span style="font-size:16px">'+medals[i]+'</span>'
+            +_customerPopupButton('growth',r,m.key)
             +'<div style="flex:1;min-width:0">'
-              +'<div style="font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#166534">'+r['Agent Name']+'</div>'
+              +'<div>'+_customerDisplayPair(r)+'</div>'
               +'<div style="font-size:10px;color:var(--t2)">'+r['Package']+'  •  '+r['Province']+'</div>'
             +'</div>'
             +'<div style="text-align:right;flex-shrink:0">'
@@ -8063,17 +8399,17 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
       var trkKey = 'growth_' + code + '_' + m.key;
       var s = (_trkData[trkKey]||{}).status || '';
       return !s||s===''||s==='wait';
-    }).sort(function(a,b){ return (N(b[m.colAvg])-N(b[mp.colAvg]))-(N(a[m.colAvg])-N(a[mp.colAvg])); });
+    }).sort(function(a,b){ return growthDelta(b,m,mp)-growthDelta(a,m,mp); });
     if (gPendCnt) gPendCnt.textContent = gPendRows.length + ' ราย';
     if (!gPendRows.length) {
       gPendEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--gn);font-weight:700">🎉 ติดต่อครบทุกรายแล้ว!</div>';
     } else {
       var gpRows = gPendRows.map(function(r, i) {
-        var diff = Math.round(N(r[m.colAvg])-N(r[mp.colAvg]));
+        var diff = Math.round(growthDelta(r,m,mp));
         return '<tr>'
           +'<td style="text-align:center;font-size:10px;color:var(--t2);width:28px">'+(i+1)+'</td>'
-          +'<td style="font-weight:700;color:#166534">'+r['Agent Name']+'</td>'
-          +'<td style="color:var(--t2);font-size:10px">'+r['Agent Code']+'</td>'
+          +'<td>'+_customerPopupButton('growth',r,m.key)+'</td>'
+          +'<td>'+_customerDisplayPair(r)+'</td>'
           +'<td style="font-size:11px">'+r['Zone Name']+'</td>'
           +'<td style="font-size:11px">'+r['Package']+'</td>'
           +'<td style="font-size:11px">'+r['Province']+'</td>'
@@ -8083,7 +8419,7 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
       }).join('');
       gPendEl.innerHTML = '<table class="tsm-zone-table">'
         +'<thead><tr>'
-        +'<th>#</th><th>Agent Name</th><th>Code</th><th>Zone</th><th>Package</th><th>Province</th>'
+        +'<th>#</th><th>ดู</th><th>Agent / Customer</th><th>Zone</th><th>Package</th><th>Province</th>'
         +'<th style="text-align:right">21.00</th>'
         +'<th style="text-align:right;color:var(--gn)">Avg เพิ่ม/วัน</th>'
         +'</tr></thead><tbody>'+gpRows+'</tbody></table>';
@@ -8117,8 +8453,8 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
         var urgBg = isUrgent ? 'background:#fff5f5' : '';
         return '<tr style="'+urgBg+'">'
           +'<td style="text-align:center;font-size:10px;color:var(--t2);width:28px">'+(i+1)+'</td>'
-          +'<td style="font-weight:700">'+(isUrgent?'🔥 ':'')+r['Agent Name']+'</td>'
-          +'<td style="color:var(--t2);font-size:10px">'+r['Agent Code']+'</td>'
+          +'<td>'+_customerPopupButton('risk',r,m.key)+'</td>'
+          +'<td>'+(isUrgent?'🔥 ':'')+_customerDisplayPair(r)+'</td>'
           +'<td style="font-size:11px">'+r['Zone Name']+'</td>'
           +'<td style="font-size:11px">'+r['Package']+'</td>'
           +'<td style="font-size:11px">'+r['Province']+'</td>'
@@ -8128,7 +8464,7 @@ function _renderTsmGrowthTab(m, mp, role, isBD) {
       }).join('');
       pendEl.innerHTML = '<table class="tsm-zone-table">'
         +'<thead><tr>'
-        +'<th>#</th><th>Agent Name</th><th>Code</th><th>Zone</th><th>Package</th><th>Province</th>'
+        +'<th>#</th><th>ดู</th><th>Agent / Customer</th><th>Zone</th><th>Package</th><th>Province</th>'
         +'<th style="text-align:right">21.00</th>'
         +'<th style="text-align:right;color:var(--rd)">Avg ลด/วัน</th>'
         +'</tr></thead><tbody>'+pRows+'</tbody></table>';
@@ -9561,8 +9897,8 @@ function showCityDrill(cityName, d){
   // ตาราง agent
   html += '<table style="width:100%;border-collapse:collapse;font-size:11px">'
     +'<thead><tr style="background:#f0f4ff">'
-    +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Agent</th>'
-    +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Code</th>'
+    +'<th style="padding:5px 8px;text-align:center;font-weight:700;color:var(--pr)">ดู</th>'
+    +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Agent / Customer</th>'
     +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Revenue</th>'
     +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Volume</th>'
     +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Rev/day</th>'
@@ -9581,8 +9917,8 @@ function showCityDrill(cityName, d){
           var daysP = mp ? Math.max(getDAY1ForMonth(mp.key)||1,1) : 1;
           var st = _mapStatusBadge(r, m);
           return '<tr style="border-bottom:1px solid #f1f5f9">'
-            +'<td style="padding:4px 8px;font-weight:600">'+String(r[COL.agentName]||'-')+'</td>'
-            +'<td style="padding:4px 8px;color:var(--t2);font-size:10px">'+String(r[COL.agentCode]||'-')+'</td>'
+            +'<td style="padding:4px 8px;text-align:center">'+_customerPopupButton('customer',r,m.key)+'</td>'
+            +'<td style="padding:4px 8px">'+_customerDisplayPair(r)+'</td>'
             +_mapCompareCell(rev, revP, function(v){return fmtS(Math.round(v));})
             +_mapCompareCell(vol, volP, function(v){return fmtInt(Math.round(v));})
             +_mapCompareCell(avg, avgP, function(v){return fmtS(Math.round(v));})
@@ -9923,8 +10259,8 @@ function showMapDrill(pvTH, pvEN, d){
       +'<div id="'+uid+'" style="display:none;margin-bottom:6px;border-radius:0 0 8px 8px;border:1.5px solid var(--ac);border-top:none;overflow:hidden">'
         +'<table style="width:100%;border-collapse:collapse;font-size:11px">'
         +'<thead><tr style="background:#f0f4ff">'
-          +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Agent</th>'
-          +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Code</th>'
+          +'<th style="padding:5px 8px;text-align:center;font-weight:700;color:var(--pr)">ดู</th>'
+          +'<th style="padding:5px 8px;text-align:left;font-weight:700;color:var(--pr)">Agent / Customer</th>'
           +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Revenue</th>'
           +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Volume</th>'
           +'<th style="padding:5px 8px;text-align:right;font-weight:700;color:var(--pr)">Avg Rev/day</th>'
@@ -9943,8 +10279,8 @@ function showMapDrill(pvTH, pvEN, d){
               var daysP = mp ? Math.max(getDAY1ForMonth(mp.key)||1,1) : 1;
               var st = _mapStatusBadge(r, m);
               return '<tr style="border-bottom:1px solid #f1f5f9">'
-                +'<td style="padding:4px 8px;font-weight:600">'+String(r[COL.agentName]||'-')+'</td>'
-                +'<td style="padding:4px 8px;color:var(--t2);font-size:10px">'+String(r[COL.agentCode]||'-')+'</td>'
+                +'<td style="padding:4px 8px;text-align:center">'+_customerPopupButton('customer',r,m.key)+'</td>'
+                +'<td style="padding:4px 8px">'+_customerDisplayPair(r)+'</td>'
                 +_mapCompareCell(rev, revP, function(v){return fmtS(Math.round(v));})
                 +_mapCompareCell(vol, volP, function(v){return fmtInt(Math.round(v));})
                 +_mapCompareCell(avg, avgP, function(v){return fmtS(Math.round(v));})
@@ -10413,15 +10749,16 @@ function _homeRenderMapActionCard(title, rows){
     + (actions.length
       ? actions.map(function(item){
           var r = item.row || {};
-          return '<button type="button" class="home-map-customer-row" onclick="swMain(\''+item.actionTab+'\')">'
-            + '<span class="home-map-customer-main">'+_esc(r[COL.agentName] || '-')+'</span>'
-            + '<span class="home-map-customer-meta">'+_esc(item.badge)+' · '+_esc(r[COL.agentCode] || '-')+' · Priority '+item.score+'</span>'
+          var kind = item.actionTab === 'growth' ? 'growth' : (item.actionTab === 'risk' ? 'risk' : 'customer');
+          return '<button type="button" class="home-map-customer-row" onclick="openCustomerCardPopup(\''+kind+'\',\''+_esc(r[COL.agentCode] || '')+'\',\''+((getMC()||{}).key||'')+'\')">'
+            + '<span class="home-map-customer-main">'+_esc(r[COL.agentCode] || '-')+'</span>'
+            + '<span class="home-map-customer-meta">'+_esc(item.badge)+' · '+_esc(r[COL.account21] || r['21.00'] || '-')+' · Priority '+item.score+'</span>'
             + '</button>';
         }).join('')
       : topRows.map(function(r){
-          return '<button type="button" class="home-map-customer-row" onclick="swMain(\'ls\')">'
-            + '<span class="home-map-customer-main">'+_esc(r[COL.agentName] || '-')+'</span>'
-            + '<span class="home-map-customer-meta">'+_esc(r[COL.agentCode] || '-')+' · '+_esc(r[COL.package] || '-')+'</span>'
+          return '<button type="button" class="home-map-customer-row" onclick="openCustomerCardPopup(\'customer\',\''+_esc(r[COL.agentCode] || '')+'\',\''+((getMC()||{}).key||'')+'\')">'
+            + '<span class="home-map-customer-main">'+_esc(r[COL.agentCode] || '-')+'</span>'
+            + '<span class="home-map-customer-meta">'+_esc(r[COL.account21] || r['21.00'] || '-')+' · '+_esc(r[COL.package] || '-')+'</span>'
             + '</button>';
         }).join(''))
     + '</div>'
@@ -10704,9 +11041,9 @@ function _homeRenderMapCommandList(pvData){
     fallbackEl.innerHTML = fallbackRows.length
       ? '<div class="home-map-list-title">รายการที่ไม่มีพิกัดบนแผนที่</div>'
         + fallbackRows.map(function(r){
-          return '<button type="button" class="home-map-fallback-item" onclick="swMain(\'ls\')">'
-            + '<strong>'+_esc(r[COL.agentName] || '-')+'</strong>'
-            + '<span>'+_esc(r[COL.agentCode] || '-')+' · '+_esc(r[COL.zoneName] || '-')+'</span>'
+          return '<button type="button" class="home-map-fallback-item" onclick="openCustomerCardPopup(\'customer\',\''+_esc(r[COL.agentCode] || '')+'\',\''+((getMC()||{}).key||'')+'\')">'
+            + '<strong>'+_esc(r[COL.agentCode] || '-')+'</strong>'
+            + '<span>'+_esc(r[COL.account21] || r['21.00'] || '-')+' · '+_esc(r[COL.zoneName] || '-')+'</span>'
             + '</button>';
         }).join('')
       : '';
@@ -10788,7 +11125,7 @@ function _renderHomeDirector(m, mp) {
 
   // ── growth count for Director ──
   var riskBaseHome = getRiskBaselineMonth(m);
-  var dirGrowthRows = mp ? FR.filter(function(r){ return (N(r[m.colAvg])-N(r[mp.colAvg]))>_growthThreshold; }) : [];
+  var dirGrowthRows = mp ? FR.filter(function(r){ return growthDelta(r,m,mp)>_growthThreshold; }) : [];
   var dirGrowthRevGain = dirGrowthRows.reduce(function(s,r){ return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev])); },0);
   var dirRiskCount = riskBaseHome ? riskRowsForBaseline(FR, m, riskBaseHome, _riskThreshold).length : 0;
 
@@ -11693,7 +12030,7 @@ function _phase4BdRows(rows,m,mp){
     if(String(r[COL.agentCode]||'').trim()&&String(r[COL.agentName]||'').trim()&&String(r[COL.zoneName]||'').trim()&&String(r[COL.phone]||r['phone']||r['Tel']||'').trim())d.complete++;
     if(zone&&String(d.zone).indexOf(zone)<0)d.zone=d.zone?d.zone+','+zone:zone;
     var risk=false,growth=false;
-    if(mp){risk=riskBase ? riskDelta(r,m,riskBase)>(_riskThreshold||0) : false;growth=(N(r[m.colAvg])-N(r[mp.colAvg]))>(_growthThreshold||0);}
+    if(mp){risk=riskBase ? riskDelta(r,m,riskBase)>(_riskThreshold||0) : false;growth=growthDelta(r,m,mp)>(_growthThreshold||0);}
     var rs=code?_phase4TaskStatus('risk_'+code+'_'+m.key):'', gs=code?_phase4TaskStatus('growth_'+code+'_'+m.key):'';
     if(risk){d.riskTotal++;d.followTotal++;if(['contact','solving','success','fail'].indexOf(rs)>=0)d.followDone++;if(rs==='success'){d.riskSaved++;d.success++;}}
     if(growth){d.followTotal++;if(['contacted','data_collected','rewarded','upsold','unreachable'].indexOf(gs)>=0)d.followDone++;if(['rewarded','upsold'].indexOf(gs)>=0)d.success++;}
@@ -11845,7 +12182,7 @@ function _bdRender() {
       zMap[z].prevRev  += N(r[mp.colRev]);
       zMap[z].prevTotal++;
     }
-    if (mp && (N(r[m.colAvg]) - N(r[mp.colAvg])) > (_growthThreshold || 0)) {
+    if (mp && growthDelta(r,m,mp) > (_growthThreshold || 0)) {
       zMap[z].growth++;
       zMap[z].growthRevGain += Math.max(0, N(r[m.colRev]) - N(r[mp.colRev]));
     }
@@ -12071,7 +12408,7 @@ function _renderHomeAM(m, mp) {
 
   // ── Growth & risk rows ──
   var riskBaseAm = getRiskBaselineMonth(m);
-  var amGrowthRows  = mp ? myRows.filter(function(r){ return (N(r[m.colAvg])-N(r[mp.colAvg]))>_growthThreshold; }) : [];
+  var amGrowthRows  = mp ? myRows.filter(function(r){ return growthDelta(r,m,mp)>_growthThreshold; }) : [];
   var amGrowthRevGain = amGrowthRows.reduce(function(s,r){ return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev])); },0);
   var amRiskCount   = riskBaseAm ? riskRowsForBaseline(myRows, m, riskBaseAm, _riskThreshold).length : 0;
 
@@ -12663,7 +13000,7 @@ function _renderHomeAM(m, mp) {
       var pct=(prv&&prv>0)?Math.round((rv-prv)/prv*100):null;
       var pctTxt = pct!==null ? '<span style="color:'+(pct>=0?'var(--gn)':'#64748b')+'">'+pct+'%</span>' : '—';
       html += _amTblRow(
-        String(r[COL.agentName]||'-'),
+        String(r[COL.agentCode]||'-'),
         prv!==null?fmtS(Math.round(prv)):'—',
         fmtS(Math.round(rv)),
         prvVol!==null?fmtInt(Math.round(prvVol)):'—',
@@ -12717,7 +13054,7 @@ function _renderHomeAM(m, mp) {
         var pct=(prv&&prv>0)?Math.round((rv-prv)/prv*100):null;
         var pctTxt = pct!==null ? '<span style="color:'+(pct<0?'#c2410c':'#64748b')+'">'+pct+'%</span>' : '—';
         html += _amTblRow(
-          String(r[COL.agentName]||'-'),
+          String(r[COL.agentCode]||'-'),
           prv!==null?fmtS(Math.round(prv)):'—',
           fmtS(Math.round(rv)),
           prvVol!==null?fmtInt(Math.round(prvVol)):'—',
@@ -12779,12 +13116,12 @@ function _renderHomeAM(m, mp) {
     // CARD A — กลุ่มเสี่ยง (สีเหลือง): Avg Rev ลดเกิน threshold ยังมีรายได้
     // ══════════════════════════════════════════════
     var amRiskRows = mp ? myRows.filter(function(r){
-      return (N(r[mp.colAvg]) - N(r[m.colAvg])) > _riskThreshold;
+      return riskDelta(r,m,mp) > _riskThreshold;
     }) : [];
     var amRiskRevCur  = amRiskRows.reduce(function(s,r){ return s + N(r[m.colRev]); }, 0);
     var amRiskRevPrev = amRiskRows.reduce(function(s,r){ return s + (mp ? N(r[mp.colRev]) : 0); }, 0);
     var amRiskRevDrop = amRiskRevPrev - amRiskRevCur;
-    var amRiskAvgDrop = amRiskRows.reduce(function(s,r){ return s + (N(r[mp.colAvg]) - N(r[m.colAvg])); }, 0);
+    var amRiskAvgDrop = amRiskRows.reduce(function(s,r){ return s + riskDelta(r,m,mp); }, 0);
     var amRiskPct     = myRows.length > 0 ? (amRiskRows.length / myRows.length * 100).toFixed(0) : 0;
 
     // ── open 2-col grid (Risk left, Inactive right) ──
@@ -12846,7 +13183,7 @@ function _renderHomeAM(m, mp) {
         var prv=mp?N(r[mp.colRev]):null;
         var pct=(prv&&prv>0)?Math.round((rv-prv)/prv*100):null;
         html += '<div style="display:grid;grid-template-columns:1fr 56px 44px 40px;gap:3px;align-items:center;padding:4px 4px;border-radius:5px;background:'+(i%2===0?'#fffbeb':'transparent')+'">'
-          + '<span style="font-size:10px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[COL.agentName]||'-')+'</span>'
+          + '<span style="font-size:10px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[COL.agentCode]||'-')+'</span>'
           + '<span style="font-size:10px;color:#94a3b8;text-align:right">'+(prv!==null?fmtS(Math.round(prv)):'—')+'</span>'
           + '<span style="font-size:10px;font-weight:700;color:#c2410c;text-align:right">'+fmtS(Math.round(rv))+'</span>'
           + '<span style="font-size:10px;font-weight:800;color:'+(pct!==null&&pct<0?'#c2410c':'#64748b')+';text-align:right">'+(pct!==null?pct+'%':'—')+'</span>'
@@ -12905,7 +13242,7 @@ function _renderHomeAM(m, mp) {
         var prv = mp ? N(r[mp.colRev]) : null;
         var pct = (prv && prv > 0) ? Math.round((rv - prv) / prv * 100) : null;
         html += '<div style="display:grid;grid-template-columns:1fr 56px 44px 40px;gap:3px;align-items:center;padding:5px 4px;border-radius:6px;background:'+(i%2===0?'#fff7ed':'transparent')+'">'
-          + '<span style="font-size:10px;font-weight:600;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[COL.agentName]||'-')+'</span>'
+          + '<span style="font-size:10px;font-weight:600;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[COL.agentCode]||'-')+'</span>'
           + '<span style="font-size:10px;color:#94a3b8;text-align:right">'+(prv?fmtS(Math.round(prv)):'—')+'</span>'
           + '<span style="font-size:10px;font-weight:700;color:#c2410c;text-align:right">'+fmtS(Math.round(rv))+'</span>'
           + '<span style="font-size:10px;font-weight:800;color:'+(pct!==null&&pct<0?'#c2410c':'#64748b')+';text-align:right">'+(pct!==null?pct+'%':'—')+'</span>'
@@ -13064,8 +13401,8 @@ function calcPriorityScore(row, tracking, ctx) {
   var reasons = [];
   var curRev = N(row[m.colRev]);
   var prevRev = mp ? N(row[mp.colRev]) : 0;
-  var curAvg = N(row[m.colAvg]);
-  var prevAvg = mp ? N(row[mp.colAvg]) : 0;
+  var curAvg = (m && m.colRev) ? _rowAvgRevDay(row, m) : N(row[m.colAvg]);
+  var prevAvg = (mp && mp.colRev) ? _rowAvgRevDay(row, mp) : 0;
   var diffAvg = mp ? curAvg - prevAvg : 0;
   var pctRev = prevRev > 0 ? ((curRev - prevRev) / Math.abs(prevRev) * 100) : null;
   var status = tracking.status || '';
@@ -13079,16 +13416,24 @@ function calcPriorityScore(row, tracking, ctx) {
     if (prevRev > 0) score += Math.min(15, Math.round(prevRev / 30000));
     if (drop > 0) reasons.push('Avg ลด ' + fmtS(Math.round(drop)) + '/วัน');
     if (pctRev !== null && pctRev < 0) reasons.push('ยอดลด ' + Math.abs(pctRev).toFixed(1) + '%');
-  } else {
+  } else if (type === 'growth') {
     var gain = Math.max(0, curAvg - prevAvg);
     score += Math.min(35, Math.round(gain / Math.max(_growthThreshold || 1, 1) * 14));
     if (pctRev !== null && pctRev > 0) score += Math.min(18, Math.round(pctRev / 4));
     score += Math.min(12, Math.round(curRev / 40000));
     if (gain > 0) reasons.push('Avg เพิ่ม ' + fmtS(Math.round(gain)) + '/วัน');
     if (pctRev !== null && pctRev > 0) reasons.push('ยอดโต +' + pctRev.toFixed(1) + '%');
+  } else {
+    var movement = Math.abs(diffAvg);
+    score += Math.min(35, Math.round(movement / Math.max(_growthThreshold || 1, 1) * 10));
+    score += Math.min(15, Math.round(curRev / 50000));
+    if (diffAvg !== 0) reasons.push('Avg ' + (diffAvg > 0 ? 'เพิ่ม ' : 'ลด ') + fmtS(Math.round(Math.abs(diffAvg))) + '/วัน');
+    if (pctRev !== null) reasons.push('ยอด ' + (pctRev >= 0 ? 'โต +' : 'ลด ') + Math.abs(pctRev).toFixed(1) + '%');
   }
 
-  if (!status) {
+  if (type === 'customer') {
+    reasons.push('ดูแนวโน้มเทียบเดือนก่อน');
+  } else if (!status) {
     score += 25;
     reasons.push('ยังไม่อัปเดตสถานะ');
   } else if (status === 'wait') {
@@ -13134,8 +13479,8 @@ function computeActionCenterRows(rows, trackingData, ctx) {
   rows.forEach(function(r) {
     var code = String(r[COL.agentCode] || r['Agent Code'] || '').trim();
     if (!code) return;
-    var riskDrop = N(r[mp.colAvg]) - N(r[m.colAvg]);
-    var growthGain = N(r[m.colAvg]) - N(r[mp.colAvg]);
+    var riskDrop = riskDelta(r,m,mp);
+    var growthGain = growthDelta(r,m,mp);
     if (riskDrop > (_riskThreshold || 0)) {
       var riskKey = 'risk_' + code + '_' + m.key;
       var riskTrk = trackingData[riskKey] || {};
@@ -13205,17 +13550,17 @@ function renderActionCenter(items, m) {
     var r = item.row || {};
     var trk = item.tracking || {};
     var code = String(r[COL.agentCode] || r['Agent Code'] || '-');
-    var name = String(r[COL.agentName] || r['Agent Name'] || '-');
     var zone = String(r[COL.zoneName] || r['Zone Name'] || '-');
     var pkg = String(r[COL.package] || r['Package'] || '-');
     var rev = N(r[m.colRev]);
     var reason = item.reasons && item.reasons.length ? item.reasons.join(' · ') : 'ต้องตรวจสอบ';
     var scoreColor = item.score >= 75 ? 'var(--rd)' : item.score >= 50 ? '#d97706' : '#0369a1';
-    html += '<div class="action-center-row" style="display:grid;grid-template-columns:34px minmax(180px,1fr) 92px 150px 96px;gap:8px;align-items:center;padding:9px 10px;border:1px solid #e2e8f0;border-radius:10px;background:white">'
+    html += '<div class="action-center-row" style="display:grid;grid-template-columns:34px 34px minmax(180px,1fr) 92px 150px 96px;gap:8px;align-items:center;padding:9px 10px;border:1px solid #e2e8f0;border-radius:10px;background:white">'
       + '<div style="width:28px;height:28px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#0f172a">'+(idx+1)+'</div>'
+      + _customerPopupButton(item.type,r,m.key)
       + '<div style="min-width:0">'
-      + '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap"><span style="font-size:12px;font-weight:900;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_esc(name)+'</span><span style="font-size:9px;font-weight:900;border-radius:20px;padding:2px 7px;background:'+item.badgeColor+'1A;color:'+item.badgeColor+'">'+item.badge+'</span></div>'
-      + '<div style="font-size:10px;color:#64748b;margin-top:2px">'+_esc(code)+' · '+_esc(zone)+' · '+_esc(pkg)+' · Rev '+fmtS(Math.round(rev))+'</div>'
+      + '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap">'+_customerDisplayPair(r)+'<span style="font-size:9px;font-weight:900;border-radius:20px;padding:2px 7px;background:'+item.badgeColor+'1A;color:'+item.badgeColor+'">'+item.badge+'</span></div>'
+      + '<div style="font-size:10px;color:#64748b;margin-top:2px">'+_esc(zone)+' · '+_esc(pkg)+' · Rev '+fmtS(Math.round(rev))+'</div>'
       + '<div style="font-size:10px;color:#334155;margin-top:3px">'+_esc(reason)+'</div>'
       + '</div>'
       + '<div><div style="font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase">Priority</div><div style="font-size:20px;font-weight:900;color:'+scoreColor+'">'+item.score+'</div><div style="height:5px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:4px"><span style="display:block;height:100%;width:'+item.score+'%;background:'+scoreColor+';border-radius:99px"></span></div></div>'
@@ -13358,7 +13703,7 @@ function _renderHomeBD(m, mp) {
 
   // ── growth count for BD ──
   var riskBaseBd = getRiskBaselineMonth(m);
-  var bdGrowthRows = mp ? myRows.filter(function(r){ return (N(r[m.colAvg])-N(r[mp.colAvg]))>_growthThreshold; }) : [];
+  var bdGrowthRows = mp ? myRows.filter(function(r){ return growthDelta(r,m,mp)>_growthThreshold; }) : [];
   var bdGrowthRevGain = bdGrowthRows.reduce(function(s,r){ return s+Math.abs(N(r[m.colRev])-N(r[mp.colRev])); },0);
   var bdRiskCount = riskBaseBd ? riskRowsForBaseline(myRows, m, riskBaseBd, _riskThreshold).length : 0;
 
@@ -13643,7 +13988,7 @@ function _renderHomeBD(m, mp) {
       var prvVol = mp ? N(r[mp.colVol]) : null;
       var pct = prv ? _pctChg(rv, prv) : null;
       alertHtml += '<div style="display:grid;grid-template-columns:1fr 46px 46px 40px 40px 38px;gap:3px;align-items:center;padding:4px 2px;border-radius:5px;background:'+(i%2===0?'#fff7ed':'transparent')+'">'
-        + '<span style="font-size:10px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[COL.agentName]||'-')+'</span>'
+        + '<span style="font-size:10px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[COL.agentCode]||'-')+'</span>'
         + '<span style="font-size:10px;color:#94a3b8;text-align:right">'+(prv?fmtS(Math.round(prv)):'—')+'</span>'
         + '<span style="font-size:10px;font-weight:700;color:#c2410c;text-align:right">'+fmtS(Math.round(rv))+'</span>'
         + '<span style="font-size:10px;color:#94a3b8;text-align:right">'+(prvVol?fmtInt(Math.round(prvVol)):'—')+'</span>'
@@ -13698,7 +14043,7 @@ function _renderHomeBD(m, mp) {
         var pct = _pctChg(rv, prv);
         var medals = ['🥇','🥈','🥉','',''];
         alertHtml += '<div style="display:grid;grid-template-columns:1fr 46px 46px 40px 40px 38px;gap:3px;align-items:center;padding:4px 2px;border-radius:5px;background:'+(i%2===0?'#f0fdf4':'transparent')+'">'
-          + '<span style="font-size:10px;color:#166534;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(medals[i]||'')+(medals[i]?' ':'')+String(r[COL.agentName]||'-')+'</span>'
+          + '<span style="font-size:10px;color:#166534;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(medals[i]||'')+(medals[i]?' ':'')+String(r[COL.agentCode]||'-')+'</span>'
           + '<span style="font-size:10px;color:#94a3b8;text-align:right">'+fmtS(Math.round(prv))+'</span>'
           + '<span style="font-size:10px;font-weight:700;color:var(--gn);text-align:right">'+fmtS(Math.round(rv))+'</span>'
           + '<span style="font-size:10px;color:#94a3b8;text-align:right">'+fmtInt(Math.round(prvVol))+'</span>'
@@ -13796,7 +14141,7 @@ function _renderHomeBD(m, mp) {
         var pct = _pctChg(rv, prv);
         var medals = ['🥇','🥈','🥉','','',''];
         html += '<div style="display:grid;grid-template-columns:1fr 50px 50px 44px 44px 40px;gap:3px;align-items:center;padding:5px 6px;border-radius:7px;background:'+(i%2===0?'#f0fdf4':'transparent')+'">'
-          + '<span style="font-size:11px;color:#166534;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(medals[i]?medals[i]+' ':'')+String(r[COL.agentName]||'-')+'</span>'
+          + '<span style="font-size:11px;color:#166534;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(medals[i]?medals[i]+' ':'')+String(r[COL.agentCode]||'-')+'</span>'
           + '<span style="font-size:11px;color:#94a3b8;text-align:right">'+fmtS(Math.round(prv))+'</span>'
           + '<span style="font-size:11px;font-weight:700;color:var(--gn);text-align:right">'+fmtS(Math.round(rv))+'</span>'
           + '<span style="font-size:11px;color:#94a3b8;text-align:right">'+fmtInt(Math.round(prvVol))+'</span>'
@@ -13825,12 +14170,12 @@ function _renderHomeBD(m, mp) {
   html += '<div>';
   (function() {
     var bdRiskRows = mp ? myRows.filter(function(r){
-      return (N(r[mp.colAvg]) - N(r[m.colAvg])) > _riskThreshold;
+      return riskDelta(r,m,mp) > _riskThreshold;
     }) : [];
     var bdRiskRevCur  = bdRiskRows.reduce(function(s,r){ return s + N(r[m.colRev]); }, 0);
     var bdRiskRevPrev = bdRiskRows.reduce(function(s,r){ return s + (mp ? N(r[mp.colRev]) : 0); }, 0);
     var bdRiskRevDrop = bdRiskRevPrev - bdRiskRevCur;
-    var bdRiskAvgDrop = bdRiskRows.reduce(function(s,r){ return s + (N(r[mp.colAvg]) - N(r[m.colAvg])); }, 0);
+    var bdRiskAvgDrop = bdRiskRows.reduce(function(s,r){ return s + riskDelta(r,m,mp); }, 0);
     var bdRiskPct     = myRows.length > 0 ? (bdRiskRows.length / myRows.length * 100).toFixed(0) : 0;
 
     html += '<div class="ccard" style="border:1.5px solid #fde68a;background:#fffdf5;margin-bottom:12px">'
@@ -13861,10 +14206,10 @@ function _renderHomeBD(m, mp) {
       // Agent list — same structure as Loss/Growth
       var bdRiskAgentList = bdRiskRows.map(function(r) {
         return {
-          name:    String(r[COL.agentName] || '—'),
+          name:    String(r[COL.agentCode] || '—'),
           avgCur:  N(r[m.colAvg]),
           avgPrev: N(r[mp.colAvg]),
-          avgDrop: N(r[mp.colAvg]) - N(r[m.colAvg]),
+          avgDrop: riskDelta(r,m,mp),
           revCur:  N(r[m.colRev]),
           revPrev: N(r[mp.colRev]),
           volCur:  N(r[m.colVol]),
@@ -13931,7 +14276,7 @@ function _renderHomeBD(m, mp) {
       var prvVol = mp ? N(r[mp.colVol]) : null;
       var pct = prv && prv > 0 ? _pctChg(rv, prv) : null;
       html += '<div style="display:grid;grid-template-columns:1fr 50px 50px 44px 44px 40px;gap:3px;align-items:center;padding:5px 6px;border-radius:7px;background:'+(i%2===0?'#fff7ed':'transparent')+'">'
-        + '<span style="font-size:11px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[COL.agentName]||'-')+'</span>'
+        + '<span style="font-size:11px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(r[COL.agentCode]||'-')+'</span>'
         + '<span style="font-size:11px;color:#94a3b8;text-align:right">'+(prv!==null?fmtS(Math.round(prv)):'—')+'</span>'
         + '<span style="font-size:11px;font-weight:700;color:#c2410c;text-align:right">'+fmtS(Math.round(rv))+'</span>'
         + '<span style="font-size:11px;color:#94a3b8;text-align:right">'+(prvVol!==null?fmtInt(Math.round(prvVol)):'—')+'</span>'

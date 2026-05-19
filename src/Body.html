@@ -725,76 +725,80 @@
       <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
         <span id="risk_page_cnt" style="font-size:11px;color:var(--t2)"></span>
       </div>
-
-      <!-- ★ STATUS COMPARISON CARDS -->
-      <div id="risk_status_cards" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"></div>
-
-      <!-- ★ TREND COMPARISON SECTION -->
-      <div id="risk_trend_section" style="margin-bottom:12px">
-        <!-- Days remaining info bar -->
-        <div id="risk_days_bar" class="days-bar-risk">
-          <span style="font-size:13px">📅</span>
-          <span id="risk_days_remaining_label" style="font-size:12px;font-weight:700;color:var(--rd)"></span>
-          <span id="risk_projection_label" class="projection-label-risk"></span>
+      <div class="risk-growth-shell">
+        <div class="risk-growth-subtabs" role="tablist" aria-label="Risk customer views">
+          <button class="risk-growth-subtab active" id="risk_subtab_overview" onclick="swRiskSubTab('overview',this)">ภาพรวม</button>
+          <button class="risk-growth-subtab" id="risk_subtab_work" onclick="swRiskSubTab('work',this)">ติดตามลูกค้า</button>
         </div>
-        <!-- Trend charts -->
-        <div class="g2" style="margin-bottom:10px">
-          <!-- MoM Count trend -->
-          <div class="ccard">
-            <div class="chdr">
-              <div>
-                <div class="ctitle">📊 แนวโน้มจำนวนกลุ่มเสี่ยง (เดือนต่อเดือน)</div>
-                <div class="csub" id="risk_trend_count_sub">เปรียบเทียบจำนวนลูกค้าเสี่ยงรายเดือน</div>
-              </div>
-              <span class="cbadge-red" id="risk_trend_count_badge"></span>
+
+        <div id="risk_overview_pane">
+          <div id="risk_status_cards" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"></div>
+          <div id="risk_trend_section" style="margin-bottom:12px">
+            <div id="risk_days_bar" class="days-bar-risk">
+              <span style="font-size:13px">📅</span>
+              <span id="risk_days_remaining_label" style="font-size:12px;font-weight:700;color:var(--rd)"></span>
+              <span id="risk_projection_label" class="projection-label-risk"></span>
             </div>
-            <div class="ch220"><canvas id="c_risk_trend_count"></canvas></div>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="ccard">
+                <div class="chdr">
+                  <div>
+                    <div class="ctitle">📊 แนวโน้มจำนวนกลุ่มเสี่ยง (เดือนต่อเดือน)</div>
+                    <div class="csub" id="risk_trend_count_sub">เปรียบเทียบจำนวนลูกค้าเสี่ยงรายเดือน</div>
+                  </div>
+                  <span class="cbadge-red" id="risk_trend_count_badge"></span>
+                </div>
+                <div class="ch220"><canvas id="c_risk_trend_count"></canvas></div>
+              </div>
+              <div class="ccard">
+                <div class="chdr">
+                  <div>
+                    <div class="ctitle">💸 แนวโน้ม Revenue ลดลง (MoM)</div>
+                    <div class="csub" id="risk_trend_rev_sub">รวม Revenue ที่ลดลงเทียบแต่ละเดือน</div>
+                  </div>
+                  <span class="cbadge-red" id="risk_trend_rev_badge"></span>
+                </div>
+                <div class="ch220"><canvas id="c_risk_trend_rev"></canvas></div>
+              </div>
+            </div>
+            <div class="ccard" style="margin-bottom:10px">
+              <div class="chdr">
+                <div>
+                  <div class="ctitle">📉 แนวโน้ม Avg Rev/วัน ที่ลดลง (เดือนต่อเดือน)</div>
+                  <div class="csub">ยิ่งแท่งสั้นลง = สถานการณ์ดีขึ้น | เส้นประ = ค่าเฉลี่ย</div>
+                </div>
+                <span id="risk_trend_avg_badge" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px"></span>
+              </div>
+              <div style="height:160px"><canvas id="c_risk_trend_avg"></canvas></div>
+            </div>
           </div>
-          <!-- MoM Revenue Loss trend -->
-          <div class="ccard">
-            <div class="chdr">
-              <div>
-                <div class="ctitle">💸 แนวโน้ม Revenue ลดลง (MoM)</div>
-                <div class="csub" id="risk_trend_rev_sub">รวม Revenue ที่หายไปเทียบแต่ละเดือน</div>
-              </div>
-              <span class="cbadge-red" id="risk_trend_rev_badge"></span>
-            </div>
-            <div class="ch220"><canvas id="c_risk_trend_rev"></canvas></div>
+          <div class="g3" style="margin-bottom:12px">
+            <div class="ccard"><div class="chdr"><div class="ctitle" id="risk_chart_zone_title">ราย Zone</div></div><div class="ch220"><canvas id="c_risk_zone"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle">📦 ราย Package</div></div><div class="ch220"><canvas id="c_risk_pkg"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle">🗺️ ราย Province</div></div><div class="ch220"><canvas id="c_risk_prov"></canvas></div></div>
           </div>
         </div>
-        <!-- Avg Drop trend — full width -->
-        <div class="ccard" style="margin-bottom:10px">
-          <div class="chdr">
+
+        <div id="risk_work_pane" style="display:none">
+          <div class="risk-growth-work-intro">
             <div>
-              <div class="ctitle">📉 แนวโน้ม Avg Rev/วัน ที่ลดลง (เดือนต่อเดือน)</div>
-              <div class="csub">ยิ่งแท่งสั้นลง = สถานการณ์ดีขึ้น | เส้นประ = ค่าเฉลี่ย</div>
+              <div class="risk-growth-work-title">ติดตามลูกค้าที่เริ่มมีสัญญาณเสี่ยง</div>
+              <div class="risk-growth-work-sub">ตารางหลักซ่อนข้อมูลส่วนตัวไว้ก่อน แล้วเปิดดูรายละเอียดผ่านปุ่มรูปตาตามสิทธิ์ของผู้ใช้</div>
             </div>
-            <span id="risk_trend_avg_badge" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px"></span>
+            <div class="trk-bar" style="margin-bottom:0;padding:5px 12px;">
+              <span class="trk-bar-label">📋 บันทึกสถานะการติดตาม</span>
+              <button class="trk-save-all-btn" id="risk_save_all_btn" onclick="saveAllTracking('risk')">💾 บันทึกทั้งหมด</button>
+              <span class="trk-saved-all" id="risk_saved_all_msg">✅ บันทึกสำเร็จ!</span>
+            </div>
           </div>
-          <div style="height:160px"><canvas id="c_risk_trend_avg"></canvas></div>
-        </div>
-      </div>
-
-      <!-- Charts -->
-      <div class="g3" style="margin-bottom:12px">
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="risk_chart_zone_title">ราย Zone</div></div><div class="ch220"><canvas id="c_risk_zone"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle">📦 ราย Package</div></div><div class="ch220"><canvas id="c_risk_pkg"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle">🗺️ ราย Province</div></div><div class="ch220"><canvas id="c_risk_prov"></canvas></div></div>
-      </div>
-
-      <!-- Table -->
-      <div class="ccard gfull">
-        <div class="chdr">
-          <div class="ctitle" id="risk_tbl_title">📋 รายชื่อกลุ่มเสี่ยง</div>
-          <span class="cbadge-red" id="risk_tbl_label">0 ราย</span>
-          <div class="trk-bar" style="margin-bottom:0;margin-left:auto;padding:5px 12px;">
-            <span class="trk-bar-label">📋 บันทึกสถานะการติดตาม</span>
-            <button class="trk-save-all-btn" id="risk_save_all_btn" onclick="saveAllTracking('risk')">💾 บันทึกทั้งหมด</button>
-
-            <span class="trk-saved-all" id="risk_saved_all_msg">✅ บันทึกสำเร็จ!</span>
+          <div class="ccard gfull">
+            <div class="chdr">
+              <div class="ctitle" id="risk_tbl_title">📋 รายชื่อลูกค้ากลุ่มเสี่ยง</div>
+              <span class="cbadge-red" id="risk_tbl_label">0 ราย</span>
+            </div>
+            <div style="overflow-x:auto;max-height:500px;overflow-y:auto" id="risk_tbl"></div>
           </div>
         </div>
-        <div style="overflow-x:auto;max-height:500px;overflow-y:auto" id="risk_tbl"></div>
       </div>
     </div>
   </div><!-- end mainRisk -->
@@ -823,76 +827,100 @@
       <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
         <span id="growth_page_cnt" style="font-size:11px;color:var(--t2)"></span>
       </div>
-
-      <!-- STATUS COMPARISON CARDS -->
-      <div id="growth_status_cards" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"></div>
-
-      <!-- TREND COMPARISON SECTION -->
-      <div id="growth_trend_section" style="margin-bottom:12px">
-        <!-- Days info bar -->
-        <div id="growth_days_bar" class="days-bar-growth">
-          <span style="font-size:13px">📅</span>
-          <span id="growth_days_remaining_label" style="font-size:12px;font-weight:700;color:var(--gn)"></span>
-          <span id="growth_projection_label" class="projection-label-growth"></span>
+      <div class="risk-growth-shell">
+        <div class="risk-growth-subtabs risk-growth-subtabs-growth" role="tablist" aria-label="Growth customer views">
+          <button class="risk-growth-subtab active" id="growth_subtab_overview" onclick="swGrowthSubTab('overview',this)">ภาพรวม</button>
+          <button class="risk-growth-subtab" id="growth_subtab_work" onclick="swGrowthSubTab('work',this)">ต่อยอดลูกค้า</button>
         </div>
-        <!-- Trend charts -->
-        <div class="g2" style="margin-bottom:10px">
-          <div class="ccard">
-            <div class="chdr">
-              <div>
-                <div class="ctitle">📊 แนวโน้มจำนวนกลุ่มเติบโต (เดือนต่อเดือน)</div>
-                <div class="csub" id="growth_trend_count_sub">เปรียบเทียบจำนวนลูกค้าเติบโตรายเดือน</div>
-              </div>
-              <span class="cbadge-green" id="growth_trend_count_badge"></span>
+
+        <div id="growth_overview_pane">
+          <div id="growth_status_cards" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"></div>
+          <div id="growth_trend_section" style="margin-bottom:12px">
+            <div id="growth_days_bar" class="days-bar-growth">
+              <span style="font-size:13px">📅</span>
+              <span id="growth_days_remaining_label" style="font-size:12px;font-weight:700;color:var(--gn)"></span>
+              <span id="growth_projection_label" class="projection-label-growth"></span>
             </div>
-            <div class="ch220"><canvas id="c_growth_trend_count"></canvas></div>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="ccard">
+                <div class="chdr">
+                  <div>
+                    <div class="ctitle">📊 แนวโน้มจำนวนกลุ่มเติบโต (เดือนต่อเดือน)</div>
+                    <div class="csub" id="growth_trend_count_sub">เปรียบเทียบจำนวนลูกค้าเติบโตรายเดือน</div>
+                  </div>
+                  <span class="cbadge-green" id="growth_trend_count_badge"></span>
+                </div>
+                <div class="ch220"><canvas id="c_growth_trend_count"></canvas></div>
+              </div>
+              <div class="ccard">
+                <div class="chdr">
+                  <div>
+                    <div class="ctitle">💚 แนวโน้ม Revenue เพิ่มขึ้น (MoM)</div>
+                    <div class="csub" id="growth_trend_rev_sub">รวม Revenue ที่เพิ่มขึ้นเทียบแต่ละเดือน</div>
+                  </div>
+                  <span class="cbadge-green" id="growth_trend_rev_badge"></span>
+                </div>
+                <div class="ch220"><canvas id="c_growth_trend_rev"></canvas></div>
+              </div>
+            </div>
+            <div class="ccard" style="margin-bottom:10px">
+              <div class="chdr">
+                <div>
+                  <div class="ctitle">📈 แนวโน้ม Avg Rev/วัน ที่เพิ่มขึ้น (เดือนต่อเดือน)</div>
+                  <div class="csub">ยิ่งแท่งสูงขึ้น = สถานการณ์ดีขึ้น | เส้นประ = ค่าเฉลี่ย</div>
+                </div>
+                <span id="growth_trend_avg_badge" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px"></span>
+              </div>
+              <div style="height:160px"><canvas id="c_growth_trend_avg"></canvas></div>
+            </div>
           </div>
-          <div class="ccard">
-            <div class="chdr">
-              <div>
-                <div class="ctitle">💚 แนวโน้ม Revenue เพิ่มขึ้น (MoM)</div>
-                <div class="csub" id="growth_trend_rev_sub">รวม Revenue ที่เพิ่มเทียบแต่ละเดือน</div>
-              </div>
-              <span class="cbadge-green" id="growth_trend_rev_badge"></span>
-            </div>
-            <div class="ch220"><canvas id="c_growth_trend_rev"></canvas></div>
+          <div class="g3" style="margin-bottom:12px">
+            <div class="ccard"><div class="chdr"><div class="ctitle" id="growth_chart_zone_title">🟢 เติบโต ราย Zone</div></div><div class="ch220"><canvas id="c_growth_zone"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle">📦 ราย Package</div></div><div class="ch220"><canvas id="c_growth_pkg"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle">🗺️ ราย Province</div></div><div class="ch220"><canvas id="c_growth_prov"></canvas></div></div>
           </div>
         </div>
-        <!-- Avg Rise trend — full width -->
-        <div class="ccard" style="margin-bottom:10px">
-          <div class="chdr">
+
+        <div id="growth_work_pane" style="display:none">
+          <div class="risk-growth-work-intro risk-growth-work-intro-growth">
             <div>
-              <div class="ctitle">📈 แนวโน้ม Avg Rev/วัน ที่เพิ่มขึ้น (เดือนต่อเดือน)</div>
-              <div class="csub">ยิ่งแท่งสูงขึ้น = สถานการณ์ดีขึ้น | เส้นประ = ค่าเฉลี่ย</div>
+              <div class="risk-growth-work-title">ต่อยอดลูกค้าที่พร้อมขยายยอด</div>
+              <div class="risk-growth-work-sub">ตารางหลักเน้นข้อมูลวิเคราะห์และ action ที่ใช้จริง ส่วนรายละเอียดลูกค้าเปิดผ่านปุ่มรูปตาตามสิทธิ์ของผู้ใช้</div>
             </div>
-            <span id="growth_trend_avg_badge" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px"></span>
+            <div class="trk-bar" style="margin-bottom:0;padding:5px 12px;">
+              <span class="trk-bar-label">📋 บันทึกสถานะการต่อยอด</span>
+              <button class="trk-save-all-btn" id="growth_save_all_btn" onclick="saveAllTracking('growth')">💾 บันทึกทั้งหมด</button>
+              <span class="trk-saved-all" id="growth_saved_all_msg">✅ บันทึกสำเร็จ!</span>
+            </div>
           </div>
-          <div style="height:160px"><canvas id="c_growth_trend_avg"></canvas></div>
-        </div>
-      </div>
-
-      <!-- Charts -->
-      <div class="g3" style="margin-bottom:12px">
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="growth_chart_zone_title">🟢 เติบโต ราย Zone</div></div><div class="ch220"><canvas id="c_growth_zone"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle">📦 ราย Package</div></div><div class="ch220"><canvas id="c_growth_pkg"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle">🗺️ ราย Province</div></div><div class="ch220"><canvas id="c_growth_prov"></canvas></div></div>
-      </div>
-
-      <!-- Table -->
-      <div class="ccard gfull">
-        <div class="chdr">
-          <div class="ctitle" id="growth_tbl_title">📋 รายชื่อกลุ่มเติบโต</div>
-          <span class="cbadge-green" id="growth_tbl_label">0 ราย</span>
-          <div class="trk-bar" style="margin-bottom:0;margin-left:auto;padding:5px 12px;">
-            <span class="trk-bar-label">📋 บันทึกสถานะการติดตาม</span>
-            <button class="trk-save-all-btn" id="growth_save_all_btn" onclick="saveAllTracking('growth')">💾 บันทึกทั้งหมด</button>
-            <span class="trk-saved-all" id="growth_saved_all_msg">✅ บันทึกสำเร็จ!</span>
+          <div class="ccard gfull">
+            <div class="chdr">
+              <div class="ctitle" id="growth_tbl_title">📋 รายชื่อลูกค้ากลุ่มเติบโต</div>
+              <span class="cbadge-green" id="growth_tbl_label">0 ราย</span>
+            </div>
+            <div style="overflow-x:auto;max-height:500px;overflow-y:auto" id="growth_tbl"></div>
           </div>
         </div>
-        <div style="overflow-x:auto;max-height:500px;overflow-y:auto" id="growth_tbl"></div>
       </div>
     </div>
   </div><!-- end mainGrowth -->
+
+<div class="ui-overlay" id="customerCardOverlay" onclick="if(event.target===this)closeCustomerCardPopup()">
+  <div class="customer-card-modal" role="dialog" aria-modal="true" aria-labelledby="customerCardTitle">
+    <div class="customer-card-header">
+      <div>
+        <div class="customer-card-eyebrow" id="customerCardEyebrow">Customer card</div>
+        <div class="customer-card-title" id="customerCardTitle">รายละเอียดลูกค้า</div>
+      </div>
+      <button type="button" class="customer-card-close" onclick="closeCustomerCardPopup()" aria-label="Close customer card">✕</button>
+    </div>
+    <div class="customer-card-body" id="customerCardBody"></div>
+    <div class="customer-card-footer">
+      <button type="button" class="customer-card-btn" onclick="closeCustomerCardPopup()">ปิด</button>
+      <button type="button" class="customer-card-btn customer-card-btn-primary" id="customerCardActionBtn" onclick="goToCustomerWorkTab()">ไปยังหน้าทำงาน</button>
+    </div>
+  </div>
+</div>
 
 <div id="mainUsermgmt" style="display:none">
   <div class="main" style="padding-top:10px">
