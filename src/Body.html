@@ -142,7 +142,6 @@
       <button class="ntab" onclick="swMain('cr')">🚚 ขนส่ง</button>
       <button class="ntab ntab-risk" onclick="swMain('risk')">⚠️ กลุ่มเสี่ยง</button>
       <button class="ntab ntab-growth" onclick="swMain('growth')">📈 กลุ่มเติบโต</button>
-      <button class="ntab" onclick="openReportCenter()">📄 Report Center</button>
     </div>
   </div>
 
@@ -694,8 +693,6 @@
             <option value="">-- เลือกเดือน --</option>
           </select>
           <button class="btnexp" id="table_compact_btn" onclick="toggleTableCompact()">มุมมองเต็ม</button>
-          <button class="btnexp" onclick="exportCSV()">⬇ Export CSV</button>
-          <button class="btnexp rc-report-btn" onclick="openReportCenter()">Report Center</button>
         </div>
       </div>
       <div class="twrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
@@ -728,6 +725,7 @@
       <div class="risk-growth-shell">
         <div class="risk-growth-subtabs" role="tablist" aria-label="Risk customer views">
           <button class="risk-growth-subtab active" id="risk_subtab_overview" onclick="swRiskSubTab('overview',this)">ภาพรวม</button>
+          <button class="risk-growth-subtab" id="risk_subtab_operation" onclick="swRiskSubTab('operation',this)">Operation Dashboard</button>
           <button class="risk-growth-subtab" id="risk_subtab_work" onclick="swRiskSubTab('work',this)">ติดตามลูกค้า</button>
         </div>
 
@@ -779,6 +777,10 @@
           </div>
         </div>
 
+        <div id="risk_operation_pane" style="display:none">
+          <div id="risk_operation_content" class="opdash"></div>
+        </div>
+
         <div id="risk_work_pane" style="display:none">
           <div class="risk-growth-work-intro">
             <div>
@@ -791,6 +793,7 @@
               <span class="trk-saved-all" id="risk_saved_all_msg">✅ บันทึกสำเร็จ!</span>
             </div>
           </div>
+          <div id="risk_work_command" class="tracking-work-command"></div>
           <div class="ccard gfull">
             <div class="chdr">
               <div class="ctitle" id="risk_tbl_title">📋 รายชื่อลูกค้ากลุ่มเสี่ยง</div>
@@ -830,6 +833,7 @@
       <div class="risk-growth-shell">
         <div class="risk-growth-subtabs risk-growth-subtabs-growth" role="tablist" aria-label="Growth customer views">
           <button class="risk-growth-subtab active" id="growth_subtab_overview" onclick="swGrowthSubTab('overview',this)">ภาพรวม</button>
+          <button class="risk-growth-subtab" id="growth_subtab_operation" onclick="swGrowthSubTab('operation',this)">Operation Dashboard</button>
           <button class="risk-growth-subtab" id="growth_subtab_work" onclick="swGrowthSubTab('work',this)">ต่อยอดลูกค้า</button>
         </div>
 
@@ -881,6 +885,10 @@
           </div>
         </div>
 
+        <div id="growth_operation_pane" style="display:none">
+          <div id="growth_operation_content" class="opdash opdash-growth"></div>
+        </div>
+
         <div id="growth_work_pane" style="display:none">
           <div class="risk-growth-work-intro risk-growth-work-intro-growth">
             <div>
@@ -893,6 +901,7 @@
               <span class="trk-saved-all" id="growth_saved_all_msg">✅ บันทึกสำเร็จ!</span>
             </div>
           </div>
+          <div id="growth_work_command" class="tracking-work-command tracking-work-command-growth"></div>
           <div class="ccard gfull">
             <div class="chdr">
               <div class="ctitle" id="growth_tbl_title">📋 รายชื่อลูกค้ากลุ่มเติบโต</div>
@@ -944,169 +953,6 @@
       </div>
       <div id="um_table_wrap" style="overflow-x:auto">
         <div style="padding:30px;text-align:center;color:var(--t2)">กด รีเฟรช เพื่อโหลดข้อมูล</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="rc-overlay" id="rcOverlay" onclick="if(event.target===this)closeReportCenter()">
-  <div class="rc-modal">
-    <div class="rc-head">
-      <div>
-        <div class="rc-title">Report Center</div>
-        <div class="rc-sub" id="rc_sub">Preparing report preview...</div>
-      </div>
-      <button class="rc-close" onclick="closeReportCenter()">✕</button>
-    </div>
-    <div class="rc-body">
-      <div class="rc-tabs">
-        <button class="rc-tab active" id="rc_tab_summary" onclick="switchReportCenterTab('summary',this)">Summary</button>
-        <button class="rc-tab" id="rc_tab_tracking" onclick="switchReportCenterTab('tracking',this)">Tracking</button>
-        <button class="rc-tab" id="rc_tab_bd" onclick="switchReportCenterTab('bd',this)">BD Performance</button>
-        <button class="rc-tab" id="rc_tab_export" onclick="switchReportCenterTab('export',this)">Export</button>
-      </div>
-
-      <div id="rc_summary_panel" class="rc-panel active">
-        <div class="rc-krow" id="rc_summary_kpis"></div>
-        <div class="rc-grid rc-grid-2">
-          <div class="rc-card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title">Revenue by Month</div>
-                <div class="rc-card-sub">Bar = actual revenue, line = MoM growth</div>
-              </div>
-            </div>
-            <div class="rc-chart-wrap"><canvas id="rc_summary_rev_chart"></canvas></div>
-          </div>
-          <div class="rc-card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title">Volume by Month</div>
-                <div class="rc-card-sub">Bar = actual volume, line = MoM growth</div>
-              </div>
-            </div>
-            <div class="rc-chart-wrap"><canvas id="rc_summary_vol_chart"></canvas></div>
-          </div>
-        </div>
-        <div class="rc-grid rc-grid-2">
-          <div class="rc-card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title">Carrier Snapshot</div>
-                <div class="rc-card-sub">Top carriers in current scope</div>
-              </div>
-            </div>
-            <div id="rc_summary_carriers"></div>
-          </div>
-          <div class="rc-card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title">Executive Summary</div>
-                <div class="rc-card-sub">Quick read before export</div>
-              </div>
-            </div>
-            <div id="rc_summary_notes"></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="rc_tracking_panel" class="rc-panel">
-        <div class="rc-krow" id="rc_tracking_kpis"></div>
-        <div class="rc-grid rc-grid-2">
-          <div class="rc-card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title">Tracking Tasks by Month</div>
-                <div class="rc-card-sub">Bar = total tasks, line = follow-up completion</div>
-              </div>
-            </div>
-            <div class="rc-chart-wrap"><canvas id="rc_tracking_chart"></canvas></div>
-          </div>
-          <div class="rc-card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title">Zone Tracking Snapshot</div>
-                <div class="rc-card-sub">Current month risk and growth workload</div>
-              </div>
-            </div>
-            <div id="rc_tracking_zones"></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="rc_bd_panel" class="rc-panel">
-        <div class="rc-krow" id="rc_bd_kpis"></div>
-        <div class="rc-grid rc-grid-2" id="rc_bd_grid">
-          <div class="rc-card" id="rc_bd_chart_card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title" id="rc_bd_chart_title">Top BD Revenue</div>
-                <div class="rc-card-sub" id="rc_bd_chart_sub">Bar = current revenue, line = MoM growth</div>
-              </div>
-              <div class="rc-view-switch">
-                <button class="rc-view-btn active" id="rc_bd_view_ranking" onclick="switchReportCenterBdView('ranking',this)">Ranking</button>
-                <button class="rc-view-btn" id="rc_bd_view_trend" onclick="switchReportCenterBdView('trend',this)">Monthly Trend</button>
-              </div>
-            </div>
-            <div class="rc-trend-filter" id="rc_bd_trend_filter" style="display:none">
-              <input id="rc_bd_trend_search" class="rc-trend-search" type="search" placeholder="Filter BD" oninput="setReportCenterBdTrendFilter('search',this.value)">
-              <select id="rc_bd_trend_limit" class="rc-trend-select" onchange="setReportCenterBdTrendFilter('limit',this.value)">
-                <option value="all">All BD</option>
-                <option value="5">Top 5</option>
-                <option value="10">Top 10</option>
-                <option value="15">Top 15</option>
-              </select>
-              <span class="rc-trend-count" id="rc_bd_trend_count"></span>
-            </div>
-            <div class="rc-chart-wrap" id="rc_bd_chart_host"><canvas id="rc_bd_chart"></canvas></div>
-            <div class="rc-bd-trend-charts" id="rc_bd_trend_charts" style="display:none">
-              <div class="rc-trend-chart">
-                <div class="rc-trend-title">Revenue</div>
-                <canvas id="rc_bd_rev_trend_chart"></canvas>
-              </div>
-              <div class="rc-trend-chart">
-                <div class="rc-trend-title">Volume</div>
-                <canvas id="rc_bd_vol_trend_chart"></canvas>
-              </div>
-            </div>
-          </div>
-          <div class="rc-card" id="rc_bd_leaderboard_card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title">BD Leaderboard</div>
-                <div class="rc-card-sub">Revenue, follow-up, success, risk saved</div>
-              </div>
-            </div>
-            <div id="rc_bd_table"></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="rc_export_panel" class="rc-panel">
-        <div class="rc-grid rc-grid-2">
-          <div class="rc-card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title">Export Actions</div>
-                <div class="rc-card-sub">Use the same filtered scope from the current dashboard</div>
-              </div>
-            </div>
-            <div class="rc-export-list">
-              <button class="rc-export-btn" onclick="exportTrackingReport()">Tracking Report CSV</button>
-              <button class="rc-export-btn" onclick="exportBDPerformanceReport()">BD Performance CSV</button>
-              <button class="rc-export-btn" onclick="exportWeeklySummary()">Weekly Summary HTML</button>
-            </div>
-          </div>
-          <div class="rc-card">
-            <div class="rc-card-head">
-              <div>
-                <div class="rc-card-title">Export Metadata</div>
-                <div class="rc-card-sub">Session and visibility scope used for generated files</div>
-              </div>
-            </div>
-            <div id="rc_export_meta"></div>
-          </div>
-        </div>
       </div>
     </div>
   </div>

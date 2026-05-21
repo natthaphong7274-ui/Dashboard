@@ -20,6 +20,7 @@ branch นี้รวมงานตั้งแต่ Phase 0 ถึง Phase 
 | Phase 7.5 | [PHASE_7_5_NOTES.md](./PHASE_7_5_NOTES.md) | Audit และ polish หน้า ภาพรวม/ขนส่ง: overview context, carrier color legend, focus state และ responsive touch target |
 | Phase 8 | [PHASE_8_NOTES.md](./PHASE_8_NOTES.md) | เริ่มปรับ logic การคำนวณ Avg/day ให้ใช้จำนวนวันที่มีข้อมูลจริง และเตรียม Loss Baseline config |
 | Phase 9 | [PHASE_9_NOTES.md](./PHASE_9_NOTES.md) | ปรับหน้า กลุ่มเสี่ยง/กลุ่มเติบโต ให้แยก overview กับ work view, ซ่อนข้อมูลในตารางหลัก, และเพิ่ม Customer Card Popup ภายใต้ scope/masking เดิม |
+| Phase 10 | [PHASE_10_NOTES.md](./PHASE_10_NOTES.md) | Tracking/TrackingGrowth sync, ปิด Report Center/export/download, เพิ่ม Risk/Growth 2-layer criteria, Operation Dashboard และ Customer Popup insight |
 
 ## วิธีอ่าน
 
