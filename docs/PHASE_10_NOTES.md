@@ -411,3 +411,77 @@ Phase 10 รอบนี้ทำเฉพาะงาน Tracking, Risk/Growth 
 - Parsed `src/Tracking.js`, `src/DataReader.js`, and `src/Auth.js` with Node `vm.Script`.
 - Parsed all inline scripts in `src/Scripts.html` with Node `vm.Script`.
 - Ran `git diff --check`; only Windows CRLF warnings remain, with no whitespace errors.
+
+## Work Log - Criteria Accuracy and Poll Render Audit
+
+### Skill / Reference Used
+
+- Skill used: `impeccable`
+- References used: `product.md`, `optimize.md`, `audit.md`, `harden.md`
+- Purpose: audit why the dashboard feels slow and why Risk/Growth criteria numbers can disagree across pages.
+
+### Problem Found
+
+- Some Risk/Growth summary panels and role-specific home panels still used raw Sheet `colAvg` values, while the main Risk/Growth pages used normalized `_rowAvgRevDay()` through `riskDelta()` / `growthDelta()`.
+- AM/BD risk cards compared against previous month directly, while the main Risk page uses `getRiskBaselineMonth()`. This made risk counts and customer lists disagree when the configured risk baseline was not the immediate previous month.
+- Risk/Growth tracking polling re-rendered the full page after every Sheet poll, and initial tab entry could render again from both the load callback and the tracking load success handler.
+- Initial `loadData()` rendered KPI, charts, and the customer table before sending the user to Home, increasing first-load work for hidden tabs.
+- Full-days projection used parsing logic that only worked by accident for the current month key, not for month keys such as `jan`, `feb`, or `may`.
+
+### What Changed
+
+- Added `getFullDaysForMonth()` and used it for Risk/Growth projection day counts.
+- Changed Risk/Growth historical trend and comparison panels to use `riskDelta()` / `growthDelta()` instead of direct `colAvg` subtraction.
+- Changed AM/BD risk sections and action-center risk detection to use `getRiskBaselineMonth()` consistently with the main Risk page.
+- Reduced Tracking/Growth polling from 8 seconds to 15 seconds.
+- Added tracking response signatures so Risk/Growth pages only re-render after polling when Sheet data actually changes.
+- Removed eager `renderAllCharts()` and `renderTable()` from initial data load; those still render when their tabs are opened.
+- Kept export/download disabled and did not change Raw KPI data, role permission, or masking guards.
+
+### Validation
+
+- Parsed all inline scripts in `src/Scripts.html` with Node `new Function`.
+- Parsed `src/Tracking.js`, `src/DataReader.js`, `src/Auth.js`, and `src/Settings.js` with Node `new Function`.
+- Ran `git diff --check`; only Windows CRLF warnings remain, with no whitespace errors.
+
+## Work Log - Estimated Weekly Criteria Backfill
+
+### Problem Found
+
+- `TrackingWeeklyCriteria` only wrote the current calendar week from `_syncWeeklyCriteria()`.
+- Because the source Raw KPI is monthly, the weekly table had no historical weekly rows to count, so `streakWeeks`, `totalMatchedWeeks`, `maxStreakWeeks`, and `matchedWeeksInMonth` stayed at `1` for new May criteria rows.
+
+### What Changed
+
+- Added monthly-to-week helpers that derive the weeks overlapping a monthly criteria period.
+- `_syncWeeklyCriteria()` now writes estimated weekly rows for each week in the matched month instead of only the current week.
+- For the current month, it writes weeks up to the current week only. For past months, it can write all weeks overlapping that month.
+- Weekly rows now include `weekly estimate from monthly criteria` in the snapshot so the data is not mistaken for true daily/weekly KPI.
+
+### Validation
+
+- Verified May 2026 through May 22 expands to `2026-W18`, `2026-W19`, `2026-W20`, and `2026-W21`.
+- Parsed `src/Tracking.js` with Node `new Function`.
+- Ran `git diff --check`; only Windows CRLF warnings remain, with no whitespace errors.
+
+## Work Log - Phase 10 Criteria Reset
+
+### Decision
+
+- The criteria system is not reliable enough for production use because the source Raw KPI is monthly and cannot support true weekly continuity.
+- Risk/Growth will remain as dashboard signals only. Tracking sheets return to manual work status, reason/factor, note, and audit fields.
+
+### What Changed
+
+- Disabled automatic Risk/Growth queue sync from computed criteria into `Tracking` and `TrackingGrowth`.
+- Stopped the frontend from calling criteria queue sync while rendering Risk/Growth lists.
+- Stopped merging criteria, weekly, and monthly continuity fields into browser tracking state.
+- Removed weekly/monthly criteria panels from customer cards and work-list filters.
+- Changed visible Risk/Growth wording from criteria language to signal language in the main working surfaces.
+- Existing Google Sheet tabs and old columns are not deleted automatically, but the new flow no longer writes criteria/streak values into them.
+
+### New Direction
+
+- Manual tracking is the source of truth for follow-up work.
+- Dashboard signals are computed live from Raw KPI for prioritization only.
+- True weekly/monthly recurrence should be redesigned only after a daily or weekly source exists.

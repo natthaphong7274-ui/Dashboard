@@ -1,4 +1,4 @@
-﻿<script>
+<script>
   // ===== GLOBALS =====
   var H = [], R = [], FR = [];
   var MONTHS = [], CUR_MONTH = null, PREV_MONTH = null;
@@ -6456,17 +6456,7 @@
     });
   }
   function _filterTrackingWeeklyRows(kind, mode) {
-    var wrap = document.getElementById(kind + '_tbl');
-    if (!wrap) return;
-    mode = mode || 'all';
-    wrap.querySelectorAll('[data-weekly-streak]').forEach(function (tr) {
-      var streak = Number(tr.getAttribute('data-weekly-streak') || 0);
-      var show = mode === 'all' || (mode === 'new' && streak <= 1) || (mode === 'repeat2' && streak >= 2) || (mode === 'repeat3' && streak >= 3);
-      tr.style.display = show ? '' : 'none';
-    });
-    document.querySelectorAll('#' + kind + '_work_command .tracking-week-filter').forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-week-filter') === mode);
-    });
+    return;
   }
   function _monthLabelFromKey(key) {
     var m = (typeof MONTHS !== 'undefined' ? MONTHS : []).find(function (x) { return String(x.key) === String(key); });
@@ -6544,9 +6534,6 @@
     function filterBtn(label, value, count) {
       return '<button type="button" class="tracking-work-filter ' + (value === 'all' ? 'active' : '') + '" data-filter="' + value + '" onclick="_filterTrackingWorkRows(\'' + kind + '\',\'' + value + '\')"><b>' + count + '</b><span>' + label + '</span></button>';
     }
-    function weekBtn(label, value) {
-      return '<button type="button" class="tracking-week-filter ' + (value === 'all' ? 'active' : '') + '" data-week-filter="' + value + '" onclick="_filterTrackingWeeklyRows(\'' + kind + '\',\'' + value + '\')">' + label + '</button>';
-    }
     el.innerHTML = ''
       + '<div class="tracking-work-rail">'
       + '<div class="tracking-work-period">'
@@ -6563,13 +6550,6 @@
       + filterBtn(activeLabel, 'active', stats.active)
       + filterBtn(successLabel, 'success', stats.success)
       + filterBtn('ไม่สำเร็จ', 'failed', stats.failed)
-      + '</div>'
-      + '<div class="tracking-week-filters">'
-      + '<span>มุมรายสัปดาห์</span>'
-      + weekBtn('ทั้งหมด', 'all')
-      + weekBtn('ใหม่สัปดาห์นี้', 'new')
-      + weekBtn('ต่อเนื่อง 2+ สัปดาห์', 'repeat2')
-      + weekBtn('ต่อเนื่อง 3+ สัปดาห์', 'repeat3')
       + '</div>'
     + '<div class="tracking-work-note"><span>' + stats.recorded + ' รายมี reason/factor แล้ว</span><span>Auto-save ทุกครั้งที่เปลี่ยนสถานะ เหตุผล หรือ note</span></div>';
   }
@@ -6609,8 +6589,6 @@
       + '<div class="tracking-work-signal">'
         + '<div class="tracking-work-level">' + _criteriaBadge(cfg.criteria.level) + '<span class="tracking-work-score">' + cfg.priority.score + '</span></div>'
         + '<div class="tracking-work-insight">' + _criteriaReasonHTML(cfg.criteria) + '</div>'
-        + weekly.html
-        + (continuity.html || '')
       + '</div>'
       + '<div class="tracking-work-metrics">'
         + '<div><span>Base avg/day</span><b>' + fmtS(Math.round(cfg.baseAvg)) + '</b></div>'
@@ -6623,6 +6601,7 @@
         + '<div class="tracking-work-action-head"><b>' + actionTitle + '</b><span>' + _trackingStatusLabel(kind, trk.status) + '</span></div>'
         + statusHtml
         + '<label class="tracking-work-field"><span>' + reasonTitle + '</span>' + reasonHtml + '</label>'
+        + '<div class="tracking-save-row"><span class="tracking-save-state" data-save-state="' + cfg.trkKey + '">' + (trk._localPending ? 'Auto-save pending' : 'Auto-save ready') + '</span></div>'
         + '<label class="tracking-work-field"><span>Note</span><input class="trk-note" type="text" placeholder="โน้ต..." data-trk="' + cfg.trkKey + '" data-field="note" value="' + _esc(trk.note) + '" oninput="_trkNoteChange(this)"></label>'
       + '</div>'
     + '</article>';
@@ -6928,26 +6907,6 @@
       + '<div class="customer-card-metric"><div class="customer-card-metric-label">' + _esc(m.en) + ' Avg Rev/day</div><div class="customer-card-metric-value">' + fmtS(Math.round(curAvg)) + '</div><div class="customer-card-metric-sub">' + (diffAvg >= 0 ? '+' : '') + fmtS(Math.round(diffAvg)) + ' vs ' + _esc(prev.en) + '</div></div>'
       + '<div class="customer-card-metric"><div class="customer-card-metric-label">' + (isRisk ? 'Priority Score' : (isGrowth ? 'Opportunity Score' : 'Customer Score')) + '</div><div class="customer-card-metric-value">' + priority.score + '</div><div class="customer-card-metric-sub">' + _esc(priority.reasons.join(' • ') || 'ดูรายละเอียดในงานติดตาม') + '</div></div>'
       + '</div>'
-      + (continuity ? '<div class="customer-week-panel monthly">'
-        + '<div><b>Monthly continuity</b><span>' + _esc(continuity.monthlyState) + '</span></div>'
-        + '<div class="customer-week-strip">'
-        + '<span class="active">' + continuity.streakMonths + ' เดือนติด</span>'
-        + '<span>รวม ' + continuity.totalMatchedMonths + ' เดือน</span>'
-        + '<span>สูงสุด ' + continuity.maxStreakMonths + ' เดือน</span>'
-        + '<span>เริ่ม ' + _esc(_monthLabelFromKey(continuity.firstMatchedMonth)) + '</span>'
-        + '</div>'
-        + '<p>' + _esc(continuity.matchedMonthsLabel || 'ยังไม่มีประวัติเดือนก่อนที่เข้าเกณฑ์') + '</p>'
-        + '</div>' : '')
-      + (weekly ? '<div class="customer-week-panel">'
-        + '<div><b>Weekly signal</b><span>' + _esc(weekly.state) + '</span></div>'
-        + '<div class="customer-week-strip">'
-        + '<span class="active">' + _esc(trk.weekKey || 'สัปดาห์นี้') + '</span>'
-        + '<span>ต่อเนื่อง ' + weekly.streak + '</span>'
-        + '<span>เดือนนี้ ' + weekly.monthWeeks + ' สัปดาห์</span>'
-        + '<span>รวม ' + weekly.total + ' สัปดาห์</span>'
-        + '</div>'
-        + '<p>' + _esc(trk.monthlyContext || 'ใช้รายสัปดาห์เป็นมุมหลัก และรายเดือนเป็นบริบทประกอบ') + '</p>'
-        + '</div>' : '')
       + '<div class="customer-card-grid">'
       + '<div class="customer-card-section">'
       + '<div class="customer-card-section-title">Customer Scope</div>'
@@ -7698,6 +7657,35 @@
     cache[key] = Object.assign({}, _trkData[key], { _localSavedAt: Date.now() });
     _trkWriteLocalState(cache);
   }
+  function _trkMarkPending(key, fields) {
+    if (!key || !_trkData || !_trkData[key]) return;
+    fields = Array.isArray(fields) ? fields : [fields];
+    var pendingFields = _trkData[key]._localPendingFields || {};
+    fields.forEach(function (field) {
+      if (field) pendingFields[field] = true;
+    });
+    _trkData[key]._localPending = true;
+    _trkData[key]._localPendingAt = Date.now();
+    _trkData[key]._localPendingBaseUpdatedAt = _trkData[key]._localPendingBaseUpdatedAt || _trkData[key].updatedAt || '';
+    _trkData[key]._localPendingFields = pendingFields;
+    _trkData[key]._localSaveError = '';
+    _trkPersistLocal(key);
+  }
+  function _trkClearPending(key, res) {
+    if (!key || !_trkData || !_trkData[key]) return;
+    if (res && res.updatedAt) _trkData[key].updatedAt = res.updatedAt;
+    delete _trkData[key]._localPending;
+    delete _trkData[key]._localPendingAt;
+    delete _trkData[key]._localPendingBaseUpdatedAt;
+    delete _trkData[key]._localPendingFields;
+    delete _trkData[key]._localSaveError;
+    _trkPersistLocal(key);
+  }
+  function _trkKeepPendingOnError(key, message) {
+    if (!key || !_trkData || !_trkData[key]) return;
+    _trkData[key]._localSaveError = message || 'save failed';
+    _trkPersistLocal(key);
+  }
   function _trkHydrateLocalState() {
     var cache = _trkReadLocalState();
     Object.keys(cache).forEach(function (key) {
@@ -7714,6 +7702,24 @@
       if (!_trkData[key]) _trkData[key] = {};
       Object.assign(_trkData[key], local);
     });
+  }
+  function _trkPendingOverlay(rowKey, data) {
+    var current = (_trkData && _trkData[rowKey]) || {};
+    if (!current._localPending) return data;
+    var pendingAt = Number(current._localPendingAt || 0);
+    var pendingAge = pendingAt ? Date.now() - pendingAt : 0;
+    if (pendingAge > 90000) return data;
+    var fields = current._localPendingFields || { status: true, reason: true, key_success: true, note: true };
+    Object.keys(fields).forEach(function (field) {
+      if (field in current) data[field] = current[field];
+    });
+    data.updatedAt = current.updatedAt || data.updatedAt || '';
+    data._localPending = current._localPending;
+    data._localPendingAt = current._localPendingAt;
+    data._localPendingBaseUpdatedAt = current._localPendingBaseUpdatedAt;
+    data._localPendingFields = current._localPendingFields;
+    data._localSaveError = current._localSaveError || '';
+    return data;
   }
   function _trkMergeLoadedRow(row, kind) {
     if (!row || !row.key) return;
@@ -7760,13 +7766,14 @@
       lastMatchedMonth: row.lastMatchedMonth || '',
       matchedMonthsLabel: row.matchedMonthsLabel || ''
     };
+    data = _trkPendingOverlay(row.key, data);
     _trkData[row.key] = Object.assign(_trkData[row.key] || {}, data);
     var keyParts = String(row.key).split('_');
     var monthKey = keyParts.length ? keyParts[keyParts.length - 1] : '';
     var agentCode = String(row.agentCode || '').trim();
     if (agentCode && monthKey) {
       var alias = kind + '_' + agentCode + '_' + monthKey;
-      _trkData[alias] = Object.assign(_trkData[alias] || {}, data);
+      _trkData[alias] = Object.assign(_trkData[alias] || {}, _trkPendingOverlay(alias, Object.assign({}, data)));
     }
   }
 
@@ -7813,11 +7820,14 @@
     if (!rows || !m) return;
     var token = sessionStorage.getItem('DASH_TOKEN') || '';
     if (!token) return;
-    var sig = [kind, _trkCurrentCutoffPeriod(), m.key, base && base.key, threshold, rows.length].join('|');
+    var rowSig = rows.map(function(r) {
+      return String(r[COL.agentCode] || r['Agent Code'] || '');
+    }).sort().join(',');
+    var sig = [kind, _trkCurrentCutoffPeriod(), m.key, base && base.key, threshold, rows.length, rowSig].join('|');
     if (_trkQueueSyncSig[kind] === sig) return;
     if (_trkQueueSyncPending[kind] === sig) return;
     _trkQueueSyncPending[kind] = sig;
-    var batch = rows.slice(0, 300).map(function (r) {
+    var batch = rows.map(function (r) {
       var code = String(r[COL.agentCode] || r['Agent Code'] || '');
       var key = kind + '_' + code + '_' + m.key;
       var trk = (_trkData && _trkData[key]) || {};
@@ -8355,6 +8365,49 @@
         });
       }
 
+      // Province chart
+      var gpv = {}, gpvP = {};
+      rows.forEach(function (r) {
+        var pv = String(r[COL.province] || r['Province'] || '?').trim() || '?';
+        gpv[pv] = (gpv[pv] || 0) + 1;
+      });
+      rowsPrevZone.forEach(function (r) {
+        var pv = String(r[COL.province] || r['Province'] || '?').trim() || '?';
+        gpvP[pv] = (gpvP[pv] || 0) + 1;
+      });
+      var gpvArr = Object.entries(gpv).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 12);
+      dc('c_growth_prov'); var epgv = document.getElementById('c_growth_prov');
+      if (epgv && gpvArr.length) {
+        var pvLabels = gpvArr.map(function (e) { return e[0]; });
+        CH['c_growth_prov'] = new Chart(epgv.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: pvLabels,
+            datasets: [
+              {
+                label: mp ? mp.en : 'ก่อน',
+                data: pvLabels.map(function (pv) { return gpvP[pv] || 0; }),
+                backgroundColor: 'rgba(100,116,139,0.4)',
+                borderColor: 'rgba(100,116,139,0.7)',
+                borderWidth: 1.5,
+                borderRadius: 4,
+                maxBarThickness: 18
+              },
+              {
+                label: m.en,
+                data: pvLabels.map(function (pv) { return gpv[pv] || 0; }),
+                backgroundColor: 'rgba(22,163,74,0.72)',
+                borderColor: 'rgba(21,128,61,0.9)',
+                borderWidth: 1.5,
+                borderRadius: 4,
+                maxBarThickness: 18
+              }
+            ]
+          },
+          options: _gGroupedOpts()
+        });
+      }
+
   // Trend charts
   var tLabels = [], tCounts = [], tRevGain = [], tAvgRise = [];
   for (var ti = 1; ti < MONTHS.length; ti++) {
@@ -8665,7 +8718,7 @@
     if (!key || !field) return;
     if (!_trkData[key]) _trkData[key] = { status: '', key_success: '', note: '', updatedBy: '', updatedAt: '' };
     _trkData[key][field] = el.value;
-    _trkPersistLocal(key);
+    _trkMarkPending(key, field);
 
     // update status CSS class
     if (field === 'status') {
@@ -8673,6 +8726,8 @@
       var row = el.closest && el.closest('[data-trk-status]');
       if (row) row.setAttribute('data-trk-status', _trackingStatusGroup('growth', el.value));
     }
+    _trkScheduleSave(key, 'growth', 800, el);
+    return;
 
     var token = sessionStorage.getItem('DASH_TOKEN') || '';
     var d = _trkData[key];
@@ -8696,8 +8751,7 @@
       .withSuccessHandler(function (res) {
         el.style.border = origBorder;
         if (res && res.ok) {
-          if (res.updatedAt) _trkData[key].updatedAt = res.updatedAt;
-          _trkPersistLocal(key);
+          _trkClearPending(key, res);
           _trkToast('💾 บันทึกแล้ว');
         } else {
           _trkToast('❌ บันทึกไม่สำเร็จ: ' + (res && res.error ? res.error : ''), true);
@@ -8741,6 +8795,76 @@
     }).join('') + '</div>';
   }
 
+  var _trkAutoSaveTimers = {};
+  function _trkKindFromKey(key) {
+    return String(key || '').indexOf('growth_') === 0 ? 'growth' : 'risk';
+  }
+  function _trkBuildSavePayload(kind, key) {
+    var d = (_trkData && _trkData[key]) || {};
+    var base = {
+      key: key,
+      status: d.status || '',
+      note: d.note || '',
+      v21: d.v21 || '',
+      agentCode: d.agentCode || '',
+      package: d.package || '',
+      agentName: d.agentName || '',
+      city: d.city || '',
+      province: d.province || '',
+      zoneName: d.zoneName || '',
+      lastKnownUpdatedAt: d.updatedAt || ''
+    };
+    if (kind === 'growth') base.key_success = d.key_success || '';
+    else base.reason = d.reason || '';
+    return base;
+  }
+  function _trkSetSaveState(key, state, text) {
+    var label = document.querySelector('[data-save-state="' + key + '"]');
+    if (label) {
+      label.classList.remove('pending', 'saving', 'saved', 'error');
+      if (state) label.classList.add(state);
+      label.textContent = text || 'Auto-save ready';
+    }
+  }
+  function _trkSaveOne(key, kind, sourceEl) {
+    if (!key) return;
+    kind = kind || _trkKindFromKey(key);
+    clearTimeout(_trkAutoSaveTimers[key]);
+    _trkSetSaveState(key, 'saving', 'Saving...');
+    var token = sessionStorage.getItem('DASH_TOKEN') || '';
+    var payload = _trkBuildSavePayload(kind, key);
+    var fn = kind === 'growth' ? 'saveGrowthTrackingRow' : 'saveTrackingRow';
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (res && res.ok) {
+          _trkClearPending(key, res);
+          _trkSetSaveState(key, 'saved', 'Saved');
+          if (sourceEl && sourceEl.style) {
+            sourceEl.style.borderColor = '';
+            sourceEl.style.outline = '';
+          }
+          setTimeout(function () { _trkSetSaveState(key, '', ''); }, 1800);
+        } else {
+          _trkKeepPendingOnError(key, res && res.error ? res.error : 'save failed');
+          _trkSetSaveState(key, 'error', 'Not saved');
+          _trkToast('บันทึกไม่สำเร็จ: ' + (res && res.error ? res.error : ''), true);
+        }
+      })
+      .withFailureHandler(function (e) {
+        _trkKeepPendingOnError(key, e && e.message ? e.message : 'save failed');
+        _trkSetSaveState(key, 'error', 'Not saved');
+        _trkToast('เกิดข้อผิดพลาด: ' + (e && e.message ? e.message : 'กรุณาลองใหม่'), true);
+      })[fn](token, payload);
+  }
+  function _trkScheduleSave(key, kind, delay, sourceEl) {
+    if (!key) return;
+    kind = kind || _trkKindFromKey(key);
+    clearTimeout(_trkAutoSaveTimers[key]);
+    _trkSetSaveState(key, 'pending', 'Auto-saving...');
+    _trkAutoSaveTimers[key] = setTimeout(function () {
+      _trkSaveOne(key, kind, sourceEl);
+    }, delay == null ? 900 : delay);
+  }
   function _trkPillClick(btn, type) {
     var key = btn.getAttribute('data-trk');
     var val = btn.getAttribute('data-val');
@@ -8751,9 +8875,11 @@
     if (newVal) btn.classList.add('active');
     if (!_trkData[key]) _trkData[key] = { status: '', reason: '', key_success: '', note: '', updatedBy: '', updatedAt: '' };
     _trkData[key].status = newVal;
-    _trkPersistLocal(key);
+    _trkMarkPending(key, 'status');
     var tr = btn.closest && btn.closest('[data-trk-status]');
     if (tr) tr.setAttribute('data-trk-status', _trackingStatusGroup(type, newVal));
+    _trkScheduleSave(key, type, 800, btn.parentNode);
+    return;
     var origBorder = btn.parentNode.style.border;
     btn.parentNode.style.outline = '2px solid #f59e0b';
     var token = sessionStorage.getItem('DASH_TOKEN') || '';
@@ -8766,11 +8892,12 @@
     google.script.run
       .withSuccessHandler(function (res) {
         btn.parentNode.style.outline = origBorder;
-        if (res && res.ok) { if (res.updatedAt) _trkData[key].updatedAt = res.updatedAt; _trkPersistLocal(key); _trkToast('💾 บันทึกแล้ว'); }
-        else _trkToast('❌ บันทึกไม่สำเร็จ: ' + (res && res.error ? res.error : ''), true);
+        if (res && res.ok) { _trkClearPending(key, res); _trkToast('💾 บันทึกแล้ว'); }
+        else { _trkKeepPendingOnError(key, res && res.error ? res.error : 'save failed'); _trkToast('❌ บันทึกไม่สำเร็จ: ' + (res && res.error ? res.error : ''), true); }
       })
       .withFailureHandler(function (e) {
         btn.parentNode.style.outline = '2px solid var(--rd)';
+        _trkKeepPendingOnError(key, e && e.message ? e.message : 'save failed');
         _trkToast('❌ เกิดข้อผิดพลาด: ' + (e && e.message ? e.message : 'กรุณาลองใหม่'), true);
       })
     [fn](token, payload);
@@ -8783,8 +8910,10 @@
     if (!key) return;
     if (!_trkData[key]) _trkData[key] = { status: '', reason: '', key_success: '', note: '', updatedBy: '', updatedAt: '' };
     _trkData[key].note = el.value;
-    _trkPersistLocal(key);
+    _trkMarkPending(key, 'note');
     el.style.borderColor = '#f59e0b';
+    _trkScheduleSave(key, _trkKindFromKey(key), 1200, el);
+    return;
     clearTimeout(_trkNoteTimers[key]);
     _trkNoteTimers[key] = setTimeout(function () {
       el.style.borderColor = '';
@@ -8797,10 +8926,10 @@
       var fn = isGrowth ? 'saveGrowthTrackingRow' : 'saveTrackingRow';
       google.script.run
         .withSuccessHandler(function (res) {
-          if (res && res.ok) { if (res.updatedAt) _trkData[key].updatedAt = res.updatedAt; _trkPersistLocal(key); _trkToast('💾 บันทึก note แล้ว'); }
-          else _trkToast('❌ บันทึกไม่สำเร็จ', true);
+          if (res && res.ok) { _trkClearPending(key, res); _trkToast('💾 บันทึก note แล้ว'); }
+          else { _trkKeepPendingOnError(key, res && res.error ? res.error : 'save failed'); _trkToast('❌ บันทึกไม่สำเร็จ', true); }
         })
-        .withFailureHandler(function (e) { _trkToast('❌ เกิดข้อผิดพลาด', true); })
+        .withFailureHandler(function (e) { _trkKeepPendingOnError(key, e && e.message ? e.message : 'save failed'); _trkToast('❌ เกิดข้อผิดพลาด', true); })
       [fn](token, payload);
     }, 1200);
   }
@@ -8812,7 +8941,6 @@
     if (!key || !field) return;
     if (!_trkData[key]) _trkData[key] = { status: '', reason: '', note: '', updatedBy: '', updatedAt: '' };
     _trkData[key][field] = el.value;
-    _trkPersistLocal(key);
 
     // toggle ช่องสาเหตุเมื่อเปลี่ยน status
     if (field === 'status') {
@@ -8833,6 +8961,9 @@
 
     // ★ Auto-save ผ่าน google.script.run ทันทีทุก field
     var token = sessionStorage.getItem('DASH_TOKEN') || '';
+    _trkMarkPending(key, field === 'status' && _trkData[key].reason === '' ? ['status', 'reason'] : field);
+    _trkScheduleSave(key, 'risk', 800, el);
+    return;
     var payload = {
       key: key,
       status: _trkData[key].status || '',
@@ -8854,8 +8985,7 @@
       .withSuccessHandler(function (res) {
         el.style.border = origBorder;
         if (res && res.ok) {
-          if (res.updatedAt) _trkData[key].updatedAt = res.updatedAt;
-          _trkPersistLocal(key);
+          _trkClearPending(key, res);
           _trkToast('💾 บันทึกแล้ว');
         } else {
           _trkToast('❌ บันทึกไม่สำเร็จ: ' + (res && res.error ? res.error : ''), true);
@@ -8910,6 +9040,9 @@
     if (msgEl) { msgEl.textContent = '⏳ กำลังบันทึก...'; msgEl.style.display = 'inline'; }
     var serverFn = isGrowth ? 'saveGrowthTrackingBatch'
       : 'saveTrackingBatch';
+    batch.forEach(function (item) {
+      _trkMarkPending(item.key, isGrowth ? ['status', 'key_success', 'note'] : ['status', 'reason', 'note']);
+    });
     google.script.run
       .withSuccessHandler(function (res) {
         if (res && res.conflict) {

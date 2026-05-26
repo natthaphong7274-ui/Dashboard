@@ -317,7 +317,7 @@ function _buildSheetHealthSummary(ss, months) {
   var items = [];
   items.push(_sheetStatus(USERS_SHEET, !!ss.getSheetByName(USERS_SHEET), 'error', 'Login and role lookup may fail'));
   items.push(_sheetStatus(BASE_SHEET, !!ss.getSheetByName(BASE_SHEET), 'error', 'Dashboard base data may fail'));
-  ['Tracking','TrackingGrowth','TrackingStatusHistory','ActivityLog'].forEach(function(name) {
+  ['Tracking','TrackingGrowth','ActivityLog'].forEach(function(name) {
     items.push(_sheetStatus(name, !!ss.getSheetByName(name), 'warning', name + ' features may be incomplete until the sheet is created'));
   });
   var latest = (months || [])[((months || []).length - 1)];

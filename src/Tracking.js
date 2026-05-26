@@ -31,28 +31,8 @@ var TRACKING_STATUS_META_COLUMNS = [
   'lastDashboardSyncAt',
   'lastSheetEditAt'
 ];
-var TRACKING_WEEKLY_SHEET = 'TrackingWeeklyCriteria';
-var TRACKING_MONTHLY_SHEET = 'TrackingMonthlyCriteria';
-var TRACKING_WEEKLY_META_COLUMNS = [
-  'weeklyState',
-  'streakWeeks',
-  'totalMatchedWeeks',
-  'maxStreakWeeks',
-  'matchedWeeksInMonth',
-  'weekKey',
-  'weekStart',
-  'weekEnd',
-  'monthlyContext'
-];
-var TRACKING_MONTHLY_META_COLUMNS = [
-  'monthlyState',
-  'streakMonths',
-  'totalMatchedMonths',
-  'maxStreakMonths',
-  'firstMatchedMonth',
-  'lastMatchedMonth',
-  'matchedMonthsLabel'
-];
+var TRACKING_WEEKLY_META_COLUMNS = [];
+var TRACKING_MONTHLY_META_COLUMNS = [];
 var TRACKING_WEEKLY_COLUMNS = [
   'kind',
   'agentCode',
@@ -852,6 +832,100 @@ function _trackingWeekMeta(dateOpt) {
   };
 }
 
+function _trackingWeekKeyFromDate(dateOpt) {
+  return _trackingWeekMeta(dateOpt).weekKey;
+}
+
+function _trackingPreviousWeekKey(weekStart) {
+  var d = new Date(String(weekStart || '').replace(/-/g, '/') + ' 00:00:00');
+  if (isNaN(d.getTime())) return '';
+  d.setDate(d.getDate() - 7);
+  return _trackingWeekKeyFromDate(d);
+}
+
+var TRACKING_MONTH_INDEX = {
+  jan: 0,
+  january: 0,
+  feb: 1,
+  february: 1,
+  mar: 2,
+  march: 2,
+  apr: 3,
+  april: 3,
+  may: 4,
+  jun: 5,
+  june: 5,
+  jul: 6,
+  july: 6,
+  aug: 7,
+  august: 7,
+  sep: 8,
+  sept: 8,
+  september: 8,
+  oct: 9,
+  october: 9,
+  nov: 10,
+  november: 10,
+  dec: 11,
+  december: 11
+};
+
+function _trackingMonthRangeFromKey(monthKey, cutoffPeriod, now) {
+  var raw = String(monthKey || '').toLowerCase().trim();
+  var cp = _trackingNormalizeCutoffPeriod(cutoffPeriod || '');
+  var fallbackDate = _trackingDateOnly(now || new Date());
+  var fallbackYear = cp ? Number(cp.slice(0, 4)) : Number(Utilities.formatDate(fallbackDate, 'Asia/Bangkok', 'yyyy'));
+  var year = fallbackYear;
+  var month = -1;
+  var ym = raw.match(/^(\d{4})-(\d{1,2})$/);
+  if (ym) {
+    year = Number(ym[1]);
+    month = Number(ym[2]) - 1;
+  } else if (TRACKING_MONTH_INDEX.hasOwnProperty(raw)) {
+    month = TRACKING_MONTH_INDEX[raw];
+  }
+  if (!year || month < 0 || month > 11) return null;
+  return {
+    year: year,
+    month: month,
+    start: new Date(year, month, 1),
+    end: new Date(year, month + 1, 0)
+  };
+}
+
+function _trackingDateOnly(dateOpt) {
+  var d = dateOpt ? new Date(dateOpt) : new Date();
+  if (isNaN(d.getTime())) d = new Date();
+  var tz = 'Asia/Bangkok';
+  return new Date(Utilities.formatDate(d, tz, 'yyyy/MM/dd 00:00:00'));
+}
+
+function _trackingParseDateOnly(value) {
+  var d = new Date(String(value || '').replace(/-/g, '/') + ' 00:00:00');
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function _trackingApproxWeeksForMonth(monthKey, cutoffPeriod, now) {
+  var range = _trackingMonthRangeFromKey(monthKey, cutoffPeriod, now);
+  if (!range) return [_trackingWeekMeta(now || new Date())];
+  var today = _trackingDateOnly(now || new Date());
+  var effectiveEnd = new Date(range.end.getTime());
+  if (today.getFullYear() === range.year && today.getMonth() === range.month && today < effectiveEnd) {
+    effectiveEnd = today;
+  }
+  var firstWeek = _trackingWeekMeta(range.start);
+  var cursor = _trackingParseDateOnly(firstWeek.weekStart) || range.start;
+  var weeks = [];
+  while (cursor <= effectiveEnd) {
+    var meta = _trackingWeekMeta(cursor);
+    var start = _trackingParseDateOnly(meta.weekStart);
+    var end = _trackingParseDateOnly(meta.weekEnd);
+    if (start && end && start <= effectiveEnd && end >= range.start) weeks.push(meta);
+    cursor.setDate(cursor.getDate() + 7);
+  }
+  return weeks.length ? weeks : [_trackingWeekMeta(now || new Date())];
+}
+
 function _trackingMonthKeyFromPayload(payload, cutoffPeriod) {
   var key = String(payload && payload.key || '');
   var parts = key.split('_');
@@ -1010,7 +1084,7 @@ function _syncWeeklyCriteria(kind, session, batch, cutoffPeriod, now) {
   var headers = data.length ? data[0].map(_trackingHeaderKey) : TRACKING_WEEKLY_COLUMNS.slice();
   var map = {};
   headers.forEach(function(h, i) { if (h && map[h] === undefined) map[h] = i; });
-  var week = _trackingWeekMeta(new Date());
+  var week = _trackingWeekMeta(now || new Date());
   var existingByKey = {};
   var historyByAgent = {};
   var activeRows = [];
@@ -1039,62 +1113,115 @@ function _syncWeeklyCriteria(kind, session, batch, cutoffPeriod, now) {
     var agentCode = String(payload.agentCode);
     var monthKey = _trackingMonthKeyFromPayload(payload, cutoffPeriod);
     var hist = historyByAgent[agentCode] || [];
-    var priorMatched = {};
+    var matchedByWeek = {};
     hist.forEach(function(rec) {
-      if (String(rec.matched || '').toUpperCase() === 'TRUE') priorMatched[String(rec.weekKey || '')] = rec;
+      var histWeek = String(rec.weekKey || '');
+      if (histWeek && String(rec.matched || '').toUpperCase() === 'TRUE') matchedByWeek[histWeek] = rec;
     });
-    var previous = null;
-    hist.forEach(function(rec) {
-      if (String(rec.weekKey || '') < week.weekKey && (!previous || String(rec.weekKey || '') > String(previous.weekKey || ''))) previous = rec;
+    var approxWeeks = _trackingApproxWeeksForMonth(monthKey, cutoffPeriod, now || new Date());
+    approxWeeks.forEach(function(meta) {
+      matchedByWeek[meta.weekKey] = Object.assign({}, matchedByWeek[meta.weekKey] || {}, {
+        weekKey: meta.weekKey,
+        weekStart: meta.weekStart,
+        weekEnd: meta.weekEnd,
+        monthKey: monthKey,
+        matched: 'TRUE'
+      });
     });
-    var prevStreak = previous && String(previous.matched || '').toUpperCase() === 'TRUE' ? Number(previous.streakWeeks || 0) : 0;
-    priorMatched[week.weekKey] = true;
-    var total = Object.keys(priorMatched).length;
-    var monthTotal = Object.keys(priorMatched).filter(function(wk) {
-      var rec = wk === week.weekKey ? { monthKey: monthKey } : priorMatched[wk];
-      return String(rec.monthKey || '') === String(monthKey || '');
-    }).length;
-    var streak = prevStreak + 1;
-    var maxStreak = Math.max(streak, Number(previous && previous.maxStreakWeeks || 0), Number(previous && previous.streakWeeks || 0));
-    var state = _trackingWeeklyState({ streakWeeks: streak });
-    var summary = {
-      weeklyState: state,
-      streakWeeks: streak,
-      totalMatchedWeeks: total,
-      maxStreakWeeks: maxStreak,
-      matchedWeeksInMonth: monthTotal,
-      weekKey: week.weekKey,
-      weekStart: week.weekStart,
-      weekEnd: week.weekEnd,
-      monthlyContext: monthKey ? monthKey + ': เข้าเกณฑ์ ' + monthTotal + ' สัปดาห์' : ''
-    };
-    summaries[payload.key] = summary;
-    currentKeys[payload.key + '|' + week.weekKey] = true;
 
-    var rowObj = {
-      kind: kind,
-      agentCode: agentCode,
-      key: payload.key,
-      monthKey: monthKey,
-      weekKey: week.weekKey,
-      weekStart: week.weekStart,
-      weekEnd: week.weekEnd,
-      criteriaMetric: payload.criteriaMetric || 'Avg Rev/day',
-      criteriaThreshold: payload.criteriaThreshold || '',
-      matched: 'TRUE',
-      level: payload.criteriaLevel || '',
-      streakWeeks: streak,
-      totalMatchedWeeks: total,
-      maxStreakWeeks: maxStreak,
-      matchedWeeksInMonth: monthTotal,
-      activeInCurrentWeek: 'TRUE',
-      snapshot: payload.criteriaSnapshot || '',
-      updatedBy: session.username,
-      updatedAt: now
-    };
-    var row = TRACKING_WEEKLY_COLUMNS.map(function(col) { return rowObj[col] != null ? rowObj[col] : ''; });
-    var existing = existingByKey[payload.key + '|' + week.weekKey];
-    writes.push({ rowNo: existing ? existing.row : 0, row: row });
+    var streakMemo = {};
+    var visiting = {};
+    function calcStreak(wk) {
+      if (!wk || !matchedByWeek[wk]) return 0;
+      if (streakMemo[wk] !== undefined) return streakMemo[wk];
+      if (visiting[wk]) return 1;
+      visiting[wk] = true;
+      var rec = matchedByWeek[wk];
+      var prevKey = _trackingPreviousWeekKey(rec.weekStart || '');
+      var prev = matchedByWeek[prevKey];
+      var value = prev ? calcStreak(prevKey) + 1 : 1;
+      visiting[wk] = false;
+      streakMemo[wk] = value;
+      return value;
+    }
+
+    var allMatched = Object.keys(matchedByWeek).map(function(wk) {
+      var rec = matchedByWeek[wk] || {};
+      return {
+        weekKey: wk,
+        weekStart: rec.weekStart || '',
+        monthKey: rec.monthKey || '',
+        streak: calcStreak(wk)
+      };
+    }).filter(function(item) {
+      return item.weekKey && item.weekStart;
+    }).sort(function(a, b) {
+      return String(a.weekStart).localeCompare(String(b.weekStart));
+    });
+
+    var maxStreakSoFar = 0;
+    var statsByWeek = {};
+    allMatched.forEach(function(item, idx) {
+      maxStreakSoFar = Math.max(maxStreakSoFar, item.streak);
+      var monthTotal = allMatched.filter(function(other) {
+        return String(other.monthKey || '') === String(item.monthKey || '')
+          && String(other.weekStart || '') <= String(item.weekStart || '');
+      }).length;
+      statsByWeek[item.weekKey] = {
+        streakWeeks: item.streak,
+        totalMatchedWeeks: idx + 1,
+        maxStreakWeeks: maxStreakSoFar,
+        matchedWeeksInMonth: monthTotal
+      };
+    });
+
+    approxWeeks.forEach(function(meta) {
+      var stats = statsByWeek[meta.weekKey] || {
+        streakWeeks: 1,
+        totalMatchedWeeks: 1,
+        maxStreakWeeks: 1,
+        matchedWeeksInMonth: 1
+      };
+      var state = _trackingWeeklyState({ streakWeeks: stats.streakWeeks });
+      var summary = {
+        weeklyState: state,
+        streakWeeks: stats.streakWeeks,
+        totalMatchedWeeks: stats.totalMatchedWeeks,
+        maxStreakWeeks: stats.maxStreakWeeks,
+        matchedWeeksInMonth: stats.matchedWeeksInMonth,
+        weekKey: meta.weekKey,
+        weekStart: meta.weekStart,
+        weekEnd: meta.weekEnd,
+        monthlyContext: monthKey ? monthKey + ': estimate from monthly criteria, ' + stats.matchedWeeksInMonth + ' week(s)' : ''
+      };
+      summaries[payload.key] = summary;
+      currentKeys[payload.key + '|' + meta.weekKey] = true;
+
+      var rowObj = {
+        kind: kind,
+        agentCode: agentCode,
+        key: payload.key,
+        monthKey: monthKey,
+        weekKey: meta.weekKey,
+        weekStart: meta.weekStart,
+        weekEnd: meta.weekEnd,
+        criteriaMetric: payload.criteriaMetric || 'Avg Rev/day',
+        criteriaThreshold: payload.criteriaThreshold || '',
+        matched: 'TRUE',
+        level: payload.criteriaLevel || '',
+        streakWeeks: stats.streakWeeks,
+        totalMatchedWeeks: stats.totalMatchedWeeks,
+        maxStreakWeeks: stats.maxStreakWeeks,
+        matchedWeeksInMonth: stats.matchedWeeksInMonth,
+        activeInCurrentWeek: meta.weekKey === week.weekKey ? 'TRUE' : 'FALSE',
+        snapshot: (payload.criteriaSnapshot || '') + ' | weekly estimate from monthly criteria',
+        updatedBy: session.username,
+        updatedAt: now
+      };
+      var row = TRACKING_WEEKLY_COLUMNS.map(function(col) { return rowObj[col] != null ? rowObj[col] : ''; });
+      var existing = existingByKey[payload.key + '|' + meta.weekKey];
+      writes.push({ rowNo: existing ? existing.row : 0, row: row });
+    });
   });
 
   activeRows.forEach(function(rowNo) {
@@ -1333,32 +1460,32 @@ function _trackingValueForColumn(kind, payload, col, now, cutoffPeriod, existing
     case 'updatedBy': return payload.syncMode === 'queue' && existing ? existing : (payload.updatedBy || '');
     case 'updatedAt': return payload.syncMode === 'queue' && existing ? existing : (now || '');
     case 'cutoffPeriod': return _trackingNormalizeCutoffPeriod(cutoffPeriod) || '';
-    case 'criteriaType': return payload.criteriaType || existing || (isGrowth ? 'growth' : 'risk');
-    case 'criteriaMetric': return payload.criteriaMetric || existing || 'Avg Rev/day';
-    case 'criteriaThreshold': return payload.criteriaThreshold != null ? payload.criteriaThreshold : existing || '';
+    case 'criteriaType': return payload.criteriaType || existing || '';
+    case 'criteriaMetric': return payload.criteriaMetric || existing || '';
+    case 'criteriaThreshold': return payload.criteriaThreshold !== undefined && payload.criteriaThreshold !== null ? payload.criteriaThreshold : (existing || '');
     case 'criteriaSnapshot': return payload.criteriaSnapshot || existing || '';
-    case 'criteriaVersion': return payload.criteriaVersion || existing || 'phase10-v1';
-    case 'activeInCurrentCriteria': return payload.activeInCurrentCriteria != null ? payload.activeInCurrentCriteria : existing || 'TRUE';
-    case 'firstMatchedAt': return existing || now || '';
-    case 'lastMatchedAt': return now || '';
+    case 'criteriaVersion': return payload.criteriaVersion || existing || '';
+    case 'activeInCurrentCriteria': return payload.activeInCurrentCriteria !== undefined && payload.activeInCurrentCriteria !== null ? payload.activeInCurrentCriteria : (existing || '');
+    case 'firstMatchedAt': return existing || payload.firstMatchedAt || (payload.activeInCurrentCriteria === 'TRUE' ? now : '');
+    case 'lastMatchedAt': return payload.lastMatchedAt || (payload.activeInCurrentCriteria === 'TRUE' ? now : (existing || ''));
     case 'statusSource': return payload.statusSource || existing || '';
     case 'statusVersion': return payload.statusVersion || existing || '';
     case 'lastDashboardSyncAt': return payload.lastDashboardSyncAt || existing || '';
     case 'lastSheetEditAt': return payload.lastSheetEditAt || existing || '';
     case 'weeklyState': return payload.weeklyState || existing || '';
-    case 'streakWeeks': return payload.streakWeeks != null ? payload.streakWeeks : existing || '';
-    case 'totalMatchedWeeks': return payload.totalMatchedWeeks != null ? payload.totalMatchedWeeks : existing || '';
-    case 'maxStreakWeeks': return payload.maxStreakWeeks != null ? payload.maxStreakWeeks : existing || '';
-    case 'matchedWeeksInMonth': return payload.matchedWeeksInMonth != null ? payload.matchedWeeksInMonth : existing || '';
+    case 'streakWeeks': return payload.streakWeeks || existing || '';
+    case 'totalMatchedWeeks': return payload.totalMatchedWeeks || existing || '';
+    case 'maxStreakWeeks': return payload.maxStreakWeeks || existing || '';
+    case 'matchedWeeksInMonth': return payload.matchedWeeksInMonth || existing || '';
     case 'weekKey': return payload.weekKey || existing || '';
     case 'weekStart': return payload.weekStart || existing || '';
     case 'weekEnd': return payload.weekEnd || existing || '';
     case 'monthlyContext': return payload.monthlyContext || existing || '';
     case 'monthlyState': return payload.monthlyState || existing || '';
-    case 'streakMonths': return payload.streakMonths != null ? payload.streakMonths : existing || '';
-    case 'totalMatchedMonths': return payload.totalMatchedMonths != null ? payload.totalMatchedMonths : existing || '';
-    case 'maxStreakMonths': return payload.maxStreakMonths != null ? payload.maxStreakMonths : existing || '';
-    case 'firstMatchedMonth': return payload.firstMatchedMonth || existing || '';
+    case 'streakMonths': return payload.streakMonths || existing || '';
+    case 'totalMatchedMonths': return payload.totalMatchedMonths || existing || '';
+    case 'maxStreakMonths': return payload.maxStreakMonths || existing || '';
+    case 'firstMatchedMonth': return existing || payload.firstMatchedMonth || '';
     case 'lastMatchedMonth': return payload.lastMatchedMonth || existing || '';
     case 'matchedMonthsLabel': return payload.matchedMonthsLabel || existing || '';
     default: return existing || '';
@@ -1444,11 +1571,102 @@ function saveTrackingRow(token, payload) {
 }
 // saveTrackingBatch(token, batch) — upsert หลายแถวพร้อมกัน (กด "💾 บันทึกทั้งหมด")
 // batch: [{ key, status, reason, note }, ...]
+function _saveTrackingBatchFast_(kind, session, batch) {
+  var isGrowth = kind === 'growth';
+  var action = isGrowth ? 'SAVE_GROWTH_TRACKING_BATCH' : 'SAVE_TRACKING_BATCH';
+  var actionLog = isGrowth ? 'GROWTH_TRACKING_BATCH_SAVE_FAST' : 'TRACKING_BATCH_SAVE_FAST';
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(15000);
+    var sheet = isGrowth ? _getOrCreateGrowthTrackingSheet() : _getOrCreateTrackingSheet();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0].map(_trackingHeaderKey);
+    var kIdx = headers.indexOf('key');
+    var cpIdx = headers.indexOf('cutoffPeriod');
+    var znIdx = headers.indexOf('zoneName');
+    var ubIdx = headers.indexOf('updatedBy');
+    var uaIdx = headers.indexOf('updatedAt');
+    var cutoffPeriod = _trackingCutoffPeriodKey();
+    var now = _bkkTimestamp();
+    var existingMap = {};
+    var duplicateRows = [];
+    for (var i = 1; i < data.length; i++) {
+      var k = String(data[i][kIdx] || '').trim();
+      var cp = cpIdx >= 0 ? _trackingNormalizeCutoffPeriod(data[i][cpIdx]) : '';
+      if (!k || cp !== cutoffPeriod) continue;
+      var old = existingMap[k];
+      var updatedAt = uaIdx >= 0 ? String(data[i][uaIdx] || '') : '';
+      if (old && String(old.updatedAt || '') > updatedAt) {
+        duplicateRows.push(i + 1);
+        continue;
+      }
+      if (old && old.row) duplicateRows.push(old.row);
+      existingMap[k] = {
+        row: i + 1,
+        zoneName: znIdx >= 0 ? String(data[i][znIdx] || '') : '',
+        updatedAt: updatedAt,
+        updatedBy: ubIdx >= 0 ? String(data[i][ubIdx] || '') : ''
+      };
+    }
+
+    var toAppend = [];
+    var historyEntries = [];
+    var conflicts = [];
+    var savedCount = 0;
+    var touchedExisting = false;
+    (batch || []).forEach(function(payload) {
+      if (!payload || !payload.key) return;
+      var existing = existingMap[payload.key];
+      if (!_canAccessRow(session, { zoneName: (existing && existing.zoneName) || payload.zoneName || '' })) {
+        _auditDenied(session, action, 'key=' + payload.key + ' zone=' + ((existing && existing.zoneName) || payload.zoneName || '-'));
+        return;
+      }
+      if (existing && _hasTrackingConflict(payload, existing.updatedAt) && existing.updatedBy !== session.username) {
+        logActivity(session.username, session.role, action + '_CONFLICT', 'key=' + payload.key + ' current=' + existing.updatedAt + ' known=' + (payload.lastKnownUpdatedAt || payload.updatedAt || ''));
+        conflicts.push(_trackingConflictResult(kind, payload, existing.updatedAt));
+        return;
+      }
+      var existingRow = existing ? data[existing.row - 1] : null;
+      var writePayload = Object.assign({}, payload, {
+        statusSource: 'DASHBOARD',
+        statusVersion: _trackingNextVersion(headers, existingRow),
+        lastDashboardSyncAt: now
+      });
+      var rowData = _trackingBuildRow(kind, headers, writePayload, session, now, cutoffPeriod, existingRow);
+      Array.prototype.push.apply(historyEntries, _trackingBuildHistoryEntries(kind, payload.key, cutoffPeriod, headers, existingRow, rowData, session, 'DASHBOARD', now));
+      if (existing) {
+        data[existing.row - 1] = rowData;
+        touchedExisting = true;
+      } else {
+        toAppend.push(rowData);
+      }
+      savedCount++;
+    });
+
+    if (conflicts.length) return { ok: false, conflict: true, conflicts: conflicts, error: 'Some rows were updated by someone else. Please refresh before saving.' };
+    if (touchedExisting && data.length > 1) {
+      sheet.getRange(2, 1, data.length - 1, headers.length).setValues(data.slice(1).map(function(row) {
+        return headers.map(function(_, idx) { return row[idx] != null ? row[idx] : ''; });
+      }));
+    }
+    _trackingDeleteRowsDescending(sheet, duplicateRows);
+    if (toAppend.length) sheet.getRange(sheet.getLastRow() + 1, 1, toAppend.length, headers.length).setValues(toAppend);
+    _trackingAppendHistory(historyEntries);
+    logActivity(session.username, session.role, actionLog, 'batch=' + savedCount + ' append=' + toAppend.length + ' existing=' + (savedCount - toAppend.length));
+    return { ok: true, saved: savedCount, updatedAt: now };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  } finally {
+    try { lock.releaseLock(); } catch(e2) {}
+  }
+}
+
 function saveTrackingBatch(token, batch) {
   var session = _requireSession(token || '', 'SAVE_TRACKING_BATCH');
   if (!session.ok) return session;
   if (!batch || !batch.length) return { ok: false, error: 'ไม่มีข้อมูล' };
 
+  return _saveTrackingBatchFast_('risk', session, batch);
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
@@ -1527,7 +1745,7 @@ function saveTrackingBatch(token, batch) {
     _trackingAppendHistory(historyEntries);
 
     logActivity(session.username, session.role, 'TRACKING_BATCH_SAVE', 'บันทึกติดตาม batch ' + savedCount + ' รายการ');
-    return { ok: true, saved: savedCount };
+    return { ok: true, saved: savedCount, updatedAt: now };
   } catch(e) {
     return { ok: false, error: e.message };
   } finally {
@@ -1776,6 +1994,7 @@ function saveGrowthTrackingBatch(token, batch) {
   if (!session.ok) return session;
   if (!batch || !batch.length) return { ok: false, error: 'ไม่มีข้อมูล' };
 
+  return _saveTrackingBatchFast_('growth', session, batch);
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
@@ -1854,7 +2073,7 @@ function saveGrowthTrackingBatch(token, batch) {
     _trackingAppendHistory(historyEntries);
 
     logActivity(session.username, session.role, 'GROWTH_TRACKING_BATCH_SAVE', 'บันทึกติดตาม(เติบโต) batch ' + savedCount + ' รายการ');
-    return { ok: true, saved: savedCount };
+    return { ok: true, saved: savedCount, updatedAt: now };
   } catch(e) {
     return { ok: false, error: e.message };
   } finally {
@@ -1873,9 +2092,8 @@ function _syncTrackingQueueForSheet(kind, token, batch) {
     var isGrowth = kind === 'growth';
     var sheet = isGrowth ? _getOrCreateGrowthTrackingSheet() : _getOrCreateTrackingSheet();
     var data = sheet.getDataRange().getValues();
-    var headers = data[0].map(_trackingHeaderKey);
     var meta = _trackingHeaderMap(sheet);
-    headers = meta.headers;
+    var headers = meta.headers;
     var map = meta.map;
     var kIdx = map.key;
     var cpIdx = map.cutoffPeriod;
@@ -1885,9 +2103,8 @@ function _syncTrackingQueueForSheet(kind, token, batch) {
     var now = _bkkTimestamp();
     var existingMap = {};
     var duplicateRows = [];
+    var inactiveCriteriaItems = [];
     var deactivated = 0;
-    var weeklySummaries = _syncWeeklyCriteria(kind, session, batch, cutoffPeriod, now);
-    _syncMonthlyCriteria(kind, session, batch, cutoffPeriod, now);
 
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
@@ -1896,7 +2113,17 @@ function _syncTrackingQueueForSheet(kind, token, batch) {
       if (!key || cp !== cutoffPeriod) continue;
       if (!_canAccessRow(session, _trackingBaseObjectFromSheetRow(headers, row))) continue;
       if (activeIdx >= 0 && String(row[activeIdx] || '').toUpperCase() !== 'FALSE') {
-        sheet.getRange(i + 1, activeIdx + 1).setValue('FALSE');
+        inactiveCriteriaItems.push({
+          key: key,
+          agentCode: _trackingCell(headers, row, 'agentCode'),
+          agentName: _trackingCell(headers, row, 'agentName'),
+          zoneName: _trackingCell(headers, row, 'zoneName'),
+          criteriaMetric: _trackingCell(headers, row, 'criteriaMetric'),
+          criteriaThreshold: _trackingCell(headers, row, 'criteriaThreshold'),
+          criteriaVersion: _trackingCell(headers, row, 'criteriaVersion'),
+          criteriaSnapshot: _trackingCell(headers, row, 'criteriaSnapshot')
+        });
+        row[activeIdx] = 'FALSE';
         deactivated++;
       }
       var old = existingMap[key];
@@ -1910,6 +2137,7 @@ function _syncTrackingQueueForSheet(kind, token, batch) {
     }
 
     var toAppend = [];
+    var changedExistingRows = {};
     var synced = 0;
     batch.forEach(function(payload) {
       if (!payload || !payload.key) return;
@@ -1918,31 +2146,46 @@ function _syncTrackingQueueForSheet(kind, token, batch) {
         return;
       }
       var existing = existingMap[payload.key];
-      var weekly = weeklySummaries[payload.key] || {};
       var enriched = Object.assign({}, payload, {
         status: existing && map.status >= 0 ? _normalizeStatus(String(existing.data[map.status] || '')) : '',
         reason: !isGrowth && existing && map.reason >= 0 ? _normalizeReason(String(existing.data[map.reason] || '')) : (payload.reason || ''),
         key_success: isGrowth && existing && map.key_success >= 0 ? _normalizeGrowthReason(String(existing.data[map.key_success] || '')) : (payload.key_success || payload.reason || ''),
         note: existing && map.note >= 0 ? String(existing.data[map.note] || '') : (payload.note || ''),
         activeInCurrentCriteria: 'TRUE',
+        firstMatchedAt: existing && map.firstMatchedAt >= 0 ? String(existing.data[map.firstMatchedAt] || '') : now,
+        lastMatchedAt: now,
         syncMode: 'queue',
         statusSource: existing ? '' : 'SYNC',
         statusVersion: existing ? '' : '0',
         lastDashboardSyncAt: now
-      }, weekly);
+      });
       if (isGrowth) {
         enriched.status = existing && map.status >= 0 ? _normalizeGrowthStatus(String(existing.data[map.status] || '')) : '';
       }
       var rowData = _trackingBuildRow(kind, headers, enriched, session, now, cutoffPeriod, existing ? existing.data : null);
       if (existing) {
-        sheet.getRange(existing.row, 1, 1, rowData.length).setValues([rowData]);
+        data[existing.row - 1] = rowData;
+        changedExistingRows[existing.row] = true;
       } else {
         toAppend.push(rowData);
       }
       synced++;
     });
 
+    var duplicateSet = {};
+    duplicateRows.forEach(function(rowNo) { duplicateSet[rowNo] = true; });
+    var rowsForWrite = data.slice(1).filter(function(row, idx) {
+      return !duplicateSet[idx + 2];
+    });
     _trackingDeleteRowsDescending(sheet, duplicateRows);
+    var hasExistingChanges = Object.keys(changedExistingRows).length > 0 || deactivated > 0;
+    if (hasExistingChanges && rowsForWrite.length) {
+      sheet.getRange(2, 1, rowsForWrite.length, headers.length).setValues(rowsForWrite.map(function(row) {
+        var out = row.slice(0, headers.length);
+        while (out.length < headers.length) out.push('');
+        return out;
+      }));
+    }
     if (toAppend.length) {
       sheet.getRange(sheet.getLastRow() + 1, 1, toAppend.length, toAppend[0].length).setValues(toAppend);
     }
