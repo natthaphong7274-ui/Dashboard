@@ -234,11 +234,35 @@
     var cut = typeof threshold === 'number' ? threshold : (_riskThreshold || 0);
     return rows.filter(function (r) { return riskDelta(r, currentMonth, baselineMonth) > cut; });
   }
+  function _packageKeys(value) {
+    var raw = String(value || '').trim();
+    if (!raw || raw === '?') return ['ไม่ระบุ Package'];
+    var seen = {};
+    var parts = raw.split(/\s*,\s*/).map(function (p) {
+      return String(p || '').replace(/\s+/g, ' ').trim();
+    }).filter(function (p) {
+      if (!p || p === '?') return false;
+      var k = p.toUpperCase();
+      if (seen[k]) return false;
+      seen[k] = true;
+      return true;
+    });
+    return parts.length ? parts : ['ไม่ระบุ Package'];
+  }
+  function _rowGroupKeys(row, groupCol) {
+    return groupCol === COL.package || groupCol === 'Package'
+      ? _packageKeys(row[groupCol] || row[COL.package] || row['Package'])
+      : [String(row[groupCol] || '?')];
+  }
+  function _rowGroupHas(row, groupCol, groupVal) {
+    return _rowGroupKeys(row, groupCol).indexOf(String(groupVal || '')) >= 0;
+  }
   function grpAvgRevDay(rows, groupCol, m) {
     var g = {};
     rows.forEach(function (r) {
-      var k = String(r[groupCol] || '?');
-      g[k] = (g[k] || 0) + N(r[m.colRev]);
+      var keys = _rowGroupKeys(r, groupCol);
+      var share = keys.length ? N(r[m.colRev]) / keys.length : 0;
+      keys.forEach(function (k) { g[k] = (g[k] || 0) + share; });
     });
     var d = getDayDivisorMeta(m && m.key).days;
     return Object.keys(g).map(function (k) { return [k, d > 0 ? g[k] / d : 0]; }).sort(function (a, b) { return b[1] - a[1]; });
@@ -282,10 +306,14 @@
   function grpAvgPiece(rows, groupCol, m) {
     var g = {};
     rows.forEach(function (r) {
-      var k = String(r[groupCol] || '?');
-      if (!g[k]) g[k] = { rev: 0, vol: 0 };
-      g[k].rev += N(r[m.colRev]);
-      g[k].vol += N(r[m.colVol]);
+      var keys = _rowGroupKeys(r, groupCol);
+      var revShare = keys.length ? N(r[m.colRev]) / keys.length : 0;
+      var volShare = keys.length ? N(r[m.colVol]) / keys.length : 0;
+      keys.forEach(function (k) {
+        if (!g[k]) g[k] = { rev: 0, vol: 0 };
+        g[k].rev += revShare;
+        g[k].vol += volShare;
+      });
     });
     return Object.keys(g).map(function (k) {
       return [k, g[k].vol > 0 ? g[k].rev / g[k].vol : 0];
@@ -295,9 +323,12 @@
   function grpAvgVolDay(rows, groupCol, m) {
     var g = {};
     rows.forEach(function (r) {
-      var k = String(r[groupCol] || '?');
-      if (!g[k]) g[k] = 0;
-      g[k] += N(r[m.colVol]);
+      var keys = _rowGroupKeys(r, groupCol);
+      var share = keys.length ? N(r[m.colVol]) / keys.length : 0;
+      keys.forEach(function (k) {
+        if (!g[k]) g[k] = 0;
+        g[k] += share;
+      });
     });
     var d = getDAY1ForMonth(m.key);
     return Object.keys(g).map(function (k) {
@@ -308,9 +339,12 @@
   function grpAvgVolDayPrev(rows, groupCol, mp) {
     var g = {};
     rows.forEach(function (r) {
-      var k = String(r[groupCol] || '?');
-      if (!g[k]) g[k] = 0;
-      g[k] += N(r[mp.colVol]);
+      var keys = _rowGroupKeys(r, groupCol);
+      var share = keys.length ? N(r[mp.colVol]) / keys.length : 0;
+      keys.forEach(function (k) {
+        if (!g[k]) g[k] = 0;
+        g[k] += share;
+      });
     });
     var d = getDAY1ForMonth(mp.key);
     return Object.keys(g).map(function (k) {
@@ -901,8 +935,22 @@
   function fmtS(v) { var n = N(v); if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(2) + 'M'; if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'K'; return Math.round(n).toLocaleString('th-TH'); }
   function fmtF(v) { var n = N(v); if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'K'; return n.toFixed(2); }
   function sumCol(rows, col) { if (!col) return 0; return rows.reduce(function (a, r) { return a + N(r[col]); }, 0); }
-  function grpSum(rows, gc, vc) { var g = {}; rows.forEach(function (r) { var k = String(r[gc] || '?'); g[k] = (g[k] || 0) + N(r[vc]); }); return Object.entries(g).sort(function (a, b) { return b[1] - a[1]; }); }
-  function grpCnt(rows, gc) { var g = {}; rows.forEach(function (r) { var k = String(r[gc] || '?'); g[k] = (g[k] || 0) + 1; }); return Object.entries(g).sort(function (a, b) { return b[1] - a[1]; }); }
+  function grpSum(rows, gc, vc) {
+    var g = {};
+    rows.forEach(function (r) {
+      var keys = _rowGroupKeys(r, gc);
+      var share = keys.length ? N(r[vc]) / keys.length : 0;
+      keys.forEach(function (k) { g[k] = (g[k] || 0) + share; });
+    });
+    return Object.entries(g).sort(function (a, b) { return b[1] - a[1]; });
+  }
+  function grpCnt(rows, gc) {
+    var g = {};
+    rows.forEach(function (r) {
+      _rowGroupKeys(r, gc).forEach(function (k) { g[k] = (g[k] || 0) + 1; });
+    });
+    return Object.entries(g).sort(function (a, b) { return b[1] - a[1]; });
+  }
   function pctChg(a, b) { if (!a) return null; return (b - a) / Math.abs(a) * 100; }
   function pill(pct) {
     if (pct === null || pct === undefined) return '<span class="pct-pill pct-zero">N/A</span>';
@@ -1616,7 +1664,7 @@
   // ─── Universal drill-down ──────────────────────────────────────
   function showDrill(groupCol, groupVal, metricCol, panelId, titleId, bodyId) {
     var m = getMC(), mp = getMP();
-    var baseRows = FR.filter(function (r) { return String(r[groupCol] || '') === groupVal; });
+    var baseRows = FR.filter(function (r) { return _rowGroupHas(r, groupCol, groupVal); });
     _clientLog('DRILL_DOWN', '[ภาพรวม] Drill: ' + groupVal + ' (' + groupCol + ') | ' + panelId);
     var p = document.getElementById(panelId);
     if (!DRILL_SORT[panelId]) DRILL_SORT[panelId] = { field: 'rev', dir: 'desc' };
@@ -1737,7 +1785,7 @@
   // ★ Drill-down for Avg Rev/piece — แสดงข้อมูลครบ 2 เดือน
   function showAvgPieceDrill(groupCol, groupVal, panelId, titleId, bodyId) {
     var m = getMC(), mp = getMP();
-    var baseRows = FR.filter(function (r) { return String(r[groupCol] || '') === groupVal; });
+    var baseRows = FR.filter(function (r) { return _rowGroupHas(r, groupCol, groupVal); });
     var p = document.getElementById(panelId);
     if (!DRILL_SORT[panelId]) DRILL_SORT[panelId] = { field: 'ap', dir: 'desc' };
 
@@ -1809,7 +1857,7 @@
   // ★ Drill-down for Avg Vol/day — sortable
   function showAvgVolDayDrill(groupCol, groupVal, panelId, titleId, bodyId) {
     var m = getMC(), mp = getMP();
-    var baseRows = FR.filter(function (r) { return String(r[groupCol] || '') === groupVal; });
+    var baseRows = FR.filter(function (r) { return _rowGroupHas(r, groupCol, groupVal); });
     var p = document.getElementById(panelId);
     if (!DRILL_SORT[panelId]) DRILL_SORT[panelId] = { field: 'avd', dir: 'desc' };
 
@@ -2560,7 +2608,7 @@
       var _cmpDrillState = { groupCol: '', groupVal: '', metric: 'rev', dir: 'desc', mA: mA, mB: mB };
       function cmpDrillRender() {
         var s = _cmpDrillState;
-        var rows = FR.filter(function (r) { return String(r[s.groupCol] || '') === s.groupVal; });
+        var rows = FR.filter(function (r) { return _rowGroupHas(r, s.groupCol, s.groupVal); });
         // sort
         var mul = s.dir === 'desc' ? -1 : 1;
         rows = rows.slice().sort(function (a, b) {
@@ -3738,7 +3786,7 @@
     var html = '<!doctype html><html><head><meta charset="utf-8"><title>Weekly Summary</title><style>body{font-family:Arial,sans-serif;color:#0f172a;padding:24px}h1{color:var(--pr)}.meta{font-size:12px;color:#64748b}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.card{border:1px solid #cbd5e1;border-radius:10px;padding:12px}.val{font-size:22px;font-weight:800;color:var(--pr)}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left;font-size:12px}.wm{position:fixed;right:18px;bottom:14px;color:rgba(0,63,92,.45);font-size:11px;font-weight:700}</style></head><body>'
       + '<h1>Weekly Summary - ' + _esc(m.en) + ' ' + _esc(DATA_YEAR) + '</h1>'
       + '<div class="meta">Internal Use Only · Exported by ' + _esc(meta.user) + ' · Role ' + _esc(meta.role) + ' · Scope ' + _esc(meta.scope) + ' · ' + _esc(meta.generatedAt) + '</div>'
-      + '<div class="grid"><div class="card"><div>Revenue</div><div class="val">' + fmtS(Math.round(totalRev)) + '</div></div><div class="card"><div>Volume</div><div class="val">' + fmtS(Math.round(totalVol)) + '</div></div><div class="card"><div>Tracking Done</div><div class="val">' + done + '/' + tasks.length + '</div></div><div class="card"><div>Success</div><div class="val">' + success + '</div></div></div>'
+      + '<div class="grid"><div class="card"><div>Revenue</div><div class="val">' + fmtS(Math.round(totalRev)) + '</div></div><div class="card"><div>Volume</div><div class="val">' + fmtS(Math.round(totalVol)) + '</div></div><div class="card"><div>Follow-up Done</div><div class="val">' + done + '/' + tasks.length + '</div></div><div class="card"><div>Success</div><div class="val">' + success + '</div></div></div>'
       + '<h2>Top BD Performance</h2><table><thead><tr><th>BD</th><th>Zone</th><th>Revenue</th><th>Tasks</th><th>Done</th><th>Success</th></tr></thead><tbody>'
       + bdRows.map(function (d) { return '<tr><td>' + _esc(d.bd) + '</td><td>' + _esc(d.zone) + '</td><td>' + fmtS(Math.round(d.rev)) + '</td><td>' + d.tasks + '</td><td>' + d.done + '</td><td>' + d.success + '</td></tr>'; }).join('')
       + '</tbody></table><div class="wm">INTERNAL USE ONLY · ' + _esc(meta.username) + ' · ' + _esc(meta.generatedAt) + '</div></body></html>';
@@ -3932,12 +3980,12 @@
       var done = tasks.filter(function (t) { return t.done; }).length;
       var success = tasks.filter(function (t) { return t.success; }).length;
       notes.push({
-        title: 'Tracking workload',
+        title: 'Follow-up workload',
         text: 'เดือนนี้มีงานติดตาม ' + tasks.length + ' รายการ, follow-up แล้ว ' + done + ' รายการ และ success ' + success + ' รายการ'
       });
     } else {
       notes.push({
-        title: 'Tracking workload',
+        title: 'Follow-up workload',
         text: 'เดือนนี้ยังไม่มีรายการ risk/growth ที่เกิน threshold ใน scope ปัจจุบัน'
       });
     }
@@ -4013,7 +4061,7 @@
       _reportCenterKpi('Revenue', fmtS(Math.round(model.totalRev)), 'ยอดรวมเดือน ' + model.m.en, _reportCenterTrendText(revPct, '%')),
       _reportCenterKpi('Volume', fmtS(Math.round(model.totalVol)), 'จำนวนชิ้นรวมเดือน ' + model.m.en, _reportCenterTrendText(volPct, '%')),
       _reportCenterKpi('Avg Rev/Vol', fmtF(model.avgPerPiece), 'Revenue ต่อชิ้น', model.mp ? _reportCenterDeltaFmt(model.avgPerPiece - model.prevAvgPerPiece, fmtF, model.prevAvgPerPiece ? pctChg(model.prevAvgPerPiece, model.avgPerPiece) : null) : _reportCenterTrendText(null, '')),
-      _reportCenterKpi('Tracking Done', done + '/' + tasks.length, 'งานติดตามที่ดำเนินการแล้ว', tasks.length ? _reportCenterTrendText(done / tasks.length * 100, '% follow-up', 'up') : _reportCenterTrendText(null, ''))
+      _reportCenterKpi('Follow-up Done', done + '/' + tasks.length, 'งานติดตามที่ดำเนินการแล้ว', tasks.length ? _reportCenterTrendText(done / tasks.length * 100, '% follow-up', 'up') : _reportCenterTrendText(null, ''))
     ].join('');
     document.getElementById('rc_summary_carriers').innerHTML = _reportCenterCarrierTable(model.carriers);
     document.getElementById('rc_summary_notes').innerHTML = _reportCenterNotesHtml(model.notes);
@@ -6444,6 +6492,108 @@
     stats.touched = stats.total - stats.empty - stats.wait;
     return stats;
   }
+  function _phase11RoleWorkSummary(kind, rows, m, stats) {
+    rows = rows || [];
+    stats = stats || { total: 0, empty: 0, wait: 0, active: 0, success: 0, failed: 0, recorded: 0 };
+    var role = _currentRole() || 'User';
+    var zones = (_currentUser && _currentUser.zones && _currentUser.zones.length) ? _currentUser.zones : ['All'];
+    var isGrowth = kind === 'growth';
+    var scopeLabel = zones[0] === 'All' ? 'All visible zones' : zones.join(', ');
+    var roleLabel = role === 'BD' ? 'BD worklist'
+      : role === 'AM' ? 'AM team view'
+      : role === 'Director' ? 'Director overview'
+      : role + ' view';
+    var ownerKey = role === 'BD' ? COL.province : COL.zoneName;
+    var ownerMap = {};
+    rows.forEach(function (r) {
+      var owner = String(r[ownerKey] || r['Zone Name'] || r['Agent Code'] || '-').trim() || '-';
+      ownerMap[owner] = (ownerMap[owner] || 0) + 1;
+    });
+    var owners = Object.keys(ownerMap).sort(function (a, b) { return ownerMap[b] - ownerMap[a]; });
+    var focusOwner = owners.length ? owners[0] : '-';
+    var focusCount = owners.length ? ownerMap[focusOwner] : 0;
+    var unresolved = Math.max(0, stats.empty + stats.wait + stats.active);
+    var actionText = stats.empty > 0 ? 'Start untouched queue first'
+      : stats.wait > 0 ? 'Move waiting rows to next action'
+      : stats.active > 0 ? 'Close active follow-ups'
+      : stats.failed > 0 ? 'Review failed contacts'
+      : 'Monitor completed queue';
+    var managerText = role === 'BD' ? 'Only scoped customers are shown'
+      : role === 'AM' ? 'Compare zones and support BD blockers'
+      : 'Watch team load and escalation risk';
+    return '<div class="phase11-role-strip ' + (isGrowth ? 'growth' : 'risk') + '">'
+      + '<div class="phase11-role-main">'
+      + '<span class="phase11-role-kicker">Phase 11 role view</span>'
+      + '<b>' + _esc(roleLabel) + '</b>'
+      + '<em>' + _esc(scopeLabel) + '</em>'
+      + '</div>'
+      + '<div class="phase11-role-stat"><span>Open work</span><b>' + unresolved + '</b><em>' + _esc(actionText) + '</em></div>'
+      + '<div class="phase11-role-stat"><span>Reason coverage</span><b>' + (stats.total ? Math.round(stats.recorded / stats.total * 100) : 0) + '%</b><em>' + stats.recorded + ' / ' + stats.total + ' rows</em></div>'
+      + '<div class="phase11-role-stat"><span>' + (role === 'BD' ? 'Top province' : 'Top zone') + '</span><b>' + _esc(focusOwner) + '</b><em>' + focusCount + ' rows, ' + _esc(managerText) + '</em></div>'
+      + '</div>';
+  }
+  function _phase11TeamProgress(kind, rows, m, base) {
+    rows = rows || [];
+    var role = _currentRole() || 'User';
+    var isGrowth = kind === 'growth';
+    var groupCol = role === 'BD' ? COL.province : COL.zoneName;
+    var title = role === 'BD' ? 'Province queue'
+      : role === 'AM' ? 'Team progress by zone'
+      : 'Zone workload progress';
+    var groups = {};
+    rows.forEach(function (r) {
+      var name = String(r[groupCol] || r[COL.zoneName] || '-').trim() || '-';
+      var code = String(r[COL.agentCode] || r['Agent Code'] || '');
+      var key = kind + '_' + code + '_' + m.key;
+      var trk = (_trkData && _trkData[key]) || {};
+      var status = _trackingStatusGroup(kind, trk.status || '');
+      var reason = isGrowth ? (trk.key_success || trk.reason || '') : (trk.reason || '');
+      var impact = 0;
+      if (base) {
+        impact = isGrowth
+          ? Math.max(0, _rowAvgRevDay(r, m) - _rowAvgRevDay(r, base))
+          : Math.max(0, _rowAvgRevDay(r, base) - _rowAvgRevDay(r, m));
+      }
+      if (!groups[name]) groups[name] = { name: name, total: 0, empty: 0, wait: 0, active: 0, success: 0, failed: 0, recorded: 0, impact: 0 };
+      groups[name].total++;
+      groups[name][status]++;
+      if (reason) groups[name].recorded++;
+      groups[name].impact += impact;
+    });
+    var list = Object.keys(groups).map(function (k) {
+      var g = groups[k];
+      g.open = g.empty + g.wait + g.active;
+      g.touchedRate = g.total ? Math.round((g.total - g.empty - g.wait) / g.total * 100) : 0;
+      g.reasonRate = g.total ? Math.round(g.recorded / g.total * 100) : 0;
+      g.outcomeRate = g.total ? Math.round(g.success / g.total * 100) : 0;
+      return g;
+    }).sort(function (a, b) {
+      return (b.open - a.open) || (b.impact - a.impact) || (b.total - a.total);
+    }).slice(0, 6);
+    if (!list.length) return '';
+    var maxOpen = list.reduce(function (mx, g) { return Math.max(mx, g.open); }, 1);
+    var rowsHtml = list.map(function (g) {
+      var width = Math.max(4, Math.round(g.open / maxOpen * 100));
+      var outcomeLabel = isGrowth ? 'conversion' : 'recovery';
+      return '<div class="phase11-team-row">'
+        + '<div class="phase11-team-name"><b>' + _esc(g.name) + '</b><span>' + g.total + ' rows, ' + fmtS(Math.round(g.impact)) + ' impact/day</span></div>'
+        + '<div class="phase11-team-bars"><span style="width:' + width + '%"></span></div>'
+        + '<div class="phase11-team-metrics">'
+        + '<em><b>' + g.open + '</b> open</em>'
+        + '<em><b>' + g.touchedRate + '%</b> touched</em>'
+        + '<em><b>' + g.reasonRate + '%</b> reason</em>'
+        + '<em><b>' + g.outcomeRate + '%</b> ' + outcomeLabel + '</em>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    var note = role === 'BD' ? 'Same scoped customer queue, grouped by province.'
+      : role === 'AM' ? 'Use this to spot which zone needs BD support first.'
+      : 'Sorted by open workload, then impact/day.';
+    return '<div class="phase11-team-progress ' + (isGrowth ? 'growth' : 'risk') + '">'
+      + '<div class="phase11-team-head"><div><span>Phase 11 team pulse</span><b>' + _esc(title) + '</b></div><em>' + _esc(note) + '</em></div>'
+      + '<div class="phase11-team-list">' + rowsHtml + '</div>'
+      + '</div>';
+  }
   function _filterTrackingWorkRows(kind, status) {
     var wrap = document.getElementById(kind + '_tbl');
     if (!wrap) return;
@@ -6543,6 +6693,8 @@
       + '</div>'
       + '<div class="tracking-work-reset"><b>' + _esc(resetText) + '</b><span>รีเฟรชหน้าแล้วข้อมูลรอบนี้ยังอยู่</span></div>'
       + '</div>'
+      + _phase11RoleWorkSummary(kind, rows, m, stats)
+      + _phase11TeamProgress(kind, rows, m, base)
       + '<div class="tracking-work-steps">'
       + filterBtn('ทั้งหมด', 'all', stats.total)
       + filterBtn('ยังไม่เริ่ม', 'empty', stats.empty)
@@ -6661,7 +6813,7 @@
         }).join('')
         + '</div><div style="display:grid;grid-template-columns:1.1fr .9fr;gap:12px"><div><div style="font-size:13px;font-weight:900;margin-bottom:8px">สาเหตุหลัก</div>'
         + (topReasons.length ? topReasons.map(function (r) { return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding:8px 0;font-size:12px"><span>' + _esc(r) + '</span><b>' + reasonMap[r] + '</b></div>'; }).join('') : '<div style="font-size:12px;color:#64748b">ยังไม่มีข้อมูลพอสำหรับสรุปสาเหตุ</div>')
-        + '</div><div style="font-size:12px;color:#475569;line-height:1.6;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px"><b>หมายเหตุ</b><br>ใช้ Avg Rev/day เป็นสัญญาณหลักเพื่อกันการเทียบเดือนที่ยังไม่เต็มเดือน และใช้สถานะ Tracking เป็นสัญญาณชั้นที่สองสำหรับจัดลำดับงาน</div></div>';
+        + '</div><div style="font-size:12px;color:#475569;line-height:1.6;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px"><b>หมายเหตุ</b><br>ใช้ Avg Rev/day เป็นสัญญาณหลักเพื่อกันการเทียบเดือนที่ยังไม่เต็มเดือน และใช้สถานะ follow-up เป็นสัญญาณชั้นที่สองสำหรับจัดลำดับงาน</div></div>';
     }
     if (period) {
       var baseAvg = rows.reduce(function (s, r) { return s + _rowAvgRevDay(r, base); }, 0);
@@ -6678,7 +6830,7 @@
     }
     if (progress) {
       var p = _trackingProgressSummary(kind, rows, m);
-      progress.innerHTML = '<div class="chdr"><div><div class="ctitle">' + (isRisk ? 'Tracking Progress' : 'Growth Progress') + '</div><div class="csub">sync จาก ' + (isRisk ? 'Tracking' : 'TrackingGrowth') + ' และนับเฉพาะ scope ปัจจุบัน</div></div><span class="' + (isRisk ? 'cbadge-red' : 'cbadge-green') + '">' + p.rate + '% touched</span></div>'
+      progress.innerHTML = '<div class="chdr"><div><div class="ctitle">' + (isRisk ? 'Follow-up Progress' : 'Growth Follow-up') + '</div><div class="csub">sync จาก ' + (isRisk ? 'Tracking' : 'TrackingGrowth') + ' และนับเฉพาะ scope ปัจจุบัน</div></div><span class="' + (isRisk ? 'cbadge-red' : 'cbadge-green') + '">' + p.rate + '% touched</span></div>'
         + '<div style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin-top:12px">'
         + '<div class="customer-card-metric"><div class="customer-card-metric-label">ทั้งหมด</div><div class="customer-card-metric-value">' + p.total + '</div></div>'
         + '<div class="customer-card-metric"><div class="customer-card-metric-label">เริ่มติดตาม</div><div class="customer-card-metric-value">' + p.touched + '</div></div>'
@@ -6738,13 +6890,13 @@
     }).slice(0, 5);
     var highCount = counts.high || 0, untouched = p.empty;
     var helpQueue = 'จำนวนลูกค้าใน scope ปัจจุบันที่เข้าเกณฑ์ ' + (isRisk ? 'กลุ่มเสี่ยง' : 'กลุ่มเติบโต') + ' ของเดือนที่เลือก';
-    var helpTouched = 'Touched = จำนวนรายการที่มีสถานะ Tracking/TrackingGrowth แล้ว หารด้วย Queue ทั้งหมด';
+    var helpTouched = 'Touched = จำนวนรายการที่มีสถานะ follow-up แล้ว หารด้วย Queue ทั้งหมด';
     var helpOutcome = (isRisk ? 'Recovery' : 'Conversion') + ' = จำนวนรายการที่มีสถานะสำเร็จ หารด้วย Queue ทั้งหมด';
     var helpCoverage = 'Reason coverage = จำนวนลูกค้าที่มีการบันทึก reason/key_success แล้ว หารด้วย Queue ทั้งหมด';
-    var helpLanes = '2-layer criteria ใช้ Avg Rev/day delta เป็นสัญญาณหลัก และใช้สถานะ Tracking เป็นสัญญาณประกอบ';
+    var helpLanes = '2-layer criteria ใช้ Avg Rev/day delta เป็นสัญญาณหลัก และใช้สถานะ follow-up เป็นสัญญาณประกอบ';
     var helpPriority = 'เรียงจาก level ของ criteria รวมกับ Priority/Opportunity score เพื่อชี้ว่าควรเปิด popup และติดตามใครก่อน';
-    var helpProgress = 'Progress pulse อ่านจาก Tracking/TrackingGrowth เฉพาะข้อมูลที่ผ่าน role scope แล้ว';
-    var helpReason = 'Factor bar chart แสดงทุกปัจจัยที่เลือกได้ใน Tracking/TrackingGrowth แท่งสูงตาม impact/day และเรียงมากไปน้อยเมื่อมีการบันทึก';
+    var helpProgress = 'Progress pulse อ่านจาก follow-up data เฉพาะข้อมูลที่ผ่าน role scope แล้ว';
+    var helpReason = 'Factor bar chart แสดงทุกปัจจัยที่เลือกได้ในงานติดตาม แท่งสูงตาม impact/day และเรียงมากไปน้อยเมื่อมีการบันทึก';
     var helpImpact = 'Impact/day รวม Avg Rev/day delta ของลูกค้าที่บันทึก reason นั้น ใช้เพื่อดูว่าสาเหตุไหนกระทบยอดต่อวันมากสุด';
     var helpSignals = 'System signals คือเหตุผลที่ระบบคำนวณจาก Avg/day, Avg Vol/day, Rev/ชิ้น และสถานะ tracking';
     var helpPeriod = 'Period comparison ใช้ค่าเฉลี่ยต่อวัน เพื่อหลีกเลี่ยงการเทียบเดือนที่ยังไม่ครบกับเดือนเต็มโดยตรง';
@@ -6781,7 +6933,7 @@
       + '<div class="opdash-command">'
       + '<div class="opdash-kicker">' + (isRisk ? 'Risk operation' : 'Growth operation') + '</div>'
       + '<div class="opdash-title">' + _esc(command) + '</div>'
-      + '<div class="opdash-brief">อ่านจาก Avg/day เพื่อกันเดือนที่ยังไม่ครบ และใช้ Tracking เป็นชั้นที่สองเพื่อบอกว่าควรลงมือกับใครก่อน</div>'
+      + '<div class="opdash-brief">อ่านจาก Avg/day เพื่อกันเดือนที่ยังไม่ครบ และใช้ follow-up เป็นชั้นที่สองเพื่อบอกว่าควรลงมือกับใครก่อน</div>'
       + '<div class="opdash-hero-row">'
       + '<div class="opdash-hero-metric"><div class="opdash-hero-label">Queue ' + _opHelp(helpQueue) + '</div><div class="opdash-hero-value">' + rows.length + '</div><div class="opdash-hero-sub">' + statusText + '</div></div>'
       + '<div class="opdash-hero-metric"><div class="opdash-hero-label">Touched ' + _opHelp(helpTouched) + '</div><div class="opdash-hero-value">' + p.rate + '%</div><div class="opdash-hero-sub">' + p.touched + ' / ' + p.total + ' ราย</div></div>'
@@ -6918,7 +7070,7 @@
       + '</div>'
       + '</div>'
       + '<div class="customer-card-section">'
-      + '<div class="customer-card-section-title">Tracking</div>'
+      + '<div class="customer-card-section-title">Follow-up</div>'
       + '<div class="customer-card-kv">'
       + '<div class="k">Status</div><div class="v">' + _esc(_riskGrowthStatusLabel(kind, trk.status || '')) + '</div>'
       + '<div class="k">' + (isRisk ? 'สาเหตุ' : 'ปัจจัยเติบโต') + '</div><div class="v">' + _esc(_riskGrowthReasonLabel(kind, trk.key_success || trk.reason || '')) + '</div>'
@@ -6932,7 +7084,7 @@
       + '<div class="k">Criteria level</div><div class="v">' + (criteria ? _criteriaBadge(criteria.level) : '—') + '</div>'
       + '<div class="k">Avg/day signal</div><div class="v">' + fmtS(Math.round(prevAvg)) + ' → ' + fmtS(Math.round(curAvg)) + ' (' + (diffAvg >= 0 ? '+' : '') + fmtS(Math.round(diffAvg)) + '/วัน)</div>'
       + '<div class="k">Reasons</div><div class="v">' + (criteria ? _criteriaReasonHTML(criteria) : 'ดูรายละเอียดตาม metric ด้านล่าง') + '</div>'
-      + '<div class="k">Tracking signal</div><div class="v">' + _esc((trk.status && trk.status !== 'wait') ? 'มี progress ล่าสุด' : 'ยังไม่มี progress ล่าสุด') + '</div>'
+      + '<div class="k">Follow-up signal</div><div class="v">' + _esc((trk.status && trk.status !== 'wait') ? 'มี progress ล่าสุด' : 'ยังไม่มี progress ล่าสุด') + '</div>'
       + '</div>'
       + '</div>'
       + '<div class="customer-card-section">'
@@ -7234,8 +7386,8 @@
 
       // ── Package chart ──
       var rp = {}, rpP = {};
-      rows.forEach(function (r) { var p = String(r['Package'] || '?'); rp[p] = (rp[p] || 0) + 1; });
-      rowsPrevZone.forEach(function (r) { var p = String(r['Package'] || '?'); rpP[p] = (rpP[p] || 0) + 1; });
+      rows.forEach(function (r) { _rowGroupKeys(r, COL.package).forEach(function (p) { rp[p] = (rp[p] || 0) + 1; }); });
+      rowsPrevZone.forEach(function (r) { _rowGroupKeys(r, COL.package).forEach(function (p) { rpP[p] = (rpP[p] || 0) + 1; }); });
       var rpArr = Object.entries(rp).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 10);
       dc('c_risk_pkg'); var ep = document.getElementById('c_risk_pkg');
       if (ep && rpArr.length) {
@@ -8330,8 +8482,8 @@
 
       // Package chart
       var gp = {}, gpP = {};
-      rows.forEach(function (r) { var p = String(r['Package'] || '?'); gp[p] = (gp[p] || 0) + 1; });
-      rowsPrevZone.forEach(function (r) { var p = String(r['Package'] || '?'); gpP[p] = (gpP[p] || 0) + 1; });
+      rows.forEach(function (r) { _rowGroupKeys(r, COL.package).forEach(function (p) { gp[p] = (gp[p] || 0) + 1; }); });
+      rowsPrevZone.forEach(function (r) { _rowGroupKeys(r, COL.package).forEach(function (p) { gpP[p] = (gpP[p] || 0) + 1; }); });
       var gpArr = Object.entries(gp).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 10);
       dc('c_growth_pkg'); var epg = document.getElementById('c_growth_pkg');
       if (epg && gpArr.length) {
@@ -9234,6 +9386,8 @@
       if (lockDiff) return lockDiff;
       var failDiff = (N(b.failCount) || 0) - (N(a.failCount) || 0);
       if (failDiff) return failDiff;
+      var onlineDiff = (b.online ? 1 : 0) - (a.online ? 1 : 0);
+      if (onlineDiff) return onlineDiff;
       return String(a.username || '').localeCompare(String(b.username || ''), 'th');
     });
     var html = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
@@ -9241,6 +9395,8 @@
       + '<th style="padding:9px 14px;text-align:left;font-weight:700;color:var(--pr);border-bottom:2px solid var(--bd)">Username</th>'
       + '<th style="padding:9px 14px;text-align:left;font-weight:700;color:var(--pr);border-bottom:2px solid var(--bd)">Role</th>'
       + '<th style="padding:9px 14px;text-align:left;font-weight:700;color:var(--pr);border-bottom:2px solid var(--bd)">Zone</th>'
+      + '<th style="padding:9px 14px;text-align:center;font-weight:700;color:var(--pr);border-bottom:2px solid var(--bd)">Online</th>'
+      + '<th style="padding:9px 14px;text-align:left;font-weight:700;color:var(--pr);border-bottom:2px solid var(--bd)">Last active</th>'
       + '<th style="padding:9px 14px;text-align:center;font-weight:700;color:var(--pr);border-bottom:2px solid var(--bd)">สถานะ</th>'
       + '<th style="padding:9px 14px;text-align:center;font-weight:700;color:var(--pr);border-bottom:2px solid var(--bd)">Login ผิด</th>'
       + '<th style="padding:9px 14px;text-align:center;font-weight:700;color:var(--pr);border-bottom:2px solid var(--bd)">จัดการ</th>'
@@ -9255,6 +9411,12 @@
       var failBadge = u.failCount > 0
         ? '<span style="display:inline-block;padding:2px 8px;border-radius:20px;background:#fff7ed;color:#92400e;font-weight:700;font-size:11px">' + u.failCount + ' / 5</span>'
         : '<span style="color:var(--t2)">—</span>';
+      var onlineBadge = u.online
+        ? '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;background:#dcfce7;color:#166534;font-weight:800;font-size:11px"><span style="width:6px;height:6px;border-radius:50%;background:#16a34a"></span>Online</span>'
+        : '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;background:#f1f5f9;color:#64748b;font-weight:800;font-size:11px"><span style="width:6px;height:6px;border-radius:50%;background:#94a3b8"></span>Offline</span>';
+      var lastActive = u.lastActiveAt
+        ? '<div style="font-weight:800;color:#334155">' + _esc(u.lastActiveAt) + '</div><div style="font-size:10px;color:var(--t2)">' + (u.lastActiveMin != null ? u.lastActiveMin + ' min ago' : '-') + (u.sessionCount ? ' - ' + u.sessionCount + ' session' + (u.sessionCount > 1 ? 's' : '') : '') + '</div>'
+        : '<span style="color:var(--t2)">No active session</span>';
       var unlockBtn = isLocked || u.failCount > 0
         ? '<button onclick="doUnlockUser(\'' + u.username + '\')" style="padding:5px 12px;background:var(--ac);color:white;border:none;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700">🔓 ปลดล็อก</button>'
         : '<span style="color:#cbd5e1;font-size:11px">—</span>';
@@ -9263,6 +9425,8 @@
         + '<td style="padding:9px 14px;font-weight:700;color:var(--pr)">' + u.username + '</td>'
         + '<td style="padding:9px 14px">' + (u.role || '—') + '</td>'
         + '<td style="padding:9px 14px;color:var(--t2)">' + (u.zone || 'All') + '</td>'
+        + '<td style="padding:9px 14px;text-align:center">' + onlineBadge + '</td>'
+        + '<td style="padding:9px 14px">' + lastActive + '</td>'
         + '<td style="padding:9px 14px;text-align:center">' + statusHtml + '</td>'
         + '<td style="padding:9px 14px;text-align:center">' + failBadge + '</td>'
         + '<td style="padding:9px 14px;text-align:center">' + unlockBtn + '</td>'
@@ -11992,11 +12156,24 @@
       + '<span id="home_criteria_arrow" style="font-size:10px;color:rgba(255,255,255,0.5);transition:.2s">' + (_homeCriteriaCollapsed ? '▶' : '▼') + '</span>'
       + '</div>'
       + '<div id="home_criteria_body" style="overflow:hidden;transition:max-height .25s ease,opacity .2s;' + (_homeCriteriaCollapsed ? 'max-height:0;opacity:0' : 'max-height:200px;opacity:1') + '">'
-      + '<div class="home-map-criteria-row"><span class="home-map-dot danger"></span><strong>Risk</strong><em>Avg Rev/day ลดลง ≥5% MoM</em></div>'
-      + '<div class="home-map-criteria-row"><span class="home-map-dot warn"></span><strong>Watch</strong><em>Avg Rev/day ลดลง 0-5%</em></div>'
-      + '<div class="home-map-criteria-row"><span class="home-map-dot good"></span><strong>Stable</strong><em>Avg Rev/day ทรงตัว หรือโต 0-5%</em></div>'
-      + '<div class="home-map-criteria-row"><span class="home-map-dot great"></span><strong>Growth</strong><em>Avg Rev/day โต >5%</em></div>'
+      + '<div class="home-map-criteria-row"><span class="home-map-dot danger"></span><strong>Recovery</strong><em>Score 70+ with risk pressure</em></div>'
+      + '<div class="home-map-criteria-row"><span class="home-map-dot warn"></span><strong>Monitor</strong><em>Score 40-69, review before escalation</em></div>'
+      + '<div class="home-map-criteria-row"><span class="home-map-dot good"></span><strong>Stable</strong><em>Score below 40, normal monitoring</em></div>'
+      + '<div class="home-map-criteria-row"><span class="home-map-dot great"></span><strong>Opportunity</strong><em>Score 70+ with growth pressure</em></div>'
       + '<div class="home-map-criteria-note">คลิกพื้นที่บนแผนที่เพื่อดู action card · เส้น callout = Zone/จำนวน agents</div>'
+      + '</div>'
+      + '</div>';
+    criteria = '<div class="home-map-map-criteria" id="home_criteria_panel">'
+      + '<div class="home-map-criteria-header" onclick="_toggleHomeCriteria()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:2px 0 4px">'
+      + '<div class="home-map-list-title" style="margin:0">Map Score criteria</div>'
+      + '<span id="home_criteria_arrow" style="font-size:10px;color:rgba(255,255,255,0.5);transition:.2s">' + (_homeCriteriaCollapsed ? '>' : 'v') + '</span>'
+      + '</div>'
+      + '<div id="home_criteria_body" style="overflow:hidden;transition:max-height .25s ease,opacity .2s;' + (_homeCriteriaCollapsed ? 'max-height:0;opacity:0' : 'max-height:210px;opacity:1') + '">'
+      + '<div class="home-map-criteria-row"><span class="home-map-dot danger"></span><strong>Recovery</strong><em>Score 70+ with risk pressure</em></div>'
+      + '<div class="home-map-criteria-row"><span class="home-map-dot warn"></span><strong>Monitor</strong><em>Score 40-69, review before escalation</em></div>'
+      + '<div class="home-map-criteria-row"><span class="home-map-dot good"></span><strong>Stable</strong><em>Score below 40, normal monitoring</em></div>'
+      + '<div class="home-map-criteria-row"><span class="home-map-dot great"></span><strong>Opportunity</strong><em>Score 70+ with growth pressure</em></div>'
+      + '<div class="home-map-criteria-note">Score uses avg revenue/day movement, risk count, growth count, and avg volume/day movement.</div>'
       + '</div>'
       + '</div>';
     var stats = (cfg.stats || []).map(function (s) {
@@ -12068,23 +12245,75 @@
     });
   }
 
+  function _homeCarrierMovementForRows(rows, m, mp) {
+    var empty = { name: '-', delta: 0, pct: null, curAvg: 0, prevAvg: 0 };
+    if (!rows || !rows.length || !m || !mp || !m.label || !mp.label || !(CARRIERS || []).length) {
+      return { drop: empty, growth: empty };
+    }
+    var curDays = m.currentMonth ? Math.max(1, getDAY1ForMonth(m.key)) : 30;
+    var prevDays = mp.currentMonth ? Math.max(1, getDAY1ForMonth(mp.key)) : 30;
+    var list = (CARRIERS || []).map(function (carrier) {
+      var curRev = sumCol(rows, carCol(carrier, 'Rev', m.label));
+      var prevRev = sumCol(rows, carCol(carrier, 'Rev', mp.label));
+      var curAvg = curRev / Math.max(curDays, 1);
+      var prevAvg = prevRev / Math.max(prevDays, 1);
+      var delta = curAvg - prevAvg;
+      return {
+        name: carrier,
+        curAvg: curAvg,
+        prevAvg: prevAvg,
+        delta: delta,
+        pct: prevAvg > 0 ? (delta / Math.abs(prevAvg) * 100) : null
+      };
+    }).filter(function (x) {
+      return x.curAvg > 0 || x.prevAvg > 0;
+    });
+    var drop = list.filter(function (x) { return x.delta < 0; }).sort(function (a, b) { return a.delta - b.delta; })[0] || empty;
+    var growth = list.filter(function (x) { return x.delta > 0; }).sort(function (a, b) { return b.delta - a.delta; })[0] || empty;
+    return { drop: drop, growth: growth };
+  }
+
   function _homeMapStatusForRows(rows, m, mp) {
     rows = rows || [];
-    var rev = 0, prevRev = 0, vol = 0, active = 0;
+    var rev = 0, prevRev = 0, vol = 0, prevVol = 0, active = 0;
+    var riskCount = 0, growthCount = 0;
+    var riskBase = getRiskBaselineMonth(m);
     rows.forEach(function (r) {
       rev += N(r[m.colRev]);
       vol += N(r[m.colVol]);
-      if (mp) prevRev += N(r[mp.colRev]);
+      if (mp) { prevRev += N(r[mp.colRev]); prevVol += N(r[mp.colVol]); }
       if (_isActiveAgent(r, m)) active++;
+      if (riskBase && riskDelta(r, m, riskBase) > (_riskThreshold || 0)) riskCount++;
+      if (mp && growthDelta(r, m, mp) > (_growthThreshold || 0)) growthCount++;
     });
     var curDays = m && m.currentMonth ? Math.max(1, getDAY1ForMonth(m.key)) : 30;
     var prevDays = mp && mp.currentMonth ? Math.max(1, getDAY1ForMonth(mp.key)) : 30;
     var avgDay = rev / Math.max(curDays, 1);
     var prevAvgDay = prevRev / Math.max(prevDays, 1);
+    var avgVolDay = vol / Math.max(curDays, 1);
+    var prevAvgVolDay = prevVol / Math.max(prevDays, 1);
     var pct = mp && prevAvgDay > 0 ? ((avgDay - prevAvgDay) / Math.abs(prevAvgDay) * 100) : null;
-    var tone = pct === null ? 'neutral' : pct <= -5 ? 'danger' : pct < 0 ? 'warn' : 'good';
-    var label = pct === null ? 'Stable' : pct <= -5 ? 'Risk' : pct < 0 ? 'Watch' : pct > 5 ? 'Growth' : 'Stable';
-    return { rev: rev, prevRev: prevRev, vol: vol, active: active, avgDay: avgDay, prevAvgDay: prevAvgDay, pct: pct, tone: tone, label: label };
+    var volPct = mp && prevAvgVolDay > 0 ? ((avgVolDay - prevAvgVolDay) / Math.abs(prevAvgVolDay) * 100) : null;
+    var avgMoveScore = pct === null ? 0 : Math.min(35, Math.round(Math.abs(pct) * 1.7));
+    var riskScore = Math.min(25, riskCount * 4);
+    var growthScore = Math.min(18, growthCount * 3);
+    var volScore = volPct === null ? 0 : Math.min(17, Math.round(Math.abs(volPct) * 0.9));
+    var score = Math.max(0, Math.min(100, avgMoveScore + riskScore + growthScore + volScore));
+    var isOpportunity = growthCount > riskCount && pct !== null && pct >= 0;
+    var tone = score >= 70 ? (isOpportunity ? 'great' : 'danger') : score >= 40 ? 'warn' : 'good';
+    var label = score >= 70 ? (isOpportunity ? 'Opportunity' : 'Recovery') : score >= 40 ? 'Monitor' : 'Stable';
+    var suggestion = label === 'Recovery' ? 'Focus recovery: assign follow-up owner and clear risk queue'
+      : label === 'Opportunity' ? 'Growth opportunity: protect capacity and plan upsell'
+      : label === 'Monitor' ? 'Monitor: review movement before escalation'
+      : 'Stable: keep normal monitoring';
+    var carrierMove = _homeCarrierMovementForRows(rows, m, mp);
+    return {
+      rev: rev, prevRev: prevRev, vol: vol, prevVol: prevVol, active: active,
+      avgDay: avgDay, prevAvgDay: prevAvgDay, avgVolDay: avgVolDay, prevAvgVolDay: prevAvgVolDay,
+      pct: pct, volPct: volPct, riskCount: riskCount, growthCount: growthCount,
+      score: score, tone: tone, label: label, suggestion: suggestion,
+      topDropCarrier: carrierMove.drop, topGrowthCarrier: carrierMove.growth
+    };
   }
 
   function _homeMapActionItems(rows, m, mp) {
@@ -12113,13 +12342,24 @@
     el.innerHTML = '<button class="home-map-popup-close" type="button" onclick="_homeCloseMapActionCard()">×</button>'
       + '<div class="home-map-card-head">'
       + '<div><div class="home-map-card-kicker">Selected area</div><div class="home-map-card-title">' + _esc(title || '-') + '</div></div>'
-      + '<span class="home-map-card-status home-map-' + stat.tone + '">' + _esc(stat.label) + (stat.pct !== null ? ' ' + (stat.pct >= 0 ? '+' : '') + stat.pct.toFixed(1) + '%' : '') + '</span>'
+      + '<span class="home-map-card-status home-map-' + stat.tone + '">' + _esc(stat.label) + ' · Score ' + stat.score + '</span>'
       + '</div>'
       + '<div class="home-map-card-metrics">'
       + '<div><span>Revenue</span><strong>฿' + fmtS(Math.round(stat.rev)) + '</strong></div>'
       + '<div><span>Volume</span><strong>' + fmtInt(stat.vol) + '</strong></div>'
       + '<div><span>Active</span><strong>' + fmtInt(stat.active) + '/' + fmtInt(rows.length) + '</strong></div>'
       + '</div>'
+      + '<div class="home-map-card-metrics">'
+      + '<div><span>Avg Rev/day</span><strong>THB ' + fmtS(Math.round(stat.avgDay)) + '</strong><em>' + (stat.pct !== null ? (stat.pct >= 0 ? '+' : '') + stat.pct.toFixed(1) + '% vs prev' : 'no baseline') + '</em></div>'
+      + '<div><span>Avg Vol/day</span><strong>' + fmtF(stat.avgVolDay) + '</strong><em>' + (stat.volPct !== null ? (stat.volPct >= 0 ? '+' : '') + stat.volPct.toFixed(1) + '% vs prev' : 'no baseline') + '</em></div>'
+      + '<div><span>Risk / Growth</span><strong>' + fmtInt(stat.riskCount) + ' / ' + fmtInt(stat.growthCount) + '</strong><em>' + fmtInt(rows.length) + ' scoped rows</em></div>'
+      + '</div>'
+      + '<div class="home-map-card-metrics">'
+      + '<div><span>Top drop carrier</span><strong>' + _esc((stat.topDropCarrier || {}).name || '-') + '</strong><em>' + (((stat.topDropCarrier || {}).delta || 0) < 0 ? '-' + fmtS(Math.round(Math.abs(stat.topDropCarrier.delta))) + '/day' : 'no carrier drop') + '</em></div>'
+      + '<div><span>Top growth carrier</span><strong>' + _esc((stat.topGrowthCarrier || {}).name || '-') + '</strong><em>' + (((stat.topGrowthCarrier || {}).delta || 0) > 0 ? '+' + fmtS(Math.round(stat.topGrowthCarrier.delta)) + '/day' : 'no carrier growth') + '</em></div>'
+      + '<div><span>Score basis</span><strong>Map Score</strong><em>avg movement, risk, growth, volume</em></div>'
+      + '</div>'
+      + '<div class="home-map-suggestion home-map-' + stat.tone + '"><span>Suggested action</span><strong>' + _esc(stat.suggestion) + '</strong></div>'
       + '<div class="home-map-card-list">'
       + (actions.length
         ? actions.map(function (item) {
@@ -12397,10 +12637,13 @@
         rows: itemRows.length,
         rev: stat.rev,
         tone: stat.tone,
-        status: stat.label,
+        status: 'Score ' + stat.score + ' · ' + stat.label,
+        score: stat.score,
+        suggestion: stat.suggestion,
         actionCount: actionCount
       };
     }).filter(function (item) { return item.rows > 0; }).sort(function (a, b) {
+      if (a.score !== b.score) return b.score - a.score;
       if (a.actionCount !== b.actionCount) return b.actionCount - a.actionCount;
       return b.rev - a.rev;
     }).slice(0, 6);
@@ -12590,7 +12833,7 @@
         + '<div class="hero-shortcuts">'
         + '<button class="hero-sc-btn hero-sc-primary" onclick="swMain(\'ov\')">📈 ภาพรวม</button>'
         + (dirGrowthRows.length > 0 ? '<button class="hero-sc-btn hero-sc-growth" onclick="swMain(\'growth\')">🟢 Upsell (' + dirGrowthRows.length + ')</button>' : '<button class="hero-sc-btn hero-sc-growth" onclick="swMain(\'growth\')">🟢 กลุ่มเติบโต</button>')
-        + '<button class="hero-sc-btn hero-sc-track" onclick="openTrkSummary()">📊 Tracking</button>'
+        + '<button class="hero-sc-btn hero-sc-track" onclick="openTrkSummary()">📊 สรุปงานติดตาม</button>'
         + '<button class="hero-sc-btn hero-sc-track" onclick="swMain(\'usermgmt\')">👥 จัดการผู้ใช้</button>'
         + '<button class="hero-sc-btn" style="background:linear-gradient(135deg,var(--ac),#7c3aed);color:white;border:none;font-weight:700" onclick="openTargetModal(\'' + m.key + '\')">🎯 ตั้งเป้า</button>'
         + '</div>'
@@ -12612,8 +12855,8 @@
         ],
         actions: [
           { label: 'ดู Zone ที่ต้องช่วย', value: dropZones.length + ' zone', sub: 'เรียงจาก MoM ลด', tone: dropZones.length ? 'warn' : 'good', onclick: "swMain('ov')" },
-          { label: 'ดู Tracking Progress', value: amUsers.length + ' ทีม', sub: 'risk/growth workload', tone: 'neutral', onclick: "openTrkSummary()" },
-          { label: 'เปิด Tracking', value: 'follow-up', sub: 'งานค้างและสถานะ', tone: 'neutral', onclick: "openTrkSummary()" },
+          { label: 'ดู Follow-up Progress', value: amUsers.length + ' ทีม', sub: 'risk/growth workload', tone: 'neutral', onclick: "openTrkSummary()" },
+          { label: 'เปิดงานติดตาม', value: 'follow-up', sub: 'งานค้างและสถานะ', tone: 'neutral', onclick: "openTrkSummary()" },
           { label: 'ตั้งเป้า', value: 'target', sub: 'ประเทศและ BD', tone: dirHasTarget ? 'neutral' : 'warn', onclick: "openTargetModal('" + m.key + "')" }
         ],
         note: 'Director เห็นภาพรวมเพื่อเลือกจุด escalate ไม่ใช่ดูทุกตารางพร้อมกัน'
@@ -12656,8 +12899,8 @@
           { label: 'Escalation', value: dropZones.length + ' zones', sub: dirRiskCount + ' risk agents', tone: dropZones.length ? 'warn' : 'good' }
         ],
         actions: [
-          { label: 'Review tracking', value: 'Risk/Growth', sub: 'status and progress', tone: 'neutral', onclick: 'openTrkSummary()' },
-          { label: 'Review tracking', value: 'Follow-up', sub: 'risk and growth status', tone: 'neutral', onclick: 'openTrkSummary()' },
+          { label: 'Review follow-up', value: 'Risk/Growth', sub: 'status and progress', tone: 'neutral', onclick: 'openTrkSummary()' },
+          { label: 'Review follow-up', value: 'Follow-up', sub: 'risk and growth status', tone: 'neutral', onclick: 'openTrkSummary()' },
           { label: 'Set country target', value: 'Target', sub: dirHasTarget ? 'adjust target' : 'missing target', tone: dirHasTarget ? 'neutral' : 'warn', onclick: "openTargetModal('" + m.key + "')" },
           { label: 'Go to growth', value: dirGrowthRows.length + ' agents', sub: 'upsell opportunity', tone: 'good', onclick: "swMain('growth')" }
         ]
@@ -13894,7 +14137,7 @@
         + '<button class="hero-sc-btn hero-sc-primary" onclick="swMain(\'ov\')">📈 ภาพรวม</button>'
         // T03: Loss/Inactive buttons removed
         + (amGrowthRows.length > 0 ? '<button class="hero-sc-btn hero-sc-growth" onclick="swMain(\'growth\')">🟢 Upsell (' + amGrowthRows.length + ')</button>' : '<button class="hero-sc-btn hero-sc-growth" onclick="swMain(\'growth\')">🟢 กลุ่มเติบโต</button>')
-        + '<button class="hero-sc-btn hero-sc-track" onclick="openTrkSummary()">📊 Tracking</button>'
+        + '<button class="hero-sc-btn hero-sc-track" onclick="openTrkSummary()">📊 สรุปงานติดตาม</button>'
         + '</div>'
         + '</div>'
         + '</div>';
@@ -13920,7 +14163,7 @@
           { label: 'ช่วย BD ที่ lag', value: bdUsers.filter(function (b) { return b.mom !== null && parseFloat(b.mom) < 0; }).length + ' คน', sub: 'ดูอันดับและ MoM', tone: 'warn', onclick: "swMain('ov')" },
           { label: 'เปิด Risk list', value: amRiskCount + ' ราย', sub: 'Avg ลดเกินเกณฑ์', tone: amRiskCount > 0 ? 'warn' : 'good', onclick: "swMain('risk')" },
           { label: 'เปิด Growth list', value: amGrowthRows.length + ' ราย', sub: 'โอกาสเพิ่มยอด', tone: 'good', onclick: "swMain('growth')" },
-          { label: 'Tracking summary', value: 'status', sub: 'งานค้างในทีม', tone: 'neutral', onclick: "openTrkSummary()" }
+          { label: 'สรุปงานติดตาม', value: 'status', sub: 'งานค้างในทีม', tone: 'neutral', onclick: "openTrkSummary()" }
         ],
         note: 'AM เห็นภาพรวมเพื่อเลือกทีมและลูกค้าที่ควรเข้าไปช่วยวันนี้'
       });
@@ -13962,10 +14205,10 @@
           { label: 'BD support', value: bdUsers.filter(function (b) { return b.mom !== null && parseFloat(b.mom) < 0; }).length + ' people', sub: amRiskCount + ' risk agents', tone: amRiskCount ? 'warn' : 'good' }
         ],
         actions: [
-          { label: 'Review tracking', value: bdUsers.length + ' BDs', sub: 'team workload', tone: 'neutral', onclick: 'openTrkSummary()' },
+          { label: 'Review follow-up', value: bdUsers.length + ' BDs', sub: 'team workload', tone: 'neutral', onclick: 'openTrkSummary()' },
           { label: 'Review risk list', value: amRiskCount + ' agents', sub: 'avg rev drop', tone: amRiskCount ? 'warn' : 'good', onclick: "swMain('risk')" },
           { label: 'Review growth list', value: amGrowthRows.length + ' agents', sub: 'upsell ready', tone: 'good', onclick: "swMain('growth')" },
-          { label: 'Tracking summary', value: 'Status', sub: 'team workload', tone: 'neutral', onclick: 'openTrkSummary()' }
+          { label: 'สรุปงานติดตาม', value: 'Status', sub: 'team workload', tone: 'neutral', onclick: 'openTrkSummary()' }
         ]
       });
 
@@ -14673,11 +14916,11 @@
           : '')
         + '</div></div>';
 
-      // ── Tracking Status ──
+      // ── Follow-up Status ──
       html += '<div class="ccard">'
-        + '<div class="ctitle" style="margin-bottom:10px">📊 Tracking Status</div>'
+        + '<div class="ctitle" style="margin-bottom:10px">📊 Follow-up Status</div>'
         + '<div id="home_trk_summary"><div style="font-size:11px;color:var(--t2)">⏳ กำลังโหลด...</div></div>'
-        + '<button class="home-qbtn home-qbtn-primary" style="width:100%;margin-top:10px;justify-content:center" onclick="openTrkSummary()">ดูรายละเอียด Tracking →</button>'
+        + '<button class="home-qbtn home-qbtn-primary" style="width:100%;margin-top:10px;justify-content:center" onclick="openTrkSummary()">ดูรายละเอียดงานติดตาม →</button>'
         + '</div>';
 
       html += '</div>'; // close ROW 4 grid
@@ -15083,7 +15326,7 @@
         // T03: Loss button removed
         // T03: Inactive button removed
         + '<button class="hero-sc-btn hero-sc-growth" onclick="swMain(\'growth\')">🟢 กลุ่มเติบโต</button>'
-        + '<button class="hero-sc-btn hero-sc-track" onclick="openTrkSummary()">📊 Tracking</button>'
+        + '<button class="hero-sc-btn hero-sc-track" onclick="openTrkSummary()">📊 สรุปงานติดตาม</button>'
         + '</div>'
         + '</div>'
         + '</div>';
@@ -15111,7 +15354,7 @@
           { label: 'เปิดรายการลูกค้า', value: fmtInt(totLeads) + ' ราย', sub: 'ค้นหาและกรอง', tone: 'neutral', onclick: "swMain('ls')" },
           { label: 'ทำ Risk follow-up', value: bdRiskCount + ' ราย', sub: 'Avg Rev ลด', tone: bdRiskCount > 0 ? 'warn' : 'good', onclick: "swMain('risk')" },
           { label: 'ทำ Growth follow-up', value: bdGrowthRows.length + ' ราย', sub: 'โอกาสเพิ่มยอด', tone: 'good', onclick: "swMain('growth')" },
-          { label: 'ดู Tracking', value: 'status', sub: 'งานค้าง/เสร็จ', tone: 'neutral', onclick: "openTrkSummary()" }
+          { label: 'ดูงานติดตาม', value: 'status', sub: 'งานค้าง/เสร็จ', tone: 'neutral', onclick: "openTrkSummary()" }
         ],
         note: 'BD เห็นเฉพาะพอร์ตและงานของตัวเอง ไม่ต้องอ่านตารางบริหารระดับ Zone'
       });
@@ -15156,7 +15399,7 @@
           { label: 'Open customer list', value: fmtInt(totLeads) + ' accounts', sub: 'search and filter', tone: 'neutral', onclick: "swMain('ls')" },
           { label: 'Do risk follow-up', value: bdRiskCount + ' agents', sub: 'protect revenue', tone: bdRiskCount ? 'warn' : 'good', onclick: "swMain('risk')" },
           { label: 'Do growth follow-up', value: bdGrowthRows.length + ' agents', sub: 'expand volume', tone: 'good', onclick: "swMain('growth')" },
-          { label: 'Tracking status', value: 'Update', sub: 'work queue', tone: 'neutral', onclick: 'openTrkSummary()' }
+          { label: 'สรุปงานติดตาม', value: 'Update', sub: 'work queue', tone: 'neutral', onclick: 'openTrkSummary()' }
         ]
       });
 
@@ -15445,7 +15688,7 @@
       }
 
       // Tracking summary
-      alertHtml += '<div class="ccard"><div class="ctitle" style="margin-bottom:8px">📊 Tracking Status</div>'
+      alertHtml += '<div class="ccard"><div class="ctitle" style="margin-bottom:8px">📊 Follow-up Status</div>'
         + '<div id="home_trk_summary"><div style="font-size:11px;color:var(--t2)">⏳ กำลังโหลด...</div></div>'
         + '<button class="home-qbtn home-qbtn-primary" style="width:100%;margin-top:8px;justify-content:center" onclick="openTrkSummary()">ดูรายละเอียด →</button>'
         + '</div>';
@@ -15478,7 +15721,7 @@
         + '<button class="home-qbtn home-qbtn-primary" style="width:100%;margin-top:10px;justify-content:center" onclick="swMain(\'ls\')">ดูรายการทั้งหมด →</button>'
         + '</div>';
       // Tracking card
-      html += '<div class="ccard"><div class="ctitle" style="margin-bottom:8px">📊 Tracking Status</div>'
+      html += '<div class="ccard"><div class="ctitle" style="margin-bottom:8px">📊 Follow-up Status</div>'
         + '<div id="home_trk_summary"><div style="font-size:11px;color:var(--t2)">⏳ กำลังโหลด...</div></div>'
         + '<button class="home-qbtn home-qbtn-primary" style="width:100%;margin-top:8px;justify-content:center" onclick="openTrkSummary()">ดูรายละเอียด →</button>'
         + '</div>';

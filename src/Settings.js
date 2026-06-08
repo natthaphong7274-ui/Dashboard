@@ -235,6 +235,41 @@ function getAllBdMonthlyTargets(token) {
 // ============================================================
 
 // getUserStatus(token) — ดึงรายชื่อ user + สถานะ lock/fail
+function _userSessionIndex_() {
+  var props = PropertiesService.getScriptProperties();
+  var all = props.getProperties();
+  var now = Date.now();
+  var onlineWindow = Math.max(2 * HEARTBEAT_MS, 10 * 60 * 1000);
+  var byUser = {};
+  Object.keys(all).forEach(function(k) {
+    if (k.indexOf(TOKEN_PREFIX) !== 0) return;
+    try {
+      var s = JSON.parse(all[k]);
+      if (!s || !s.username) return;
+      if (now - Number(s.loginTime || 0) > SESSION_TTL_MS) return;
+      var userKey = String(s.username || '').toLowerCase();
+      var lastActive = Number(s.lastActive || s.loginTime || 0);
+      var existing = byUser[userKey];
+      if (!existing || lastActive > existing.lastActiveMs) {
+        var nextCount = existing ? existing.sessionCount + 1 : 1;
+        byUser[userKey] = {
+          online: lastActive > 0 && (now - lastActive) <= onlineWindow,
+          lastActiveMs: lastActive,
+          lastActiveAt: lastActive ? Utilities.formatDate(new Date(lastActive), 'Asia/Bangkok', 'yyyy-MM-dd HH:mm') : '',
+          lastActiveMin: lastActive ? Math.max(0, Math.floor((now - lastActive) / 60000)) : null,
+          role: s.role || '',
+          zones: s.zones || [],
+          sessionCount: nextCount
+        };
+      } else if (existing) {
+        existing.sessionCount++;
+        if (lastActive > 0 && (now - lastActive) <= onlineWindow) existing.online = true;
+      }
+    } catch(e) {}
+  });
+  return byUser;
+}
+
 function getUserStatus(token) {
   var session = _requireSession(token || '', 'GET_USER_STATUS');
   if (!session.ok) return session;
@@ -255,6 +290,7 @@ function getUserStatus(token) {
 
     var props = PropertiesService.getScriptProperties();
     var now   = Date.now();
+    var sessions = _userSessionIndex_();
     var users = [];
 
     for (var i = 1; i < data.length; i++) {
@@ -290,7 +326,11 @@ function getUserStatus(token) {
         zone:         zIdx >= 0 ? String(data[i][zIdx] || '').trim() : 'All',
         locked:       locked,
         remainingMin: remainingMin,
-        failCount:    failCount
+        failCount:    failCount,
+        online:       !!(sessions[uLower] && sessions[uLower].online),
+        lastActiveAt: sessions[uLower] ? sessions[uLower].lastActiveAt : '',
+        lastActiveMin:sessions[uLower] ? sessions[uLower].lastActiveMin : null,
+        sessionCount: sessions[uLower] ? sessions[uLower].sessionCount : 0
       });
     }
 
