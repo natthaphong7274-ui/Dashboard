@@ -11,7 +11,7 @@ function doGet(e) {
   return HtmlService.createTemplateFromFile(entryFile)
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .setTitle('Dashboard Realtime');
+    .setTitle('Customer Insight Dashboard');
 }
 
 

@@ -2,7 +2,7 @@
 
 Branch: `UX_Sprint-3`
 
-ไฟล์นี้ใช้ติดตามงาน UX refinement ของ Dashboard Realtime ในฐานะ operational workspace โดยใช้รูปแบบคล้าย `PHASE_INDEX.md` เดิม แต่แยกชื่อเป็น UX Sprint เพื่อไม่ให้ชนกับประวัติงาน Phase 0-6
+ไฟล์นี้ใช้ติดตามงาน UX refinement ของ Customer Insight Dashboard ในฐานะ operational workspace โดยใช้รูปแบบคล้าย `PHASE_INDEX.md` เดิม แต่แยกชื่อเป็น UX Sprint เพื่อไม่ให้ชนกับประวัติงาน Phase 0-6
 
 ## รายการ UX Sprint
 

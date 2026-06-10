@@ -1,4 +1,4 @@
-# Dashboard Realtime — โครงสร้างไฟล์ Google Apps Script
+# Customer Insight Dashboard — โครงสร้างไฟล์ Google Apps Script
 
 ## วิธีใช้งาน
 
@@ -36,7 +36,7 @@
 function doGet(e) {
   return HtmlService.createHtmlOutputFromFile('Index')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .setTitle('Dashboard Realtime');
+    .setTitle('Customer Insight Dashboard');
 }
 ```
 

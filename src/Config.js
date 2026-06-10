@@ -4,7 +4,7 @@
 // ============================================================
 
 // ============================================================
-//  Code.gs — Dashboard Realtime  (Auto-discover edition)
+//  Code.gs — Customer Insight Dashboard  (Auto-discover edition)
 //  ✅ รองรับการเพิ่มชีตใหม่ Raw-KPI-XXX โดยอัตโนมัติ
 //     ไม่ต้องแก้โค้ดเมื่อเพิ่มเดือนใหม่
 //  Sheet mapping (auto-detected):
