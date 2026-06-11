@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-11T09:27:00Z",
+  "title": "Design System: Customer Insight Dashboard",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Deep Slate Blue", "canonical": "oklch(27% 0.05 240)", "tonalRamp": ["#091822", "#0f2331", "#153041", "#113247", "#2e4a5f", "#5b7388", "#93a6b7", "#dee4ea"] },
+      "accent": { "role": "accent", "displayName": "Mint Emerald", "canonical": "oklch(77% 0.17 165)", "tonalRamp": ["#003b30", "#005a4a", "#008169", "#00d4aa", "#40dfbf", "#80ebd4", "#bfeee3", "#f2fcf9"] },
+      "neutral-bg": { "role": "neutral", "displayName": "Slate Ash", "canonical": "oklch(97% 0.005 240)", "tonalRamp": ["#e0e7e9", "#e8eff1", "#f0f5f7", "#f3f7f8", "#f6fafb", "#f9fcfd", "#fbfcfc", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "body": { "displayName": "Body Stack", "purpose": "Default operational text, tables, and metric data." }
+    },
+    "shadows": [
+      { "name": "ambient-focus", "value": "0 24px 60px rgba(17,32,42,0.10)", "purpose": "Used on active overlay components such as the login card and modal windows." }
+    ],
+    "motion": [
+      { "name": "snappy-standard", "value": "150ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Snappy transitions for hovers and status indicators." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1180px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Standard action button used across key operations and sign-in controls.",
+      "html": "<button class=\"ds-btn-primary\">Sign in</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 10px 20px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; border-radius: 10px; background: linear-gradient(135deg, #113247, #1e485f); color: #ffffff; border: none; cursor: pointer; transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 12px 24px rgba(17,50,71,0.16); } .ds-btn-primary:hover { background: #1e485f; transform: translateY(-1px); } .ds-btn-primary:active { transform: translateY(0); }"
+    },
+    {
+      "name": "Text Input Field",
+      "kind": "input",
+      "description": "Structured secure text fields for authentication and system search.",
+      "html": "<input type=\"text\" class=\"ds-input-text\" placeholder=\"Username\" />",
+      "css": ".ds-input-text { width: 100%; box-sizing: border-box; min-height: 40px; border-radius: 10px; background: #f7fafb; border: 1.5px solid #d5dfe2; padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 13px; outline: none; transition: border-color 150ms, box-shadow 150ms, background-color 150ms; } .ds-input-text:focus { border-color: #0f766e; background: #ffffff; box-shadow: 0 0 0 3px rgba(15,118,110,0.10); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Calm Operational Beacon",
+    "overview": "The Customer Insight Dashboard visual system prioritizes speed, clarity, and task-focused dense information. It supports three distinct operational roles (Director, AM, BD) working in ambient daylight or dim environments, needing to parse complex customer risk, growth, and carrier flow signals in seconds. The aesthetic philosophy rejects gratuitous decoration, glassmorphism, or neon gradients in favor of clean, solid, semantic grids.",
+    "keyCharacteristics": [
+      "Restrained color application with a 90% neutral foundation.",
+      "High-contrast typography optimized for rapid scanning of tabular and metric data.",
+      "State-driven micro-interactions with short, snappy transitions (150ms)."
+    ],
+    "rules": [
+      { "name": "The 10% Accent Rule", "body": "The mint accent is restricted to less than 10% of any screen. Its rarity guarantees that active states and critical signals immediately draw focus.", "section": "colors" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadows and border shifts appear only in response to interaction (hover, active focus).", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use semantic green/orange/red pills to convey customer status rather than decorative icons.",
+      "Do align form inputs and headers to the baseline grid layout.",
+      "Do keep text labels sentence-cased."
+    ],
+    "donts": [
+      "Don't use border-left greater than 1px as a colored stripe on cards or alerts.",
+      "Don't use glassmorphic blur effects or decorative gradients on dashboard containers.",
+      "Don't wrap widgets in nested cards; keep the container hierarchy flat."
+    ]
+  }
+}

@@ -16972,289 +16972,631 @@ function setAppLang(lang) { _appLang = lang; if (typeof renderKPI === 'function'
   }
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-  (function initLogin3D() {
-    var canvas = document.getElementById('login3d');
-    if (!canvas) return;
-
-    var renderer, scene, camera, animId;
-    var isDragging = false, prevMouse = { x: 0, y: 0 };
-    var autoRotateY = 0, autoRotateX = 0.18;
-    var userRotY = 0, userRotX = 0;
-    var group;
-
-    function init() {
-      var W = canvas.parentElement.clientWidth || 800;
-      var H = canvas.parentElement.clientHeight || 700;
-
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(W, H);
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0d1f2d);
-      scene.fog = new THREE.Fog(0x0d1f2d, 30, 80);
-
-      camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 200);
-      camera.position.set(0, 12, 28);
-      camera.lookAt(0, 0, 0);
-
-      // Lights
-      var amb = new THREE.AmbientLight(0xffffff, 0.4);
-      scene.add(amb);
-
-      var dir = new THREE.DirectionalLight(0xffffff, 0.9);
-      dir.position.set(10, 20, 15);
-      dir.castShadow = true;
-      scene.add(dir);
-
-      var pt1 = new THREE.PointLight(0x00d4aa, 1.2, 40);
-      pt1.position.set(-8, 8, 5);
-      scene.add(pt1);
-
-      var pt2 = new THREE.PointLight(0x3b82f6, 0.8, 35);
-      pt2.position.set(8, 6, -5);
-      scene.add(pt2);
-
-      // Ground grid
-      var gridHelper = new THREE.GridHelper(30, 20, 0x1e3a4a, 0x1e3a4a);
-      gridHelper.position.y = -0.01;
-      scene.add(gridHelper);
-
-      // Bar chart data — simulate monthly revenue by zone
-      var data = [
-        { label: 'Jan', values: [6.2, 4.1, 5.8], },
-        { label: 'Feb', values: [7.5, 5.3, 4.9], },
-        { label: 'Mar', values: [5.1, 6.8, 7.2], },
-        { label: 'Apr', values: [8.3, 5.9, 6.1], },
-        { label: 'May', values: [9.1, 7.4, 5.5], },
-        { label: 'Jun', values: [7.8, 8.2, 6.9], },
-        { label: 'Jul', values: [6.4, 7.1, 8.8], },
-        { label: 'Aug', values: [9.5, 6.3, 7.5], },
-      ];
-
-      var colors = [0x009B9B, 0x22c55e, 0x3b82f6];
-      var barW = 0.55, gap = 0.2;
-      var groupW = data[0].values.length * (barW + gap) - gap;
-      var monthGap = 1.1;
-      var totalW = data.length * (groupW + monthGap) - monthGap;
-
-      group = new THREE.Group();
-
-      data.forEach(function (month, mi) {
-        month.values.forEach(function (val, zi) {
-          var h = val * 0.6;
-          var geo = new THREE.BoxGeometry(barW, h, barW);
-          var mat = new THREE.MeshPhongMaterial({
-            color: colors[zi],
-            shininess: 80,
-            specular: new THREE.Color(0x444444),
-            transparent: true,
-            opacity: 0.92
-          });
-          var mesh = new THREE.Mesh(geo, mat);
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-
-          var x = -totalW / 2 + mi * (groupW + monthGap) + zi * (barW + gap) + barW / 2;
-          mesh.position.set(x, h / 2, 0);
-
-          // Animated entrance target
-          mesh.userData.targetY = h / 2;
-          mesh.userData.delay = mi * 0.06 + zi * 0.03;
-          mesh.position.y = -2; // start below ground
-          mesh.scale.y = 0.01;
-
-          group.add(mesh);
-
-          // Top cap glow
-          var capGeo = new THREE.BoxGeometry(barW, 0.08, barW);
-          var capMat = new THREE.MeshPhongMaterial({
-            color: colors[zi],
-            emissive: new THREE.Color(colors[zi]),
-            emissiveIntensity: 0.6,
-            transparent: true,
-            opacity: 0.9
-          });
-          var cap = new THREE.Mesh(capGeo, capMat);
-          cap.position.set(x, h, 0);
-          cap.userData.isCap = true;
-          cap.userData.barMesh = mesh;
-          cap.scale.y = 0.01;
-          group.add(cap);
-        });
-      });
-
-      // Floor plane
-      var floorGeo = new THREE.PlaneGeometry(40, 40);
-      var floorMat = new THREE.MeshPhongMaterial({ color: 0x0a1822, shininess: 20 });
-      var floor = new THREE.Mesh(floorGeo, floorMat);
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -0.02;
-      floor.receiveShadow = true;
-      scene.add(floor);
-
-      // Floating particles
-      var partGeo = new THREE.BufferGeometry();
-      var partCount = 120;
-      var positions = new Float32Array(partCount * 3);
-      for (var i = 0; i < partCount; i++) {
-        positions[i * 3] = (Math.random() - 0.5) * 30;
-        positions[i * 3 + 1] = Math.random() * 15;
-        positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
-      }
-      partGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      var partMat = new THREE.PointsMaterial({ color: 0x009B9B, size: 0.12, transparent: true, opacity: 0.5 });
-      var particles = new THREE.Points(partGeo, partMat);
-      scene.add(particles);
-
-      scene.add(group);
-
-      // Mouse / touch drag
-      canvas.addEventListener('mousedown', function (e) { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; canvas.style.cursor = 'grabbing'; });
-      window.addEventListener('mouseup', function () { isDragging = false; canvas.style.cursor = 'grab'; });
-      window.addEventListener('mousemove', function (e) {
-        if (!isDragging) return;
-        userRotY += (e.clientX - prevMouse.x) * 0.008;
-        userRotX += (e.clientY - prevMouse.y) * 0.005;
-        userRotX = Math.max(-0.6, Math.min(0.6, userRotX));
-        prevMouse = { x: e.clientX, y: e.clientY };
-      });
-      canvas.addEventListener('touchstart', function (e) { isDragging = true; prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, { passive: true });
-      window.addEventListener('touchend', function () { isDragging = false; });
-      window.addEventListener('touchmove', function (e) {
-        if (!isDragging) return;
-        userRotY += (e.touches[0].clientX - prevMouse.x) * 0.008;
-        prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }, { passive: true });
-
-      // ★ ปิด scroll-wheel zoom บน canvas (ป้องกัน browser zoom หน้าเว็บ)
-      canvas.addEventListener('wheel', function (e) { e.preventDefault(); }, { passive: false });
-
-      window.addEventListener('resize', onResize);
-      animate();
+// ===== INTERACTIVE EYES =====
+(function initInteractiveEyes() {
+  var lastMouseX = window.innerWidth / 2;
+  var lastMouseY = window.innerHeight / 2;
+  
+  window.addEventListener('mousemove', function(e) {
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  });
+  
+  window.addEventListener('touchmove', function(e) {
+    if (e.touches && e.touches.length > 0) {
+      lastMouseX = e.touches[0].clientX;
+      lastMouseY = e.touches[0].clientY;
     }
+  }, { passive: true });
 
-    var clock = { start: Date.now() };
-    function elapsed() { return (Date.now() - clock.start) / 1000; }
-
-    function animate() {
-      animId = requestAnimationFrame(animate);
-      var t = elapsed();
-
-      // Bar entrance animation
-      group.children.forEach(function (mesh) {
-        if (mesh.userData.delay !== undefined && !mesh.userData.isCap) {
-          var progress = Math.max(0, Math.min(1, (t - mesh.userData.delay) * 1.4));
-          var ease = 1 - Math.pow(1 - progress, 3);
-          mesh.scale.y = ease;
-          mesh.position.y = mesh.userData.targetY * ease - mesh.userData.targetY * (1 - ease) * 0;
-          if (progress >= 1) mesh.position.y = mesh.userData.targetY;
-        }
-        if (mesh.userData.isCap) {
-          var bar = mesh.userData.barMesh;
-          if (bar && bar.scale.y > 0.98) mesh.scale.y = 1;
-        }
-      });
-
-      // Auto slow rotation loop
-      if (!isDragging) {
-        autoRotateY += 0.003;
-      }
-
-      group.rotation.y = autoRotateY + userRotY;
-      group.rotation.x = autoRotateX + userRotX;
-
-      // Particles drift
-      scene.children.forEach(function (obj) {
-        if (obj instanceof THREE.Points) {
-          obj.rotation.y += 0.0005;
-          obj.position.y = Math.sin(t * 0.2) * 0.3;
-        }
-      });
-
-      renderer.render(scene, camera);
-    }
-
-    function onResize() {
-      var el = canvas.parentElement;
-      if (!el) return;
-      var W = el.clientWidth, H = el.clientHeight;
-      camera.aspect = W / H;
-      camera.updateProjectionMatrix();
-      renderer.setSize(W, H);
-    }
-
-    // Init when login overlay is shown
-    var _3dInited = false;
-    var _origShow = window.showLoginOverlay;
-    window.showLoginOverlay = function () {
-      if (_origShow) _origShow.apply(this, arguments);
-      if (!_3dInited) {
-        setTimeout(function () { init(); _3dInited = true; }, 80);
-      }
-    };
-
-    // Also try on DOMContentLoaded if overlay already visible
-    document.addEventListener('DOMContentLoaded', function () {
-      var ov = document.getElementById('login_overlay');
-      if (ov && ov.style.display !== 'none' && !_3dInited) {
-        init(); _3dInited = true;
-      }
+  function randomizeEyeSettings() {
+    var stage = document.querySelector('.login-eye-stage');
+    if (!stage) return;
+    
+    var colors = ['green', 'orange', 'blue', 'peach', 'red', 'pink'];
+    var randomColor = colors[Math.floor(Math.random() * colors.length)];
+    colors.forEach(function(c) {
+      stage.classList.remove('eye-variant-' + c);
     });
-
-    // UX Sprint 9: Help / Onboarding Modal
-    window.openHelpModal = function () {
-      var overlay = document.getElementById('helpOverlay');
-      if (overlay) overlay.classList.add('open');
-    };
-
-    window.closeHelpModal = function () {
-      var overlay = document.getElementById('helpOverlay');
-      if (overlay) {
-        overlay.classList.remove('open');
-        localStorage.setItem('hasSeenOnboarding_v1', 'true');
+    stage.classList.add('eye-variant-' + randomColor);
+    
+    var shapes = ['normal', 'heart', 'angry', 'dizzy', 'happy'];
+    var randomShape = shapes[Math.floor(Math.random() * shapes.length)];
+    stage.setAttribute('data-shape', randomShape);
+    
+    renderEyeSVG(randomShape);
+  }
+  
+  function renderEyeSVG(shape) {
+    var mount = document.getElementById('login_eye_mount');
+    if (!mount) return;
+    
+    var html = '';
+    html += LT + 'svg class="login-eye-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"' + GT;
+    
+    // Brows slants
+    var browLeftD = "M 90 90 Q 120 75 150 90";
+    var browRightD = "M 250 90 Q 280 75 310 90";
+    if (shape === 'angry') {
+      browLeftD = "M 90 78 L 150 102";
+      browRightD = "M 250 102 L 310 78";
+    } else if (shape === 'happy') {
+      browLeftD = "M 90 98 Q 120 112 150 98";
+      browRightD = "M 250 98 Q 280 112 310 98";
+    } else if (shape === 'dizzy') {
+      browLeftD = "M 90 82 Q 120 86 150 82";
+      browRightD = "M 250 82 Q 280 86 310 82";
+    }
+    
+    html += LT + 'path class="login-brow left-brow" d="' + browLeftD + '" /' + GT;
+    html += LT + 'path class="login-brow right-brow" d="' + browRightD + '" /' + GT;
+    
+    // Eyes background shape
+    if (shape === 'happy') {
+      html += LT + 'path class="login-eye-line left-eye" d="M 85 130 Q 120 98 155 130" /' + GT;
+      html += LT + 'path class="login-eye-line right-eye" d="M 245 130 Q 280 98 315 130" /' + GT;
+    } else if (shape === 'heart') {
+      html += LT + 'path class="login-heart-shape left-eye-bg" d="M 120 155 C 120 155 80 128 80 112 C 80 96 98 86 112 98 C 120 105 120 105 120 105 C 120 105 120 105 128 98 C 142 86 160 96 160 112 C 160 128 120 155 120 155 Z" /' + GT;
+      html += LT + 'path class="login-heart-shape right-eye-bg" d="M 280 155 C 280 155 240 128 240 112 C 240 96 258 86 272 98 C 280 105 280 105 280 105 C 280 105 280 105 288 98 C 302 86 320 96 320 112 C 320 128 280 155 280 155 Z" /' + GT;
+    } else {
+      html += LT + 'ellipse class="login-eye-white left-eye-bg" cx="120" cy="130" rx="45" ry="35" /' + GT;
+      html += LT + 'ellipse class="login-eye-white right-eye-bg" cx="280" cy="130" rx="45" ry="35" /' + GT;
+    }
+    
+    // Pupils
+    if (shape !== 'happy') {
+      html += LT + 'g class="left-pupil-container" style="transform-box: fill-box; transform-origin: center;"' + GT;
+      if (shape === 'dizzy') {
+        html += LT + 'path class="login-pupil dizzy-x" d="M 110 120 L 130 140 M 130 120 L 110 140" stroke-width="6" stroke="var(--eye-ink)" stroke-linecap="round" /' + GT;
+      } else {
+        html += LT + 'circle class="login-pupil" cx="120" cy="130" r="18" /' + GT;
+        html += LT + 'circle class="login-highlight" cx="113" cy="122" r="5" /' + GT;
       }
-    };
-
-    // UX Sprint 8: Global Keyboard Shortcuts
-    document.addEventListener('keydown', function (e) {
-      var tag = (e.target.tagName || '').toLowerCase();
-      var isInput = (tag === 'input' || tag === 'textarea' || tag === 'select');
-
-      // Esc: Close modals, blur inputs
-      if (e.key === 'Escape') {
-        if (typeof hideAC === 'function') hideAC();
-        if (typeof closeMtModal === 'function') closeMtModal();
-        var umModal = document.getElementById('um_modal');
-        if (umModal && umModal.style.display !== 'none') umModal.style.display = 'none';
-        if (isInput) e.target.blur();
-        return;
+      html += LT + '/g' + GT;
+      
+      html += LT + 'g class="right-pupil-container" style="transform-box: fill-box; transform-origin: center;"' + GT;
+      if (shape === 'dizzy') {
+        html += LT + 'path class="login-pupil dizzy-x" d="M 270 120 L 290 140 M 290 120 L 270 140" stroke-width="6" stroke="var(--eye-ink)" stroke-linecap="round" /' + GT;
+      } else {
+        html += LT + 'circle class="login-pupil" cx="280" cy="130" r="18" /' + GT;
+        html += LT + 'circle class="login-highlight" cx="273" cy="122" r="5" /' + GT;
       }
+      html += LT + '/g' + GT;
+    }
+    
+    // Smile/mouth
+    var mouthD = "M 170 205 Q 200 225 230 205";
+    if (shape === 'angry') {
+      mouthD = "M 175 215 Q 200 200 225 215";
+    } else if (shape === 'dizzy') {
+      mouthD = "M 185 210 Q 200 225 215 210";
+    }
+    html += LT + 'path class="login-eye-mouth" d="' + mouthD + '" /' + GT;
+    
+    html += LT + '/svg' + GT;
+    mount.innerHTML = html;
+  }
+  
+  function updatePupils() {
+    var overlay = document.getElementById('login_overlay');
+    if (!overlay || overlay.style.display === 'none') {
+      requestAnimationFrame(updatePupils);
+      return;
+    }
+    
+    var leftContainer = document.querySelector('.left-pupil-container');
+    var rightContainer = document.querySelector('.right-pupil-container');
+    if (leftContainer) movePupil(leftContainer, 120, 130);
+    if (rightContainer) movePupil(rightContainer, 280, 130);
+    
+    requestAnimationFrame(updatePupils);
+  }
+  
+  function movePupil(container, cx, cy) {
+    var svg = document.querySelector('.login-eye-svg');
+    if (!svg) return;
+    
+    var rect = svg.getBoundingClientRect();
+    if (rect.width === 0) return;
+    
+    var scaleX = rect.width / 400;
+    var scaleY = rect.height / 300;
+    var eyeScreenX = rect.left + cx * scaleX;
+    var eyeScreenY = rect.top + cy * scaleY;
+    
+    var dx = lastMouseX - eyeScreenX;
+    var dy = lastMouseY - eyeScreenY;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    
+    var maxDist = 12;
+    var tx = 0;
+    var ty = 0;
+    
+    if (dist > 0.1) {
+      var factor = Math.min(dist / 200, 1);
+      var targetDist = maxDist * factor;
+      tx = (dx / dist) * targetDist;
+      ty = (dy / dist) * targetDist;
+    }
+    container.style.transform = 'translate(' + tx + 'px, ' + ty + 'px)';
+  }
+  
+  // Wire initialization hook
+  var _origShow = window.showLoginOverlay;
+  window.showLoginOverlay = function() {
+    if (_origShow) _origShow.apply(this, arguments);
+    setTimeout(function() { randomizeEyeSettings(); }, 50);
+  };
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    var ov = document.getElementById('login_overlay');
+    if (ov && ov.style.display !== 'none') {
+      randomizeEyeSettings();
+    }
+  });
+  
+  // Start tracking animation frames
+  updatePupils();
+})();
 
-      // Cmd+K or Ctrl+K: Global search focus
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+// ===== DESERT HORSE LOADING MINI-GAME =====
+(function initDesertHorse() {
+  var canvas = document.getElementById('splash_game_canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var scoreEl = document.getElementById('splash_game_score');
+  
+  var score = 0;
+  var speed = 5.5;
+  var gravity = 0.58;
+  var groundY = canvas.height - 40;
+  
+  var horse = {
+    x: 80,
+    y: groundY - 48,
+    w: 52,
+    h: 44,
+    vy: 0,
+    isJumping: false,
+    isDucking: false,
+    boostTimer: 0,
+    invincibleTimer: 0,
+    frame: 0
+  };
+  
+  var obstacles = [];
+  var particles = [];
+  var routeLines = [
+    { y: groundY - 80, speedMult: 0.6, packets: [{x: 200}, {x: 600}] },
+    { y: groundY - 140, speedMult: 0.4, packets: [{x: 100}, {x: 500}, {x: 800}] }
+  ];
+  
+  var gameOverFlash = 0;
+  var keys = {};
+  
+  window.addEventListener('keydown', function(e) {
+    var splash = document.getElementById('splash_screen');
+    if (splash && splash.style.display !== 'none') {
+      if (['Space', 'ArrowUp', 'ArrowDown', 'KeyB'].indexOf(e.code) !== -1 || e.key === ' ' || e.key === 'b' || e.key === 'B') {
         e.preventDefault();
-        var srch = document.getElementById('agentSrch');
-        if (srch) {
-          srch.focus();
-          srch.select();
-        }
-        return;
       }
-
-      // Number keys for tab navigation
-      if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (e.key === '1') { e.preventDefault(); swMain('home'); }
-        else if (e.key === '2') { e.preventDefault(); swMain('ov'); }
-        else if (e.key === '3') { e.preventDefault(); swMain('cr'); }
-        else if (e.key === '4') { e.preventDefault(); swMain('risk'); }
-        else if (e.key === '5') { e.preventDefault(); swMain('growth'); }
-      }
+    }
+    keys[e.code] = true;
+    if (e.key === ' ' || e.key === 'ArrowUp') keys['Jump'] = true;
+    if (e.key === 'ArrowDown') keys['Duck'] = true;
+    if (e.key === 'b' || e.key === 'B') keys['Boost'] = true;
+  });
+  
+  window.addEventListener('keyup', function(e) {
+    keys[e.code] = false;
+    if (e.key === ' ' || e.key === 'ArrowUp') keys['Jump'] = false;
+    if (e.key === 'ArrowDown') keys['Duck'] = false;
+    if (e.key === 'b' || e.key === 'B') keys['Boost'] = false;
+  });
+  
+  canvas.addEventListener('touchstart', function(e) {
+    var splash = document.getElementById('splash_screen');
+    if (!splash || splash.style.display === 'none') return;
+    
+    var rect = canvas.getBoundingClientRect();
+    var touchY = e.touches[0].clientY - rect.top;
+    if (touchY < canvas.height / 2) {
+      keys['Jump'] = true;
+    } else {
+      keys['Duck'] = true;
+    }
+  }, { passive: true });
+  
+  canvas.addEventListener('touchend', function(e) {
+    keys['Jump'] = false;
+    keys['Duck'] = false;
+  }, { passive: true });
+  
+  function spawnObstacle() {
+    var minInterval = 110;
+    var lastObs = obstacles[obstacles.length - 1];
+    if (lastObs && (canvas.width - lastObs.x) < minInterval) return;
+    
+    var rand = Math.random();
+    var type = 'low';
+    var ow = 24;
+    var oh = 28;
+    var oy = groundY - oh;
+    
+    if (rand < 0.35) {
+      type = 'high';
+      ow = 22;
+      oh = 24;
+      oy = groundY - 62;
+    } else if (rand < 0.6) {
+      type = 'wide';
+      ow = 48;
+      oh = 18;
+      oy = groundY - oh;
+    }
+    
+    obstacles.push({
+      x: canvas.width + 10,
+      y: oy,
+      w: ow,
+      h: oh,
+      type: type,
+      color: type === 'high' ? '#00d4aa' : '#3b82f6'
     });
+  }
+  
+  function resetGame() {
+    score = 0;
+    obstacles = [];
+    particles = [];
+    horse.y = groundY - 48;
+    horse.vy = 0;
+    horse.isJumping = false;
+    horse.isDucking = false;
+    horse.boostTimer = 0;
+    horse.invincibleTimer = 60;
+    gameOverFlash = 12;
+    if (scoreEl) scoreEl.textContent = '00000';
+  }
+  
+  function update() {
+    var splash = document.getElementById('splash_screen');
+    var isVisible = splash && (splash.style.display !== 'none' && !splash.classList.contains('fade-out'));
+    if (!isVisible) {
+      requestAnimationFrame(update);
+      return;
+    }
+    
+    horse.frame++;
+    if (horse.invincibleTimer > 0) horse.invincibleTimer--;
+    if (gameOverFlash > 0) gameOverFlash--;
+    
+    // Jump physics
+    if (keys['Jump'] && !horse.isJumping && !horse.isDucking) {
+      horse.vy = -11.5;
+      horse.isJumping = true;
+      for (var i = 0; i < 8; i++) {
+        particles.push({
+          x: horse.x + 10,
+          y: groundY,
+          vx: -2 - Math.random() * 2,
+          vy: -Math.random() * 3,
+          size: 2 + Math.random() * 3,
+          color: '#00d4aa',
+          life: 25
+        });
+      }
+    }
+    
+    // Apply gravity
+    horse.vy += gravity;
+    horse.y += horse.vy;
+    
+    if (horse.y >= groundY - 48) {
+      horse.y = groundY - 48;
+      horse.vy = 0;
+      horse.isJumping = false;
+    }
+    
+    // Duck
+    if (keys['Duck'] && !horse.isJumping) {
+      horse.isDucking = true;
+      horse.h = 24;
+    } else {
+      horse.isDucking = false;
+      horse.h = 44;
+    }
+    
+    // Boost
+    if (keys['Boost'] && horse.boostTimer <= 0) {
+      horse.boostTimer = 75;
+    }
+    
+    var currentSpeed = speed;
+    if (horse.boostTimer > 0) {
+      horse.boostTimer--;
+      currentSpeed *= 1.8;
+      if (horse.frame % 2 === 0) {
+        particles.push({
+          x: horse.x,
+          y: horse.y + 15 + Math.random() * 15,
+          vx: -5 - Math.random() * 4,
+          vy: (Math.random() - 0.5) * 3,
+          size: 3 + Math.random() * 3,
+          color: '#00d4aa',
+          life: 20
+        });
+      }
+    }
+    
+    // Scroll packets
+    routeLines.forEach(function(rl) {
+      rl.packets.forEach(function(p) {
+        p.x -= currentSpeed * rl.speedMult;
+        if (p.x < -30) {
+          p.x = canvas.width + 20 + Math.random() * 100;
+        }
+      });
+    });
+    
+    // Spawn obstacles
+    if (horse.frame % 90 === 0 && Math.random() > 0.4) {
+      spawnObstacle();
+    }
+    
+    for (var j = obstacles.length - 1; j >= 0; j--) {
+      var obs = obstacles[j];
+      obs.x -= currentSpeed;
+      
+      if (horse.invincibleTimer === 0) {
+        var hx = horse.x + 6;
+        var hw = horse.w - 12;
+        var hy = horse.isDucking ? (groundY - 24) : horse.y + 4;
+        var hh = horse.isDucking ? 24 : horse.h - 4;
+        
+        if (hx < obs.x + obs.w &&
+            hx + hw > obs.x &&
+            hy < obs.y + obs.h &&
+            hy + hh > obs.y) {
+          resetGame();
+          break;
+        }
+      }
+      
+      if (obs.x + obs.w < 0) {
+        obstacles.splice(j, 1);
+        score += 10;
+        if (scoreEl) {
+          var pad = '00000';
+          scoreEl.textContent = (pad + score).slice(-5);
+        }
+      }
+    }
+    
+    // Running dust
+    if (!horse.isJumping && !horse.isDucking && horse.frame % 5 === 0) {
+      particles.push({
+        x: horse.x + 5,
+        y: groundY - 2,
+        vx: -2 - Math.random() * 2,
+        vy: -Math.random() * 1.5,
+        size: 1.5 + Math.random() * 2.5,
+        color: '#64748b',
+        life: 18
+      });
+    }
+    
+    // Particles update
+    for (var k = particles.length - 1; k >= 0; k--) {
+      var p = particles[k];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life--;
+      if (p.life <= 0) {
+        particles.splice(k, 1);
+      }
+    }
+    
+    draw();
+    requestAnimationFrame(update);
+  }
+  
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    
+    // Networks background
+    ctx.lineWidth = 1.5;
+    routeLines.forEach(function(rl) {
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(17, 50, 71, 0.08)';
+      ctx.beginPath();
+      ctx.moveTo(0, rl.y);
+      ctx.lineTo(canvas.width, rl.y);
+      ctx.stroke();
+      
+      ctx.fillStyle = isDark ? '#475569' : '#94a3b8';
+      rl.packets.forEach(function(p) {
+        ctx.beginPath();
+        ctx.arc(p.x, rl.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    });
+    
+    // Ground
+    ctx.strokeStyle = isDark ? '#334357' : '#cfd9dd';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(canvas.width, groundY);
+    ctx.stroke();
+    
+    // Ground Grid lines
+    ctx.strokeStyle = isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(148, 163, 184, 0.15)';
+    ctx.lineWidth = 1.5;
+    var step = 45;
+    var offset = (horse.frame * (horse.boostTimer > 0 ? speed * 1.8 : speed)) % step;
+    for (var x = -offset; x < canvas.width; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, groundY);
+      ctx.lineTo(x - 20, canvas.height);
+      ctx.stroke();
+    }
+    
+    // Draw particles
+    particles.forEach(function(p) {
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.life / 25;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1.0;
+    
+    // Obstacles
+    obstacles.forEach(function(obs) {
+      ctx.fillStyle = obs.color;
+      ctx.shadowColor = obs.color;
+      ctx.shadowBlur = 8;
+      
+      if (obs.type === 'high') {
+        ctx.beginPath();
+        ctx.moveTo(obs.x + obs.w/2, obs.y);
+        ctx.lineTo(obs.x + obs.w, obs.y + obs.h/2);
+        ctx.lineTo(obs.x + obs.w/2, obs.y + obs.h);
+        ctx.lineTo(obs.x, obs.y + obs.h/2);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+      }
+      ctx.shadowBlur = 0;
+    });
+    
+    // Horse runner
+    if (horse.invincibleTimer === 0 || Math.floor(horse.frame / 4) % 2 === 0) {
+      ctx.fillStyle = isDark ? '#00d4aa' : '#113247';
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = horse.boostTimer > 0 ? 12 : 3;
+      
+      ctx.save();
+      ctx.translate(horse.x, horse.y);
+      
+      if (horse.isDucking) {
+        ctx.beginPath();
+        ctx.ellipse(26, 32, 26, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(44, 26, 8, 6, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        var legOffset = Math.sin(horse.frame * 0.25) * 8;
+        
+        ctx.beginPath();
+        ctx.ellipse(24, 24, 18, 11, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(34, 20);
+        ctx.lineTo(46, 8);
+        ctx.lineTo(52, 12);
+        ctx.lineTo(40, 26);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(48, 9, 8, 5, -0.4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.lineWidth = 4.5;
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineCap = 'round';
+        
+        ctx.beginPath();
+        ctx.moveTo(12, 28);
+        ctx.lineTo(8 - legOffset, 42);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(16, 28);
+        ctx.lineTo(18 + legOffset, 42);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(32, 28);
+        ctx.lineTo(36 + legOffset, 42);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(28, 28);
+        ctx.lineTo(24 - legOffset, 42);
+        ctx.stroke();
+        
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(6, 20);
+        ctx.quadraticCurveTo(0, 16 - legOffset * 0.5, -4, 26);
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.shadowBlur = 0;
+    }
+    
+    if (gameOverFlash > 0) {
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+  
+  update();
+})();
 
-  })();
+// ===== HELP & ONBOARDING =====
+window.openHelpModal = function () {
+  var overlay = document.getElementById('helpOverlay');
+  if (overlay) overlay.classList.add('open');
+};
+
+window.closeHelpModal = function () {
+  var overlay = document.getElementById('helpOverlay');
+  if (overlay) {
+    overlay.classList.remove('open');
+    localStorage.setItem('hasSeenOnboarding_v1', 'true');
+  }
+};
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', function (e) {
+  var tag = (e.target.tagName || '').toLowerCase();
+  var isInput = (tag === 'input' || tag === 'textarea' || tag === 'select');
+
+  // Esc: Close modals, blur inputs
+  if (e.key === 'Escape') {
+    if (typeof hideAC === 'function') hideAC();
+    if (typeof closeMtModal === 'function') closeMtModal();
+    var umModal = document.getElementById('um_modal');
+    if (umModal && umModal.style.display !== 'none') umModal.style.display = 'none';
+    if (isInput) e.target.blur();
+    return;
+  }
+
+  // Cmd+K or Ctrl+K: Global search focus
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    var srch = document.getElementById('agentSrch');
+    if (srch) {
+      srch.focus();
+      srch.select();
+    }
+    return;
+  }
+
+  // Number keys for tab navigation
+  if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (e.key === '1') { e.preventDefault(); swMain('home'); }
+    else if (e.key === '2') { e.preventDefault(); swMain('ov'); }
+    else if (e.key === '3') { e.preventDefault(); swMain('cr'); }
+    else if (e.key === '4') { e.preventDefault(); swMain('risk'); }
+    else if (e.key === '5') { e.preventDefault(); swMain('growth'); }
+  }
+});
 </script>
