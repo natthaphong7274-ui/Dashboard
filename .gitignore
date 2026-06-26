@@ -25,3 +25,12 @@ node_modules/
 Thumbs.db
 .vscode/
 .idea/
+
+# Agent scratch files and plugins
+.agents/
+.impeccable/
+
+# Backups and documentation
+backups_pre_i18n/
+dashboard_documentation/
+docs/oklch-color-architecture/

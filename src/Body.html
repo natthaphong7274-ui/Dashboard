@@ -1,7 +1,7 @@
 <!-- ══ SPLASH LOADING SCREEN ══ -->
 <div id="splash_screen">
-  <div class="splash-radar" aria-hidden="true">
-    <div class="splash-radar-grid"></div>
+  <!-- Network visual background -->
+  <div class="splash-route" aria-hidden="true">
     <div class="splash-radar-ring ring-a"></div>
     <div class="splash-radar-ring ring-b"></div>
     <div class="splash-radar-ring ring-c"></div>
@@ -11,7 +11,7 @@
     <span class="splash-node n3"></span>
     <span class="splash-node n4"></span>
     <span class="splash-node n5"></span>
-    <div class="splash-route">
+    <div class="splash-route-lines">
       <span class="route-line line-a"></span>
       <span class="route-line line-b"></span>
       <span class="route-line line-c"></span>
@@ -45,75 +45,66 @@
 
   <!-- Center branding -->
   <div class="splash-center">
-    <div class="splash-kicker" data-i18n="splash.kicker">Customer operations workspace</div>
-    <div class="splash-title" data-i18n="app.title">Customer Insight Dashboard</div>
+    <div class="splash-kicker">Customer operations workspace</div>
+    <div class="splash-title">Customer Insight Dashboard</div>
     <div class="splash-divider"></div>
-    <div class="splash-sub" data-i18n="splash.sub">Checking role scope and follow-up signals</div>
-    <div class="splash-game-card" aria-label="Loading mini game" data-i18n-aria="splash.game.aria">
+    <div class="splash-sub">กำลังเริ่มต้นพื้นที่ทำงานวิเคราะห์ข้อมูลลูกค้า...</div>
+    <div class="splash-game-card" aria-label="Loading mini game">
       <div class="splash-game-head">
-        <span data-i18n="splash.game.title">Desert Horse</span>
+        <span>ม้าข้ามทะเลทราย (Desert Horse)</span>
         <b id="splash_game_score">00000</b>
       </div>
       <canvas id="splash_game_canvas" width="900" height="260"></canvas>
-      <div class="splash-game-help" data-i18n="splash.game.help">SPACE / ↑ jump · ↓ duck · B boost</div>
+      <div class="splash-game-help">SPACE / ↑ กระโดด · ↓ หมอบ · B บูสต์</div>
     </div>
     <div class="splash-load-row">
       <div class="splash-percent" id="splash_percent">0%</div>
       <div class="splash-load-meta">
-        <div class="splash-load-label" id="splash_stage" data-i18n="splash.stage.start">Starting workspace</div>
+        <div class="splash-load-label" id="splash_stage">Starting workspace</div>
         <div class="splash-progress"><span id="splash_progress_bar" style="width:0%"></span></div>
       </div>
     </div>
-    <div class="splash-steps" aria-label="Loading steps" data-i18n-aria="splash.steps.aria">
-      <span id="splash_step_auth" class="active" data-i18n="scope.auth">Auth</span>
-      <span id="splash_step_scope" data-i18n="scope.role">Role scope</span>
-      <span id="splash_step_data" data-i18n="scope.signals">Customer signals</span>
+    <div class="splash-steps" aria-label="Loading steps">
+      <span id="splash_step_auth" class="active">สิทธิ์เข้าถึง</span>
+      <span id="splash_step_scope">ขอบเขตสิทธิ์</span>
+      <span id="splash_step_data">สัญญาณลูกค้า</span>
     </div>
   </div>
 </div>
 <!-- ★ ข้อ 4: Login Overlay -->
 <div id="login_overlay" style="display:none;position:fixed;inset:0;z-index:9999;">
   <div class="login-shell">
-    <section class="login-left" aria-label="Customer insight workspace preview" data-i18n-aria="login.preview.aria">
+    <section class="login-left" aria-label="ตัวอย่างพื้นที่ทำงานวิเคราะห์ข้อมูลลูกค้า">
       <div class="login-eye-stage eye-variant-blue" aria-hidden="true">
         <div class="login-eye-card" id="login_eye_mount"></div>
       </div>
     </section>
 
-    <section class="login-right" aria-label="Sign in" data-i18n-aria="login.signin.aria">
-      <div class="app-pref-controls login-pref-controls" aria-label="Display settings" data-i18n-aria="prefs.aria">
-        <div class="seg-control" role="group" aria-label="Language" data-i18n-aria="prefs.language">
-          <button type="button" data-lang-btn="th" onclick="setAppLang('th')">TH</button>
-          <button type="button" data-lang-btn="en" onclick="setAppLang('en')">EN</button>
-        </div>
-        <div class="seg-control" role="group" aria-label="Theme" data-i18n-aria="prefs.theme">
-          <button type="button" data-theme-btn="light" onclick="setAppTheme('light')" data-i18n-title="theme.light">☀</button>
-          <button type="button" data-theme-btn="dark" onclick="setAppTheme('dark')" data-i18n-title="theme.dark">☾</button>
-        </div>
-      </div>
+    <section class="login-right" aria-label="เข้าสู่ระบบ">
+
       <div class="login-card">
         <div class="login-brand-row">
           <div class="login-card-icon" aria-hidden="true">CI</div>
           <div>
-            <div class="login-card-eyebrow" data-i18n="login.eyebrow">Secure workspace access</div>
-            <div class="login-card-title" data-i18n="app.title">Customer Insight Dashboard</div>
+            <div class="login-card-eyebrow">เข้าสู่ระบบพื้นที่ทำงานที่ปลอดภัย</div>
+            <div class="login-card-title">Customer Insight Dashboard</div>
           </div>
         </div>
-        <div class="login-card-sub" data-i18n="login.sub">Sign in to load your role scope, customer signals, and follow-up queue.</div>
+        <div class="login-card-sub">เข้าสู่ระบบเพื่อโหลดขอบเขตบทบาท หน้าที่ และสัญญาณลูกค้าเพื่อติดตามผล</div>
 
-        <div class="login-scope-strip" aria-label="Workspace scope" data-i18n-aria="scope.aria">
-          <span data-i18n="scope.auth">Auth</span><span data-i18n="scope.role">Role scope</span><span data-i18n="scope.signals">Customer signals</span>
+        <div class="login-scope-strip" aria-label="ขอบเขตพื้นที่ทำงาน">
+          <span>สิทธิ์เข้าถึง</span><span>ขอบเขตสิทธิ์</span><span>สัญญาณลูกค้า</span>
         </div>
 
         <div class="login-field">
-          <label class="login-field-label" for="login_user" data-i18n="field.username">Username</label>
-          <input id="login_user" type="text" placeholder="Username" data-i18n-placeholder="field.username" autocomplete="username"
+          <label class="login-field-label" for="login_user">ชื่อผู้ใช้</label>
+          <input id="login_user" type="text" placeholder="ชื่อผู้ใช้" autocomplete="username"
             class="login-input"
             onkeydown="if(event.key==='Enter')document.getElementById('login_pass').focus()">
         </div>
         <div class="login-field">
-          <label class="login-field-label" for="login_pass" data-i18n="field.password">Password</label>
-          <input id="login_pass" type="password" placeholder="Password" data-i18n-placeholder="field.password" autocomplete="current-password"
+          <label class="login-field-label" for="login_pass">รหัสผ่าน</label>
+          <input id="login_pass" type="password" placeholder="••••••••" autocomplete="current-password"
             class="login-input"
             onkeydown="if(event.key==='Enter')doLogin()">
         </div>
@@ -121,30 +112,30 @@
         <div id="login_err" class="login-err"></div>
         <div id="login_status_bar" class="login-status-bar"></div>
 
-        <button onclick="doLogin()" id="login_btn" class="login-btn-main" data-i18n="login.button">Sign in</button>
+        <button onclick="doLogin()" id="login_btn" class="login-btn-main">เข้าสู่ระบบ</button>
 
         <button type="button" class="login-director-toggle" onclick="toggleDirectorUnlock()">
-          <span data-i18n="director.unlock">Director unlock</span>
-          <b data-i18n="director.recovery">Account recovery</b>
+          <span>สิทธิ์ Director ปลดล็อก</span>
+          <b>กู้คืนบัญชีผู้ใช้</b>
         </button>
         <div id="director_unlock_panel" style="display:none">
-          <div class="director-panel-title" data-i18n="director.verify">Director verification</div>
+          <div class="director-panel-title">ยืนยันสิทธิ์ Director</div>
           <div class="director-field-grid">
-            <label><span data-i18n="director.username">Director username</span><input id="dir_username" type="text" autocomplete="username" placeholder="Director username" data-i18n-placeholder="director.username"></label>
-            <label><span data-i18n="director.password">Director password</span><input id="dir_password" type="password" autocomplete="current-password" placeholder="Password" data-i18n-placeholder="field.password"></label>
+            <label><span>ชื่อผู้ใช้ Director</span><input id="dir_username" type="text" autocomplete="username" placeholder="ชื่อผู้ใช้ Director"></label>
+            <label><span>รหัสผ่าน Director</span><input id="dir_password" type="password" autocomplete="current-password" placeholder="••••••••"></label>
           </div>
-          <label class="director-target-field"><span data-i18n="director.lockedUser">Locked username</span><input id="dir_target_user" type="text" placeholder="Username to unlock" data-i18n-placeholder="director.unlockPlaceholder"></label>
+          <label class="director-target-field"><span>ชื่อผู้ใช้ที่ถูกล็อก</span><input id="dir_target_user" type="text" placeholder="ชื่อผู้ใช้ที่ต้องการปลดล็อก"></label>
           <div id="dir_unlock_msg" class="director-unlock-msg"></div>
-          <button onclick="doDirectorUnlock()" id="dir_unlock_btn" class="director-unlock-btn" data-i18n="director.unlockButton">Unlock account</button>
+          <button onclick="doDirectorUnlock()" id="dir_unlock_btn" class="director-unlock-btn">ปลดล็อกบัญชี</button>
         </div>
       </div>
 
       <div class="login-footer">
-        <span data-i18n="footer.internal">Internal use only</span>
+        <span>สำหรับใช้ภายในองค์กรเท่านั้น</span>
         <div class="login-footer-links">
-          <a href="#" data-i18n="footer.privacy">Privacy</a>
-          <a href="#" data-i18n="footer.terms">Terms</a>
-          <a href="#" data-i18n="footer.security">Security</a>
+          <a href="#">ความเป็นส่วนตัว</a>
+          <a href="#">ข้อกำหนดการใช้งาน</a>
+          <a href="#">ความปลอดภัย</a>
         </div>
       </div>
     </section>
@@ -154,27 +145,27 @@
 <div class="nav">
   <!-- Brand -->
   <div class="nav-brand">
-    <span style="font-size:18px;line-height:1">📊</span>
+    <span class="material-symbols-outlined">analytics</span>
     <div class="nav-brand-copy">
-      <span class="nav-brand-title" data-i18n="nav.brandTitle">Customer Insight</span>
-      <span class="nav-brand-sub" data-i18n="nav.brandSub">Dashboard</span>
+      <span class="nav-brand-title">Customer Insight</span>
+      <span class="nav-brand-sub">Dashboard</span>
     </div>
   </div>
 
   <!-- Main tabs -->
-  <div class="nav-tabs" aria-label="Dashboard navigation" data-i18n-aria="nav.aria">
-    <div class="nav-group nav-group-main" aria-label="Main navigation" data-i18n-aria="nav.mainAria">
-      <span class="nav-group-label" data-i18n="nav.main">Main</span>
-      <button class="ntab active" id="home_tab" onclick="swMain('home')" data-i18n="nav.home">🏠 หน้าแรก</button>
-      <button class="ntab" onclick="swMain('ov')" data-i18n="nav.overview">📈 ภาพรวม</button>
-      <button class="ntab" onclick="swMain('ls')" data-i18n="nav.customers">📋 รายการลูกค้า</button>
+  <div class="nav-tabs" aria-label="Dashboard navigation" id="main_nav_tabs">
+    <div class="nav-group nav-group-main" aria-label="Main navigation">
+      <span class="nav-group-label">Main</span>
+      <button class="ntab active" id="home_tab" onclick="swMain('home')">🏠 หน้าแรก</button>
+      <button class="ntab" onclick="swMain('ov')">📈 ภาพรวม</button>
+      <button class="ntab" onclick="swMain('ls')">📋 รายการลูกค้า</button>
     </div>
     <div class="nav-divider"></div>
-    <div class="nav-group nav-group-work" aria-label="Work modules" data-i18n-aria="nav.workAria">
-      <span class="nav-group-label" data-i18n="nav.work">Work</span>
-      <button class="ntab" onclick="swMain('cr')" data-i18n="nav.carrier">🚚 ขนส่ง</button>
-      <button class="ntab ntab-risk" onclick="swMain('risk')" data-i18n="nav.risk">⚠️ กลุ่มเสี่ยง</button>
-      <button class="ntab ntab-growth" onclick="swMain('growth')" data-i18n="nav.growth">📈 กลุ่มเติบโต</button>
+    <div class="nav-group nav-group-work" aria-label="Work modules">
+      <span class="nav-group-label">Work</span>
+      <button class="ntab" onclick="swMain('cr')">🚚 ขนส่ง</button>
+      <button class="ntab ntab-risk" onclick="swMain('risk')">⚠️ กลุ่มเสี่ยง</button>
+      <button class="ntab ntab-growth" onclick="swMain('growth')">📈 กลุ่มเติบโต</button>
     </div>
   </div>
 
@@ -182,42 +173,33 @@
   <div class="nav-r">
     <div id="user_badge" style="display:flex;flex-direction:column;align-items:flex-end;gap:1px"></div>
     <div class="nav-divider-v"></div>
-    <div class="app-pref-controls nav-pref-controls" aria-label="Display settings" data-i18n-aria="prefs.aria">
-      <div class="seg-control" role="group" aria-label="Language" data-i18n-aria="prefs.language">
-        <button type="button" data-lang-btn="th" onclick="setAppLang('th')">TH</button>
-        <button type="button" data-lang-btn="en" onclick="setAppLang('en')">EN</button>
-      </div>
-      <div class="seg-control" role="group" aria-label="Theme" data-i18n-aria="prefs.theme">
-        <button type="button" data-theme-btn="light" onclick="setAppTheme('light')" data-i18n-title="theme.light">☀</button>
-        <button type="button" data-theme-btn="dark" onclick="setAppTheme('dark')" data-i18n-title="theme.dark">☾</button>
-      </div>
-    </div>
     <span class="lupd" id="lupd"></span>
-    <button class="rbtn rbtn-refresh" onclick="loadData(true)" data-i18n="action.refresh">🔄 รีเฟรช</button>
-    <button class="rbtn" id="help_btn" onclick="openHelpModal()" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;border-radius:20px;padding:4px 10px;" data-i18n="action.help">❓ ช่วยเหลือ</button>
-    <span id="trk_poll_badge" class="trk-poll-badge" style="display:none;" title="อัปเดตสถานะจาก Sheet ทุก 30 วินาที" data-i18n-title="poll.title">⟳ auto</span>
-    <button class="rbtn rbtn-admin" id="usermgmt_tab" onclick="swMain('usermgmt')" style="display:none" data-i18n="nav.userMgmt">🔐 จัดการผู้ใช้</button>
-    <button id="logout_btn" onclick="doLogout()" class="btn-logout" style="display:none;" data-i18n="action.logout">ออกจากระบบ</button>
+    <span id="trk_poll_badge" class="trk-poll-badge" style="display:none;" title="อัปเดตสถานะจาก Sheet ทุก 30 วินาที">⟳ auto</span>
+    <div class="nav-actions-row">
+      <button class="rbtn rbtn-refresh" onclick="loadData(true)" title="รีเฟรชข้อมูล"><span class="material-symbols-outlined">refresh</span><span>รีเฟรช</span></button>
+      <button class="rbtn" id="help_btn" onclick="openHelpModal()" style="display:none;" title="ช่วยเหลือ"><span class="material-symbols-outlined">help</span><span>ช่วยเหลือ</span></button>
+      <button id="logout_btn" onclick="confirmLogout(this)" class="btn-logout" style="display:none;" title="ออกจากระบบ"><span class="material-symbols-outlined">logout</span><span>ออกจากระบบ</span></button>
+    </div>
   </div>
 </div>
 <!-- UX Sprint 8: Keyboard Shortcut Hint Bar -->
 <div id="kb-hint-bar" class="kb-hint-bar" aria-hidden="true">
-  <span class="kb-hint-item"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd> <span data-i18n="kbd.tabs">สลับแท็บ</span></span>
+  <span class="kb-hint-item"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd> สลับแท็บ</span>
   <span class="kb-hint-sep">·</span>
-  <span class="kb-hint-item"><kbd>Ctrl</kbd><kbd>K</kbd> <span data-i18n="kbd.search">ค้นหา Agent</span></span>
+  <span class="kb-hint-item"><kbd>Ctrl</kbd><kbd>K</kbd> ค้นหา Agent</span>
   <span class="kb-hint-sep">·</span>
-  <span class="kb-hint-item"><kbd>Esc</kbd> <span data-i18n="kbd.close">ปิด</span></span>
+  <span class="kb-hint-item"><kbd>Esc</kbd> ปิด</span>
 </div>
 <div id="dashboard_watermark" class="dashboard-watermark" aria-hidden="true"></div>
 <div id="dashboard_capture_watermark" class="dashboard-capture-watermark" aria-hidden="true"></div>
 <div class="ms-overlay" id="msOverlay" onclick="closeAllDD()"></div>
 <div class="main">
   <div class="fpanel">
-    <div class="fph"><h3 data-i18n="filter.title">🔍 ตัวกรองข้อมูล</h3><span class="badge" id="fcnt" data-i18n="filter.loading">กำลังโหลด...</span></div>
+    <div class="fph"><h3>🔍 ตัวกรองข้อมูล</h3><span class="badge" id="fcnt">กำลังโหลด...</span></div>
     <div class="frow" id="frow"><div class="loading"><div class="spin"></div></div></div>
   </div>
   <div class="month-bar" id="monthBar">
-    <span class="month-bar-label" data-i18n="month.label">📅 เดือน:</span>
+    <span class="month-bar-label">📅 เดือน:</span>
     <select class="month-select" id="monthSel" onchange="setMonth()"></select>
     <span class="month-hint" id="mhint">—</span>
     <span class="day-badge" id="dayBadge">วันที่ —</span>
@@ -228,8 +210,8 @@
     <!-- Loading state -->
     <div id="home_loading" class="home-loading">
       <div class="spin" style="margin:0 auto 12px"></div>
-      <div class="home-loading-title" data-i18n="state.loading.title">Preparing workspace</div>
-      <div style="font-size:13px;color:var(--t2)" data-i18n="home.loading.dataSub">กำลังเตรียมข้อมูล...</div>
+      <div class="home-loading-title">Preparing workspace</div>
+      <div style="font-size:13px;color:var(--t2)">กำลังเตรียมข้อมูล...</div>
     </div>
 
     <!-- ===== LEGACY ROLE MAP SECTION REMOVED =====
@@ -241,9 +223,9 @@
   <div id="mainOv" style="display:none">
     <div class="ops-page-head ov-page-head">
       <div>
-        <div class="ops-eyebrow" data-i18n="overview.eyebrow">Overview</div>
-        <h2 data-i18n="overview.title">ภาพรวมสถานการณ์</h2>
-        <p data-i18n="overview.sub">สรุป performance ตามเดือนและ scope ปัจจุบัน เพื่อเห็นสัญญาณหลักก่อนลงรายละเอียด</p>
+        <div class="ops-eyebrow">Overview</div>
+        <h2>ภาพรวมสถานการณ์</h2>
+        <p>สรุป performance ตามเดือนและ scope ปัจจุบัน เพื่อเห็นสัญญาณหลักก่อนลงรายละเอียด</p>
       </div>
       <div class="ops-head-meta" aria-label="Overview context">
         <span>Revenue</span>
@@ -253,38 +235,38 @@
     </div>
 
     <!-- KPI Overview Cards -->
-    <div class="kgrid" id="kgrid"><div class="loading"><div class="spin"></div><span data-i18n="filter.loading">กำลังโหลด...</span></div></div>
+    <div class="kgrid" id="kgrid"><div class="loading"><div class="spin"></div>กำลังโหลด...</div></div>
     <!-- Extra KPI: Avg Rev/piece + Avg Vol/day -->
     <div class="kpi-extra-row" id="kgrid_extra"></div>
     <div class="overview-trend-panel" id="overview_trend_panel">
       <div class="overview-trend-head">
         <div>
-          <div class="overview-trend-title" data-i18n="overview.trend.title">Avg Performance Trend</div>
-          <div class="overview-trend-sub" data-i18n="overview.trend.sub">กราฟแท่งคือค่าเฉลี่ยรายเดือน เส้นคือ % MoM จากเดือนก่อนหน้า</div>
+          <div class="overview-trend-title">Avg Performance Trend</div>
+          <div class="overview-trend-sub">กราฟแท่งคือค่าเฉลี่ยรายเดือน เส้นคือ % MoM จากเดือนก่อนหน้า</div>
         </div>
         <span id="overview_trend_range" class="overview-trend-range"></span>
       </div>
       <div class="overview-trend-grid">
         <div class="overview-trend-card">
           <div class="overview-trend-card-head">
-            <div class="overview-trend-card-title" data-i18n="overview.trend.avgRevDay">Avg Rev/day trend</div>
-            <div class="overview-trend-legend"><span><i class="bar"></i><span data-i18n="overview.actual">Actual</span></span><span><i class="line"></i><span data-i18n="overview.mom">MoM</span></span></div>
+            <div class="overview-trend-card-title">Avg Rev/day trend</div>
+            <div class="overview-trend-legend"><span><i class="bar"></i>Actual</span><span><i class="line"></i>MoM</span></div>
           </div>
           <div class="overview-trend-chart"><canvas id="c_ov_trend_avg_rev_day"></canvas></div>
           <div class="overview-trend-note" id="ov_trend_note_avg_rev_day"></div>
         </div>
         <div class="overview-trend-card">
           <div class="overview-trend-card-head">
-            <div class="overview-trend-card-title" data-i18n="overview.trend.avgVolDay">Avg Vol/day trend</div>
-            <div class="overview-trend-legend"><span><i class="bar"></i><span data-i18n="overview.actual">Actual</span></span><span><i class="line"></i><span data-i18n="overview.mom">MoM</span></span></div>
+            <div class="overview-trend-card-title">Avg Vol/day trend</div>
+            <div class="overview-trend-legend"><span><i class="bar"></i>Actual</span><span><i class="line"></i>MoM</span></div>
           </div>
           <div class="overview-trend-chart"><canvas id="c_ov_trend_avg_vol_day"></canvas></div>
           <div class="overview-trend-note" id="ov_trend_note_avg_vol_day"></div>
         </div>
         <div class="overview-trend-card">
           <div class="overview-trend-card-head">
-            <div class="overview-trend-card-title" data-i18n="overview.trend.avgRevPiece">Avg Rev/ชิ้น trend</div>
-            <div class="overview-trend-legend"><span><i class="bar"></i><span data-i18n="overview.actual">Actual</span></span><span><i class="line"></i><span data-i18n="overview.mom">MoM</span></span></div>
+            <div class="overview-trend-card-title">Avg Rev/ชิ้น trend</div>
+            <div class="overview-trend-legend"><span><i class="bar"></i>Actual</span><span><i class="line"></i>MoM</span></div>
           </div>
           <div class="overview-trend-chart"><canvas id="c_ov_trend_avg_rev_piece"></canvas></div>
           <div class="overview-trend-note" id="ov_trend_note_avg_rev_piece"></div>
@@ -294,242 +276,242 @@
     <div class="ov-tab-bar" id="secTabs">
       <!-- Group 1: Performance -->
       <div class="ov-tab-group">
-        <span class="ov-tab-group-label" data-i18n="overview.tab.performance">Performance</span>
+        <span class="ov-tab-group-label">Performance</span>
         <div class="ov-tab-group-btns">
-          <button class="stab active" id="stab_revenue" onclick="swSec('revenue',this)" data-i18n="overview.tab.revenue">Revenue</button>
-          <button class="stab" id="stab_vol" onclick="swSec('vol',this)" data-i18n="overview.tab.volume">Volume</button>
-          <button class="stab" id="stab_avgrev" onclick="swSec('avgrev',this)" data-i18n="overview.tab.avgRevDay">Avg Rev/วัน</button>
-          <button class="stab" id="stab_avgvol" onclick="swSec('avgvol',this)" data-i18n="overview.tab.avgVolDay">Avg Vol/วัน</button>
-          <button class="stab" id="stab_avgpiece" onclick="swSec('avgpiece',this)" data-i18n="overview.tab.avgRevPiece">Avg Rev/ชิ้น</button>
+          <button class="stab active" id="stab_revenue" onclick="swSec('revenue',this)">Revenue</button>
+          <button class="stab" id="stab_vol" onclick="swSec('vol',this)">Volume</button>
+          <button class="stab" id="stab_avgrev" onclick="swSec('avgrev',this)">Avg Rev/วัน</button>
+          <button class="stab" id="stab_avgvol" onclick="swSec('avgvol',this)">Avg Vol/วัน</button>
+          <button class="stab" id="stab_avgpiece" onclick="swSec('avgpiece',this)">Avg Rev/ชิ้น</button>
         </div>
       </div>
       <div class="ov-tab-divider"></div>
       <!-- Group 2: Breakdown -->
       <div class="ov-tab-group">
-        <span class="ov-tab-group-label" data-i18n="overview.tab.breakdown">Breakdown</span>
+        <span class="ov-tab-group-label">Breakdown</span>
         <div class="ov-tab-group-btns">
-          <button class="stab" id="stab_bd" onclick="swSec('bd',this)" data-i18n="overview.tab.bdZone">BD Zone</button>
-          <button class="stab" id="stab_area" onclick="swSec('area',this)" data-i18n="overview.tab.area">พื้นที่</button>
-          <button class="stab" id="stab_acc" onclick="swSec('acc',this)" data-i18n="overview.tab.account">Account</button>
-          <button class="stab" id="stab_pkg" onclick="swSec('pkg',this)" data-i18n="overview.tab.package">Package</button>
+          <button class="stab" id="stab_bd" onclick="swSec('bd',this)">BD Zone</button>
+          <button class="stab" id="stab_area" onclick="swSec('area',this)">พื้นที่</button>
+          <button class="stab" id="stab_acc" onclick="swSec('acc',this)">Account</button>
+          <button class="stab" id="stab_pkg" onclick="swSec('pkg',this)">Package</button>
         </div>
       </div>
       <div class="ov-tab-divider"></div>
       <!-- Group 3: Compare -->
       <div class="ov-tab-group">
         <div class="ov-tab-group-btns">
-          <button class="stab cmp-tab" id="stab_compare" onclick="swSec('compare',this)" data-i18n="overview.tab.compare">⚖️ เปรียบเทียบ</button>
+          <button class="stab cmp-tab" id="stab_compare" onclick="swSec('compare',this)">⚖️ เปรียบเทียบ</button>
         </div>
       </div>
     </div>
 
     <!-- Revenue -->
     <div class="spanel active" id="sp-revenue">
-      <div class="sdiv"><h3>💰 <span data-i18n="overview.tab.revenue">Revenue</span></h3></div>
+      <div class="sdiv"><h3>💰 Revenue</h3></div>
       <div class="g3">
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_rev_zone" data-i18n="overview.revByZone">Revenue ราย Zone</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_rev_zone">Revenue ราย Zone</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_rev_zone"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" data-i18n="overview.revByPkg">Revenue แยก Package</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle">Revenue แยก Package</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_rev_pkg"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_rev_prov" data-i18n="overview.revByProv">Revenue แยกจังหวัด Top10</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_rev_prov">Revenue แยกจังหวัด Top10</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_rev_prov"></canvas></div>
         </div>
       </div>
-      <div class="ccard gfull"><div class="chdr"><div class="ctitle" data-i18n="overview.revRanking">Revenue Ranking</div></div><div style="max-height:230px;overflow-y:auto" id="rev_rank"></div></div>
-      <div class="ccard gfull" id="dp_rev_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_rev_zone"></span><span class="drill-close" onclick="closeDrill('dp_rev_zone')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_rev_zone"></div></div>
-      <div class="ccard gfull" id="dp_rev_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_rev_pkg"></span><span class="drill-close" onclick="closeDrill('dp_rev_pkg')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_rev_pkg"></div></div>
-      <div class="ccard gfull" id="dp_rev_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_rev_prov"></span><span class="drill-close" onclick="closeDrill('dp_rev_prov')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_rev_prov"></div></div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Revenue Ranking</div></div><div class="rank-list" id="rev_rank"></div></div>
+      <div class="ccard gfull" id="dp_rev_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_rev_zone"></span><span class="drill-close" onclick="closeDrill('dp_rev_zone')">✕ ปิด</span></div><div id="dpb_rev_zone"></div></div>
+      <div class="ccard gfull" id="dp_rev_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_rev_pkg"></span><span class="drill-close" onclick="closeDrill('dp_rev_pkg')">✕ ปิด</span></div><div id="dpb_rev_pkg"></div></div>
+      <div class="ccard gfull" id="dp_rev_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_rev_prov"></span><span class="drill-close" onclick="closeDrill('dp_rev_prov')">✕ ปิด</span></div><div id="dpb_rev_prov"></div></div>
     </div>
 
     <!-- Volume -->
     <div class="spanel" id="sp-vol">
-      <div class="sdiv"><h3>📦 <span data-i18n="overview.tab.volume">Volume</span></h3></div>
+      <div class="sdiv"><h3>📦 Volume</h3></div>
       <div class="g3">
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_vol_zone" data-i18n="overview.volByZone">Volume ราย Zone</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_vol_zone">Volume ราย Zone</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_vol_zone"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" data-i18n="overview.volByPkg">Volume แยก Package</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle">Volume แยก Package</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_vol_pkg"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" data-i18n="overview.volByProv">Volume แยกจังหวัด Top10</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle">Volume แยกจังหวัด Top10</div></div>
           <div class="ch260"><canvas id="c_vol_prov"></canvas></div>
         </div>
       </div>
-      <div class="ccard gfull"><div class="chdr"><div class="ctitle" data-i18n="overview.volRanking">Volume Ranking</div></div><div style="max-height:230px;overflow-y:auto" id="vol_rank"></div></div>
-      <div class="ccard gfull" id="dp_vol_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_vol_zone"></span><span class="drill-close" onclick="closeDrill('dp_vol_zone')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_vol_zone"></div></div>
-      <div class="ccard gfull" id="dp_vol_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_vol_pkg"></span><span class="drill-close" onclick="closeDrill('dp_vol_pkg')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_vol_pkg"></div></div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Volume Ranking</div></div><div class="rank-list" id="vol_rank"></div></div>
+      <div class="ccard gfull" id="dp_vol_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_vol_zone"></span><span class="drill-close" onclick="closeDrill('dp_vol_zone')">✕ ปิด</span></div><div id="dpb_vol_zone"></div></div>
+      <div class="ccard gfull" id="dp_vol_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_vol_pkg"></span><span class="drill-close" onclick="closeDrill('dp_vol_pkg')">✕ ปิด</span></div><div id="dpb_vol_pkg"></div></div>
     </div>
 
     <!-- Avg Rev -->
     <div class="spanel" id="sp-avgrev">
-      <div class="sdiv"><h3>📐 <span data-i18n="overview.tab.avgRevDay">Avg Rev/day</span> <span class="metric-help" tabindex="0" data-i18n-title="overview.help.avgRevDay" data-i18n-aria="overview.help.avgRevDay">?</span></h3></div>
+      <div class="sdiv"><h3>📐 Avg Rev/day <span class="metric-help" tabindex="0" title="คำนวณจาก Revenue รวม ÷ จำนวนวันที่ใช้จริงของเดือนนั้น ถ้าเป็นเดือนปัจจุบันจะใช้วันข้อมูลล่าสุด ไม่ใช่เต็มเดือน" aria-label="คำนวณจาก Revenue รวม หารด้วยจำนวนวันที่ใช้จริงของเดือนนั้น ถ้าเป็นเดือนปัจจุบันจะใช้วันข้อมูลล่าสุด ไม่ใช่เต็มเดือน">?</span></h3></div>
       <div class="g2">
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_avg_zone" data-i18n="overview.avgRevByZone">Avg Rev/day ราย Zone</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_avg_zone">Avg Rev/day ราย Zone</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_avg_zone"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" data-i18n="overview.avgRevByPkg">Avg Rev/day แยก Package</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle">Avg Rev/day แยก Package</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_avg_pkg"></canvas></div>
         </div>
       </div>
       <div class="g2">
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" data-i18n="overview.avgRevByProv">Avg Rev/day แยกจังหวัด</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle">Avg Rev/day แยกจังหวัด</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_avg_prov"></canvas></div>
         </div>
-        <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="overview.avgRevRanking">Avg Rev/day Ranking</div></div><div style="max-height:270px;overflow-y:auto" id="avg_rank"></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle">Avg Rev/day Ranking</div></div><div class="rank-list tall" id="avg_rank"></div></div>
       </div>
-      <div class="ccard gfull" id="dp_avg_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_avg_zone"></span><span class="drill-close" onclick="closeDrill('dp_avg_zone')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_avg_zone"></div></div>
-      <div class="ccard gfull" id="dp_avg_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_avg_pkg"></span><span class="drill-close" onclick="closeDrill('dp_avg_pkg')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_avg_pkg"></div></div>
-      <div class="ccard gfull" id="dp_avg_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_avg_prov"></span><span class="drill-close" onclick="closeDrill('dp_avg_prov')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_avg_prov"></div></div>
+      <div class="ccard gfull" id="dp_avg_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_avg_zone"></span><span class="drill-close" onclick="closeDrill('dp_avg_zone')">✕ ปิด</span></div><div id="dpb_avg_zone"></div></div>
+      <div class="ccard gfull" id="dp_avg_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_avg_pkg"></span><span class="drill-close" onclick="closeDrill('dp_avg_pkg')">✕ ปิด</span></div><div id="dpb_avg_pkg"></div></div>
+      <div class="ccard gfull" id="dp_avg_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_avg_prov"></span><span class="drill-close" onclick="closeDrill('dp_avg_prov')">✕ ปิด</span></div><div id="dpb_avg_prov"></div></div>
     </div>
 
     <!-- Avg Rev/ชิ้น Section -->
     <div class="spanel" id="sp-avgpiece">
-      <div class="sdiv"><h3>🏷️ <span data-i18n="overview.avgRevPieceTitle">Avg Revenue ต่อชิ้น (Rev ÷ Vol)</span></h3></div>
+      <div class="sdiv"><h3>🏷️ Avg Revenue ต่อชิ้น (Rev ÷ Vol)</h3></div>
       <div class="kgrid" id="avgpiece_kgrid" style="margin-bottom:12px;"></div>
       <div class="g3">
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_ap_zone" data-i18n="overview.avgRevPieceByZone">Avg Rev/ชิ้น ราย Zone</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_ap_zone">Avg Rev/ชิ้น ราย Zone</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_ap_zone"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_ap_pkg" data-i18n="overview.avgRevPieceByPkg">Avg Rev/ชิ้น แยก Package</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_ap_pkg">Avg Rev/ชิ้น แยก Package</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_ap_pkg"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_ap_prov" data-i18n="overview.avgRevPieceByProv">Avg Rev/ชิ้น แยกจังหวัด Top10</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_ap_prov">Avg Rev/ชิ้น แยกจังหวัด Top10</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_ap_prov"></canvas></div>
         </div>
       </div>
-      <div class="ccard gfull"><div class="chdr"><div class="ctitle" data-i18n="overview.avgRevPieceRanking">Avg Rev/ชิ้น Ranking</div></div><div style="max-height:230px;overflow-y:auto" id="ap_rank"></div></div>
-      <div class="ccard gfull" id="dp_ap_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_zone"></span><span class="drill-close" onclick="closeDrill('dp_ap_zone')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_ap_zone"></div></div>
-      <div class="ccard gfull" id="dp_ap_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_pkg"></span><span class="drill-close" onclick="closeDrill('dp_ap_pkg')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_ap_pkg"></div></div>
-      <div class="ccard gfull" id="dp_ap_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_prov"></span><span class="drill-close" onclick="closeDrill('dp_ap_prov')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_ap_prov"></div></div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Avg Rev/ชิ้น Ranking</div></div><div class="rank-list" id="ap_rank"></div></div>
+      <div class="ccard gfull" id="dp_ap_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_zone"></span><span class="drill-close" onclick="closeDrill('dp_ap_zone')">✕ ปิด</span></div><div id="dpb_ap_zone"></div></div>
+      <div class="ccard gfull" id="dp_ap_pkg" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_pkg"></span><span class="drill-close" onclick="closeDrill('dp_ap_pkg')">✕ ปิด</span></div><div id="dpb_ap_pkg"></div></div>
+      <div class="ccard gfull" id="dp_ap_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_ap_prov"></span><span class="drill-close" onclick="closeDrill('dp_ap_prov')">✕ ปิด</span></div><div id="dpb_ap_prov"></div></div>
     </div>
 
     <!-- Avg Vol Section (UX Sprint 4: คู่ Avg Rev) -->
     <div class="spanel" id="sp-avgvol">
-      <div class="sdiv"><h3>📦 <span data-i18n="overview.avgVolDayTitle">Avg Volume/วัน — คู่ Avg Rev</span></h3></div>
+      <div class="sdiv"><h3>📦 Avg Volume/วัน — คู่ Avg Rev</h3></div>
       <div class="kgrid" id="avgvol_kgrid" style="margin-bottom:12px;"></div>
       <div class="g3">
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_av_zone" data-i18n="overview.avgVolDayByZone">Avg Vol/วัน ราย Zone</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_av_zone">Avg Vol/วัน ราย Zone</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_av_zone"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_av_pkg" data-i18n="overview.avgVolDayByPkg">Avg Vol/วัน แยก Package</div></div>
+          <div class="chdr"><div class="ctitle" id="t_av_pkg">Avg Vol/วัน แยก Package</div></div>
           <div class="ch260"><canvas id="c_av_pkg"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_av_prov" data-i18n="overview.avgVolDayByProv">Avg Vol/วัน แยกจังหวัด Top10</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_av_prov">Avg Vol/วัน แยกจังหวัด Top10</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch260"><canvas id="c_av_prov"></canvas></div>
         </div>
       </div>
-      <div class="ccard gfull"><div class="chdr"><div class="ctitle" data-i18n="overview.avgVolDayRanking">Avg Vol/วัน Ranking</div></div><div style="max-height:230px;overflow-y:auto" id="avd_rank"></div></div>
-      <div class="ccard gfull" id="dp_av_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_av_zone"></span><span class="drill-close" onclick="closeDrill('dp_av_zone')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_av_zone"></div></div>
-      <div class="ccard gfull" id="dp_av_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_av_prov"></span><span class="drill-close" onclick="closeDrill('dp_av_prov')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_av_prov"></div></div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Avg Vol/วัน Ranking</div></div><div class="rank-list" id="avd_rank"></div></div>
+      <div class="ccard gfull" id="dp_av_zone" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_av_zone"></span><span class="drill-close" onclick="closeDrill('dp_av_zone')">✕ ปิด</span></div><div id="dpb_av_zone"></div></div>
+      <div class="ccard gfull" id="dp_av_prov" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_av_prov"></span><span class="drill-close" onclick="closeDrill('dp_av_prov')">✕ ปิด</span></div><div id="dpb_av_prov"></div></div>
     </div>
 
     <!-- BD -->
     <div class="spanel" id="sp-bd">
-      <div class="sdiv"><h3>👤 <span data-i18n="overview.bdZoneTitle">Performance ราย Zone</span></h3></div>
+      <div class="sdiv"><h3>👤 Performance ราย Zone</h3></div>
       <div class="kgrid" id="bd_kgrid" style="margin-bottom:12px;"></div>
       <div class="g2">
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_rev" data-i18n="overview.revByZone">Revenue ราย Zone</div></div><div class="ch300"><canvas id="c_bd_rev"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_vol" data-i18n="overview.volByZone">Volume ราย Zone</div></div><div class="ch300"><canvas id="c_bd_vol"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_rev">Revenue ราย Zone</div></div><div class="ch300"><canvas id="c_bd_rev"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_vol">Volume ราย Zone</div></div><div class="ch300"><canvas id="c_bd_vol"></canvas></div></div>
       </div>
       <div class="g2">
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_avg"><span data-i18n="overview.avgRevByZone">Avg Rev/day ราย Zone</span> <span class="metric-help" tabindex="0" data-i18n-title="overview.help.bdAvg" data-i18n-aria="overview.help.bdAvg">?</span></div></div><div class="ch260"><canvas id="c_bd_avg"></canvas></div></div>
-        <div class="ccard gfull"><div class="chdr"><div class="ctitle" data-i18n="overview.bdZoneRanking">🏅 Zone Ranking</div></div><div id="bd_score"></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_bd_avg">Avg Rev/day ราย Zone <span class="metric-help" tabindex="0" title="คำนวณจาก Revenue รวมของ Zone ÷ จำนวนวันที่ใช้จริงของเดือนนั้น เพื่อให้เทียบเดือนที่ยังไม่ครบได้ยุติธรรมกว่า" aria-label="คำนวณจาก Revenue รวมของโซน หารด้วยจำนวนวันที่ใช้จริงของเดือนนั้น เพื่อให้เทียบเดือนที่ยังไม่ครบได้ยุติธรรมกว่า">?</span></div></div><div class="ch260"><canvas id="c_bd_avg"></canvas></div></div>
+        <div class="ccard gfull"><div class="chdr"><div class="ctitle">🏅 Zone Ranking</div></div><div id="bd_score"></div></div>
       </div>
     </div>
 
     <!-- Area -->
     <div class="spanel" id="sp-area">
-      <div class="sdiv"><h3>🗺️ <span data-i18n="overview.areaTitle">รายพื้นที่ / จังหวัด</span></h3></div>
+      <div class="sdiv"><h3>🗺️ รายพื้นที่ / จังหวัด</h3></div>
       <div class="kgrid" id="area_kgrid" style="margin-bottom:12px;"></div>
       <!-- Charts section -->
       <div id="area-tab-charts">
       <div class="g2">
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_area_rev" data-i18n="overview.areaRevByProv">Revenue แยกจังหวัด Top15</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_area_rev">Revenue แยกจังหวัด Top15</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch300"><canvas id="c_area_rev"></canvas></div>
         </div>
         <div class="ccard">
-          <div class="chdr"><div class="ctitle" id="t_area_vol" data-i18n="overview.areaVolByProv">Volume แยกจังหวัด Top15</div><span class="cbadge" style="font-size:9px" data-i18n="overview.clickBarHint">คลิกแท่ง→รายชื่อ</span></div>
+          <div class="chdr"><div class="ctitle" id="t_area_vol">Volume แยกจังหวัด Top15</div><span class="cbadge" style="font-size:9px">คลิกแท่ง→รายชื่อ</span></div>
           <div class="ch300"><canvas id="c_area_vol"></canvas></div>
         </div>
       </div>
       <div class="g2">
-        <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="overview.areaCustByProv">จำนวนลูกค้า แยกจังหวัด</div></div><div class="ch260"><canvas id="c_area_cnt"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="overview.areaRevByArea">Revenue แยก AREA</div></div><div class="ch260"><canvas id="c_area_region"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle">จำนวนลูกค้า แยกจังหวัด</div></div><div class="ch260"><canvas id="c_area_cnt"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle">Revenue แยก AREA</div></div><div class="ch260"><canvas id="c_area_region"></canvas></div></div>
       </div>
-      <div class="ccard gfull"><div class="chdr"><div class="ctitle" data-i18n="overview.areaProvRanking">Ranking จังหวัดตาม Revenue</div></div><div style="max-height:240px;overflow-y:auto" id="area_rank"></div></div>
-      <div class="ccard gfull" id="dp_area_rev" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_area_rev"></span><span class="drill-close" onclick="closeDrill('dp_area_rev')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_area_rev"></div></div>
-      <div class="ccard gfull" id="dp_area_vol" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_area_vol"></span><span class="drill-close" onclick="closeDrill('dp_area_vol')">✕ <span data-i18n="action.close">ปิด</span></span></div><div id="dpb_area_vol"></div></div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Ranking จังหวัดตาม Revenue</div></div><div style="max-height:240px;overflow-y:auto" id="area_rank"></div></div>
+      <div class="ccard gfull" id="dp_area_rev" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_area_rev"></span><span class="drill-close" onclick="closeDrill('dp_area_rev')">✕ ปิด</span></div><div id="dpb_area_rev"></div></div>
+      <div class="ccard gfull" id="dp_area_vol" style="display:none"><div class="drill-hdr"><span class="drill-title" id="dpt_area_vol"></span><span class="drill-close" onclick="closeDrill('dp_area_vol')">✕ ปิด</span></div><div id="dpb_area_vol"></div></div>
       </div>
     </div>
 
     <!-- Account -->
     <div class="spanel" id="sp-acc">
-      <div class="sdiv"><h3>🏷️ <span data-i18n="overview.accTitle">Account แยกตาม 21.00</span></h3></div>
+      <div class="sdiv"><h3>🏷️ Account แยกตาม 21.00</h3></div>
       <div class="kgrid" id="acc_kgrid" style="margin-bottom:12px;"></div>
       <div class="g3">
-        <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="overview.accCount">จำนวน Account</div></div><div class="ch220"><canvas id="c_acc_cnt"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_acc_rev" data-i18n="overview.accRevBy21">Revenue แยกตาม 21</div></div><div class="ch220"><canvas id="c_acc_rev"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_acc_vol" data-i18n="overview.accVolBy21">Volume แยกตาม 21</div></div><div class="ch220"><canvas id="c_acc_vol"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle">จำนวน Account</div></div><div class="ch220"><canvas id="c_acc_cnt"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_acc_rev">Revenue แยกตาม 21</div></div><div class="ch220"><canvas id="c_acc_rev"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_acc_vol">Volume แยกตาม 21</div></div><div class="ch220"><canvas id="c_acc_vol"></canvas></div></div>
       </div>
-      <div class="ccard gfull"><div class="chdr"><div class="ctitle" data-i18n="overview.accRanking">Ranking ตาม 21</div></div><div style="max-height:240px;overflow-y:auto" id="acc_rank"></div></div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Ranking ตาม 21</div></div><div style="max-height:240px;overflow-y:auto" id="acc_rank"></div></div>
     </div>
 
     <!-- Package -->
     <div class="spanel" id="sp-pkg">
-      <div class="sdiv"><h3>📦 <span data-i18n="overview.tab.package">Package</span></h3></div>
+      <div class="sdiv"><h3>📦 Package</h3></div>
       <div class="kgrid" id="pkg_kgrid" style="margin-bottom:12px;"></div>
       <div class="g3">
-        <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="overview.pkgCustByPkg">จำนวนลูกค้า ตาม Package</div></div><div class="ch220"><canvas id="c_pkg_cnt"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_rev" data-i18n="overview.pkgRevByPkg">Revenue แยก Package</div></div><div class="ch220"><canvas id="c_pkg_rev"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_vol" data-i18n="overview.pkgVolByPkg">Volume แยก Package</div></div><div class="ch220"><canvas id="c_pkg_vol"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle">จำนวนลูกค้า ตาม Package</div></div><div class="ch220"><canvas id="c_pkg_cnt"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_rev">Revenue แยก Package</div></div><div class="ch220"><canvas id="c_pkg_rev"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_vol">Volume แยก Package</div></div><div class="ch220"><canvas id="c_pkg_vol"></canvas></div></div>
       </div>
       <div class="g2">
-        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_avg" data-i18n="overview.pkgAvgRevByPkg">Avg Rev/day แยก Package</div></div><div class="ch220"><canvas id="c_pkg_avg"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="overview.pkgDistribution">Package Distribution</div></div><div class="ch220"><canvas id="c_pkg_pie"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle" id="t_pkg_avg">Avg Rev/day แยก Package</div></div><div class="ch220"><canvas id="c_pkg_avg"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div class="ctitle">Package Distribution</div></div><div class="ch220"><canvas id="c_pkg_pie"></canvas></div></div>
       </div>
-      <div class="ccard gfull"><div class="chdr"><div class="ctitle" data-i18n="overview.pkgRanking">Ranking ตาม Package (เรียง Revenue)</div></div><div style="max-height:240px;overflow-y:auto" id="pkg_rank"></div></div>
+      <div class="ccard gfull"><div class="chdr"><div class="ctitle">Ranking ตาม Package (เรียง Revenue)</div></div><div style="max-height:240px;overflow-y:auto" id="pkg_rank"></div></div>
     </div>
 
     <!-- Compare -->
     <div class="spanel" id="sp-compare">
       <div class="cmp-header">
-        <div class="cmp-title" data-i18n="overview.compareTitle">⚖️ เปรียบเทียบระหว่างเดือน</div>
-        <div class="cmp-sub" data-i18n="overview.compareSub">เลือก 2 เดือนมาเทียบ หรือดูหลายเดือนพร้อมกัน • Diff คำนวณ real-time</div>
+        <div class="cmp-title">⚖️ เปรียบเทียบระหว่างเดือน</div>
+        <div class="cmp-sub">เลือก 2 เดือนมาเทียบ หรือดูหลายเดือนพร้อมกัน • Diff คำนวณ real-time</div>
       </div>
       <div class="cmp-mode-bar">
-        <div class="cmp-mode-title" data-i18n="overview.compareMode">โหมดการเปรียบเทียบ</div>
+        <div class="cmp-mode-title">โหมดการเปรียบเทียบ</div>
         <div class="mode-btns">
-          <button class="mode-btn active" onclick="setCmpMode('two',this)" data-i18n="overview.compareTwoMonths">🔵🔴 2 เดือน เทียบกัน</button>
-          <button class="mode-btn" onclick="setCmpMode('multi',this)" data-i18n="overview.compareMultiMonths">📊 หลายเดือน overlay</button>
+          <button class="mode-btn active" onclick="setCmpMode('two',this)">🔵🔴 2 เดือน เทียบกัน</button>
+          <button class="mode-btn" onclick="setCmpMode('multi',this)">📊 หลายเดือน overlay</button>
         </div>
         <div id="cmp_two_picker" class="cmp-picker">
-          <label data-i18n="overview.monthA">เดือน A:</label><select class="cmp-sel sel-a" id="cmp_sel_a"></select>
+          <label>เดือน A:</label><select class="cmp-sel sel-a" id="cmp_sel_a"></select>
           <span style="font-size:14px;font-weight:900;color:var(--t2);">vs</span>
-          <label data-i18n="overview.monthB">เดือน B:</label><select class="cmp-sel sel-b" id="cmp_sel_b"></select>
-          <button class="cmp-run-btn" onclick="runCompare()" data-i18n="overview.compareButton">▶ เปรียบเทียบ</button>
+          <label>เดือน B:</label><select class="cmp-sel sel-b" id="cmp_sel_b"></select>
+          <button class="cmp-run-btn" onclick="runCompare()">▶ เปรียบเทียบ</button>
         </div>
         <div id="cmp_multi_picker" class="cmp-picker" style="display:none;">
-          <span style="font-size:11px;font-weight:700;color:var(--t2);" data-i18n="overview.selectMonths">เลือกเดือน:</span>
+          <span style="font-size:12px;font-weight:700;color:var(--t2);">เลือกเดือน:</span>
           <div id="cmp_multi_checks" class="multi-month-wrap"></div>
-          <button class="cmp-run-btn" onclick="runMultiCompare()" data-i18n="overview.showButton">▶ แสดง</button>
+          <button class="cmp-run-btn" onclick="runMultiCompare()">▶ แสดง</button>
         </div>
       </div>
       <div class="cmp-kgrid" id="cmp_kpi"></div>
@@ -548,15 +530,15 @@
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--pr),var(--ac));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(0,63,92,.25);">🚚</div>
         <div>
-          <div style="font-size:17px;font-weight:800;color:var(--pr);letter-spacing:-.3px;" data-i18n="carrier.title">ข้อมูลขนส่ง</div>
-          <div style="font-size:11px;color:var(--t2);margin-top:1px;" data-i18n="carrier.sub">วิเคราะห์ Volume · Revenue · Avg รายขนส่ง</div>
+          <div style="font-size:17px;font-weight:800;color:var(--pr);letter-spacing:-.3px;">ข้อมูลขนส่ง</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:1px;">วิเคราะห์ Volume · Revenue · Avg รายขนส่ง</div>
         </div>
       </div>
       <!-- Month selector -->
       <div style="display:flex;align-items:center;gap:10px;background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:8px 14px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
-        <span style="font-size:12px;font-weight:700;color:var(--t2);" data-i18n="month.label">📅 เดือน:</span>
-        <select id="car_month_sel" style="border:1.5px solid var(--bd);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;color:var(--pr);background:white;outline:none;cursor:pointer;min-width:150px;" onchange="renderCarrierSection()"></select>
-        <span id="car_day_badge" style="font-size:11px;color:white;background:var(--pr);padding:3px 10px;border-radius:20px;font-weight:700;white-space:nowrap;"></span>
+        <span style="font-size:12px;font-weight:700;color:var(--t2);">📅 เดือน</span>
+        <select id="car_month_sel" class="month-select" style="border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;outline:none;cursor:pointer;min-width:150px;" onchange="renderCarrierSection()"></select>
+        <span id="car_day_badge" class="day-badge" style="white-space:nowrap;"></span>
       </div>
     </div>
 
@@ -566,32 +548,32 @@
     <div class="overview-trend-panel carrier-trend-panel" id="carrier_trend_panel">
       <div class="overview-trend-head">
         <div>
-          <div class="overview-trend-title" data-i18n="carrier.trend.title">Carrier Avg Trend</div>
-          <div class="overview-trend-sub" data-i18n="carrier.trend.sub">กราฟแท่งคือค่าเฉลี่ยรวมทุกขนส่ง เส้นคือ % MoM จากเดือนก่อนหน้า</div>
+          <div class="overview-trend-title">Carrier Avg Trend</div>
+          <div class="overview-trend-sub">กราฟแท่งคือค่าเฉลี่ยรวมทุกขนส่ง เส้นคือ % MoM จากเดือนก่อนหน้า</div>
         </div>
         <span id="carrier_trend_range" class="overview-trend-range"></span>
       </div>
       <div class="overview-trend-grid">
         <div class="overview-trend-card">
           <div class="overview-trend-card-head">
-            <div class="overview-trend-card-title" data-i18n="carrier.avgRevTrend">Avg Rev/day trend</div>
-            <div class="overview-trend-legend"><span><i class="bar"></i><span data-i18n="overview.actual">Actual</span></span><span><i class="line"></i><span data-i18n="overview.mom">MoM</span></span></div>
+            <div class="overview-trend-card-title">Avg Rev/day trend</div>
+            <div class="overview-trend-legend"><span><i class="bar"></i>Actual</span><span><i class="line"></i>MoM</span></div>
           </div>
           <div class="overview-trend-chart"><canvas id="c_car_trend_avg_rev_day"></canvas></div>
           <div class="overview-trend-note" id="car_trend_note_avg_rev_day"></div>
         </div>
         <div class="overview-trend-card">
           <div class="overview-trend-card-head">
-            <div class="overview-trend-card-title" data-i18n="overview.trend.avgVolDay">Avg Vol/day trend</div>
-            <div class="overview-trend-legend"><span><i class="bar"></i><span data-i18n="overview.actual">Actual</span></span><span><i class="line"></i><span data-i18n="overview.mom">MoM</span></span></div>
+            <div class="overview-trend-card-title">Avg Vol/day trend</div>
+            <div class="overview-trend-legend"><span><i class="bar"></i>Actual</span><span><i class="line"></i>MoM</span></div>
           </div>
           <div class="overview-trend-chart"><canvas id="c_car_trend_avg_vol_day"></canvas></div>
           <div class="overview-trend-note" id="car_trend_note_avg_vol_day"></div>
         </div>
         <div class="overview-trend-card">
           <div class="overview-trend-card-head">
-            <div class="overview-trend-card-title" data-i18n="overview.trend.avgRevPiece">Avg Rev/ชิ้น trend</div>
-            <div class="overview-trend-legend"><span><i class="bar"></i><span data-i18n="overview.actual">Actual</span></span><span><i class="line"></i><span data-i18n="overview.mom">MoM</span></span></div>
+            <div class="overview-trend-card-title">Avg Rev/Vol trend</div>
+            <div class="overview-trend-legend"><span><i class="bar"></i>Actual</span><span><i class="line"></i>MoM</span></div>
           </div>
           <div class="overview-trend-chart"><canvas id="c_car_trend_avg_rev_vol"></canvas></div>
           <div class="overview-trend-note" id="car_trend_note_avg_rev_vol"></div>
@@ -601,64 +583,64 @@
     <div class="carrier-card-section">
       <div class="carrier-card-section-head">
         <div>
-          <div class="carrier-card-title" data-i18n="carrier.cards.title">การ์ดขนส่ง</div>
-          <div class="carrier-card-sub" data-i18n="carrier.cards.sub">Top carriers ตาม volume ในเดือนที่เลือก</div>
+          <div class="carrier-card-title">การ์ดขนส่ง</div>
+          <div class="carrier-card-sub">Top carriers ตาม volume ในเดือนที่เลือก</div>
         </div>
       </div>
-      <div class="carrier-section-kicker" data-i18n="carrier.snapshot">Snapshot</div>
+      <div class="carrier-section-kicker">Snapshot</div>
       <div class="kgrid carrier-card-grid" id="carrier_kgrid"></div>
-      <div class="carrier-section-kicker trend" data-i18n="carrier.avgRevTrend">Avg Rev/day trend</div>
+      <div class="carrier-section-kicker trend">Avg Rev/day trend</div>
       <div class="carrier-focus-trend-grid" id="carrier_focus_trend_grid"></div>
     </div>
     <div class="carrier-color-legend" id="carrier_color_legend" aria-label="Carrier color legend"></div>
 
     <!-- ── Section Tabs — styled ── -->
     <div style="background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:6px;margin-bottom:12px;display:flex;gap:4px;flex-wrap:wrap;box-shadow:0 1px 6px rgba(0,0,0,.06);">
-      <button class="cr-tab active" id="cr_tab_pie"   onclick="swCarSec('pie',this)"     data-i18n="carrier.tab.pie">🥧 สัดส่วน</button>
-      <button class="cr-tab"        id="cr_tab_zone"  onclick="swCarSec('zone',this)"    data-i18n="carrier.tab.zone">📦 ราย Zone</button>
-      <button class="cr-tab"        id="cr_tab_avg"   onclick="swCarSec('avg',this)"     data-i18n="carrier.tab.avg">📐 Avg</button>
-      <button class="cr-tab"        id="cr_tab_growth"onclick="swCarSec('growth',this)"  data-i18n="carrier.tab.growth">📈 การเติบโต</button>
-      <button class="cr-tab"        id="cr_tab_cmp"   onclick="swCarSec('cmp',this)"     data-i18n="carrier.tab.compare">⚖️ เปรียบเทียบ</button>
-      <button class="cr-tab"        id="cr_tab_tbl"   onclick="swCarSec('tbl',this)"     data-i18n="carrier.tab.table">📋 ตาราง Agent</button>
+      <button class="cr-tab active" id="cr_tab_pie"   onclick="swCarSec('pie',this)"    >🥧 สัดส่วน</button>
+      <button class="cr-tab"        id="cr_tab_zone"  onclick="swCarSec('zone',this)"   >📦 ราย Zone</button>
+      <button class="cr-tab"        id="cr_tab_avg"   onclick="swCarSec('avg',this)"    >📐 Avg</button>
+      <button class="cr-tab"        id="cr_tab_growth"onclick="swCarSec('growth',this)" >📈 การเติบโต</button>
+      <button class="cr-tab"        id="cr_tab_cmp"   onclick="swCarSec('cmp',this)"    >⚖️ เปรียบเทียบ</button>
+      <button class="cr-tab"        id="cr_tab_tbl"   onclick="swCarSec('tbl',this)"    >📋 ตาราง Agent</button>
     </div>
 
     <!-- สัดส่วน -->
     <div class="spanel active" id="car_sp_pie">
       <div class="g2" style="margin-bottom:10px">
-        <div class="ccard"><div class="chdr"><div><div class="ctitle" data-i18n="carrier.volShareTitle">🥧 สัดส่วน Vol แต่ละขนส่ง</div><div class="csub" data-i18n="carrier.volShareSub">Volume share รายขนส่ง เดือนที่เลือก</div></div></div><div class="ch340"><canvas id="c_car_vol_pie"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div><div class="ctitle" data-i18n="carrier.revShareTitle">🥧 สัดส่วน Rev แต่ละขนส่ง</div><div class="csub" data-i18n="carrier.revShareSub">Revenue share รายขนส่ง เดือนที่เลือก</div></div></div><div class="ch340"><canvas id="c_car_rev_pie"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div><div class="ctitle">🥧 สัดส่วน Vol แต่ละขนส่ง</div><div class="csub">Volume share รายขนส่ง เดือนที่เลือก</div></div></div><div class="ch340"><canvas id="c_car_vol_pie"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div><div class="ctitle">🥧 สัดส่วน Rev แต่ละขนส่ง</div><div class="csub">Revenue share รายขนส่ง เดือนที่เลือก</div></div></div><div class="ch340"><canvas id="c_car_rev_pie"></canvas></div></div>
       </div>
     </div>
     <!-- ราย Zone -->
     <div class="spanel" id="car_sp_zone">
       <div class="g2" style="margin-bottom:10px">
-        <div class="ccard"><div class="chdr"><div><div class="ctitle" data-i18n="carrier.volZoneTitle">📦 Vol ราย Zone × ขนส่ง</div><div class="csub" data-i18n="carrier.volZoneSub">Volume แยกตาม Zone และขนส่ง</div></div></div><div class="ch340"><canvas id="c_car_vol_bar"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div><div class="ctitle" data-i18n="carrier.revZoneTitle">💰 Rev ราย Zone × ขนส่ง</div><div class="csub" data-i18n="carrier.revZoneSub">Revenue แยกตาม Zone และขนส่ง</div></div></div><div class="ch340"><canvas id="c_car_rev_bar"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div><div class="ctitle">📦 Vol ราย Zone × ขนส่ง</div><div class="csub">Volume แยกตาม Zone และขนส่ง</div></div></div><div class="ch340"><canvas id="c_car_vol_bar"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div><div class="ctitle">💰 Rev ราย Zone × ขนส่ง</div><div class="csub">Revenue แยกตาม Zone และขนส่ง</div></div></div><div class="ch340"><canvas id="c_car_rev_bar"></canvas></div></div>
       </div>
     </div>
     <!-- Avg -->
     <div class="spanel" id="car_sp_avg">
       <div class="g3" style="margin-bottom:10px">
-        <div class="ccard"><div class="chdr"><div><div class="ctitle" data-i18n="carrier.avgRevTitle">📐 Avg Rev/วัน ราย ขนส่ง</div><div class="csub" data-i18n="carrier.avgRevSub">Revenue เฉลี่ยต่อวัน</div></div></div><div class="ch300"><canvas id="c_car_avgrevday"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div><div class="ctitle" data-i18n="carrier.avgVolTitle">📦 Avg Vol/วัน ราย ขนส่ง</div><div class="csub" data-i18n="carrier.avgVolSub">Volume เฉลี่ยต่อวัน</div></div></div><div class="ch300"><canvas id="c_car_avgvolday"></canvas></div></div>
-        <div class="ccard"><div class="chdr"><div><div class="ctitle" data-i18n="carrier.avgRevVolTitle">🏷️ Avg Rev/Vol (ต่อชิ้น) ราย ขนส่ง</div><div class="csub" data-i18n="carrier.avgRevVolSub">Revenue ต่อ 1 ชิ้น</div></div></div><div class="ch300"><canvas id="c_car_avgrevvol"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div><div class="ctitle">📐 Avg Rev/วัน ราย ขนส่ง</div><div class="csub">Revenue เฉลี่ยต่อวัน</div></div></div><div class="ch300"><canvas id="c_car_avgrevday"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div><div class="ctitle">📦 Avg Vol/วัน ราย ขนส่ง</div><div class="csub">Volume เฉลี่ยต่อวัน</div></div></div><div class="ch300"><canvas id="c_car_avgvolday"></canvas></div></div>
+        <div class="ccard"><div class="chdr"><div><div class="ctitle">🏷️ Avg Rev/Vol (ต่อชิ้น) ราย ขนส่ง</div><div class="csub">Revenue ต่อ 1 ชิ้น</div></div></div><div class="ch300"><canvas id="c_car_avgrevvol"></canvas></div></div>
       </div>
     </div>
     <!-- การเติบโต -->
     <div class="spanel" id="car_sp_growth">
       <div class="ccard gfull">
         <div class="chdr">
-          <div><div class="ctitle" data-i18n="carrier.growthChart.title">📈 การเติบโตรายขนส่ง เดือนต่อเดือน</div><div class="csub" data-i18n="carrier.growthChart.sub">เปรียบเทียบ % growth ระหว่างสองเดือน</div></div>
+          <div><div class="ctitle">📈 การเติบโตรายขนส่ง เดือนต่อเดือน</div><div class="csub">เปรียบเทียบ % growth ระหว่างสองเดือน</div></div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <span style="font-size:11px;color:var(--t2)" data-i18n="carrier.compare">เปรียบ:</span>
-            <select id="growth_sel_prev" style="font-size:11px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none" onchange="renderGrowthChart()"></select>
-            <span style="font-size:11px;color:var(--t2)">vs</span>
-            <select id="growth_sel_cur" style="font-size:11px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none" onchange="renderGrowthChart()"></select>
-            <button class="stab active" id="growth_btn_vol" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('vol',this)">📦 <span data-i18n="carrier.btn.vol">Vol</span></button>
-            <button class="stab" id="growth_btn_rev" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('rev',this)">💰 <span data-i18n="carrier.btn.rev">Rev</span></button>
-            <button class="stab" id="growth_btn_ard" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('ard',this)">📐 <span data-i18n="carrier.btn.avgRev">Avg Rev/วัน</span></button>
-            <button class="stab" id="growth_btn_avd" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('avd',this)">📦 <span data-i18n="carrier.btn.avgVol">Avg Vol/วัน</span></button>
-            <button class="stab" id="growth_btn_arv" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('arv',this)">🏷️ <span data-i18n="carrier.btn.avgPiece">Avg Rev/Vol</span></button>
+            <span style="font-size:12px;color:var(--t2)">เปรียบ:</span>
+            <select id="growth_sel_prev" style="font-size:12px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none" onchange="renderGrowthChart()"></select>
+            <span style="font-size:12px;color:var(--t2)">vs</span>
+            <select id="growth_sel_cur" style="font-size:12px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none" onchange="renderGrowthChart()"></select>
+            <button class="stab active" id="growth_btn_vol" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('vol',this)">📦 Vol</button>
+            <button class="stab" id="growth_btn_rev" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('rev',this)">💰 Rev</button>
+            <button class="stab" id="growth_btn_ard" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('ard',this)">📐 Avg Rev/วัน</button>
+            <button class="stab" id="growth_btn_avd" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('avd',this)">📦 Avg Vol/วัน</button>
+            <button class="stab" id="growth_btn_arv" style="font-size:10px;padding:3px 8px" onclick="setGrowthMetric('arv',this)">🏷️ Avg Rev/Vol</button>
           </div>
         </div>
         <div id="growth_chart_area">
@@ -671,29 +653,29 @@
     <div class="spanel" id="car_sp_cmp">
       <div class="ccard gfull">
         <div class="chdr">
-          <div><div class="ctitle" data-i18n="carrier.cmpTitle">⚖️ เปรียบเทียบรายขนส่ง</div><div class="csub" data-i18n="carrier.cmpSub">วิเคราะห์ side-by-side ระหว่างขนส่ง</div></div>
+          <div><div class="ctitle">⚖️ เปรียบเทียบรายขนส่ง</div><div class="csub">วิเคราะห์ side-by-side ระหว่างขนส่ง</div></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <button class="stab active" id="cmp_car_btn_month" style="font-size:10px;padding:3px 8px" onclick="setCarCmpMode('month',this)" data-i18n="carrier.cmp.twoMonths">📅 2 เดือนเทียบกัน</button>
-            <button class="stab" id="cmp_car_btn_multi" style="font-size:10px;padding:3px 8px" onclick="setCarCmpMode('multi',this)" data-i18n="carrier.cmp.multiMonth">📊 หลายเดือน matrix</button>
-            <button class="stab" id="cmp_car_btn_cross" style="font-size:10px;padding:3px 8px" onclick="setCarCmpMode('cross',this)" data-i18n="carrier.cmp.crossCarrier">🔀 ขนส่ง A vs B</button>
+            <button class="stab active" id="cmp_car_btn_month" style="font-size:10px;padding:3px 8px" onclick="setCarCmpMode('month',this)">📅 2 เดือนเทียบกัน</button>
+            <button class="stab" id="cmp_car_btn_multi" style="font-size:10px;padding:3px 8px" onclick="setCarCmpMode('multi',this)">📊 หลายเดือน matrix</button>
+            <button class="stab" id="cmp_car_btn_cross" style="font-size:10px;padding:3px 8px" onclick="setCarCmpMode('cross',this)">🔀 ขนส่ง A vs B</button>
             <span id="cmp_car_month_pick" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <label style="font-size:11px" data-i18n="overview.monthA">เดือน A:</label>
-              <select id="cmp_car_ma" style="font-size:11px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none"></select>
+              <label style="font-size:12px">เดือน A:</label>
+              <select id="cmp_car_ma" style="font-size:12px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none"></select>
               <span style="font-weight:700;color:var(--t2)">vs</span>
-              <label style="font-size:11px" data-i18n="overview.monthB">เดือน B:</label>
-              <select id="cmp_car_mb" style="font-size:11px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none"></select>
-              <button class="rbtn" style="font-size:11px;padding:4px 10px" onclick="renderCarrierComparison()" data-i18n="overview.compareButton">▶ เปรียบเทียบ</button>
+              <label style="font-size:12px">เดือน B:</label>
+              <select id="cmp_car_mb" style="font-size:12px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none"></select>
+              <button class="rbtn" style="font-size:12px;padding:4px 10px" onclick="renderCarrierComparison()">▶ เปรียบเทียบ</button>
             </span>
             <span id="cmp_car_multi_pick" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
-              <span style="font-size:11px;font-weight:700;color:var(--t2)" data-i18n="overview.selectMonths">เลือกเดือน:</span>
+              <span style="font-size:12px;font-weight:700;color:var(--t2)">เลือกเดือน:</span>
               <div id="cmp_car_multi_checks" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-              <button class="rbtn" style="font-size:11px;padding:4px 10px" onclick="renderCarrierComparison()" data-i18n="overview.showButton">▶ แสดง</button>
+              <button class="rbtn" style="font-size:12px;padding:4px 10px" onclick="renderCarrierComparison()">▶ แสดง</button>
             </span>
             <span id="cmp_car_cross_pick" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
-              <select id="cmp_car_a" style="font-size:11px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none"></select>
+              <select id="cmp_car_a" style="font-size:12px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none"></select>
               <span style="font-weight:700;color:var(--t2)">vs</span>
-              <select id="cmp_car_b" style="font-size:11px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none"></select>
-              <button class="rbtn" style="font-size:11px;padding:4px 10px" onclick="renderCarrierComparison()" data-i18n="overview.compareButton">▶ เปรียบเทียบ</button>
+              <select id="cmp_car_b" style="font-size:12px;border:1.5px solid var(--bd);border-radius:6px;padding:3px 7px;outline:none"></select>
+              <button class="rbtn" style="font-size:12px;padding:4px 10px" onclick="renderCarrierComparison()">▶ เปรียบเทียบ</button>
             </span>
           </div>
         </div>
@@ -704,10 +686,10 @@
     <div class="spanel" id="car_sp_tbl">
       <div class="ccard gfull">
         <div class="chdr">
-          <div><div class="ctitle" data-i18n="carrier.agentTitle">📋 รายละเอียด Agent ราย ขนส่ง</div><div class="csub" data-i18n="carrier.agentSub">ข้อมูล Agent แยกตามขนส่ง</div></div>
+          <div><div class="ctitle">📋 รายละเอียด Agent ราย ขนส่ง</div><div class="csub">ข้อมูล Agent แยกตามขนส่ง</div></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="car_filter_sel" style="font-size:11px;border:1.5px solid var(--bd);border-radius:6px;padding:4px 8px;outline:none;cursor:pointer" onchange="renderCarrierTable()"><option value="" data-i18n="carrier.allCarriers">ทุกขนส่ง</option></select>
-            <input id="car_agent_srch" data-i18n-placeholder="carrier.searchAgent" placeholder="🔍 ค้นหา Agent..." style="font-size:11px;border:1.5px solid var(--bd);border-radius:6px;padding:4px 10px;outline:none;width:180px;transition:.2s;" oninput="renderCarrierTable()">
+            <select id="car_filter_sel" style="font-size:12px;border:1.5px solid var(--bd);border-radius:6px;padding:4px 8px;outline:none;cursor:pointer" onchange="renderCarrierTable()"><option value="">ทุกขนส่ง</option></select>
+            <input id="car_agent_srch" placeholder="🔍 ค้นหา Agent..." style="font-size:12px;border:1.5px solid var(--bd);border-radius:6px;padding:4px 10px;outline:none;width:180px;transition:.2s;" oninput="renderCarrierTable()">
           </div>
         </div>
         <div style="overflow-x:auto"><table class="mt" id="car_tbl"><thead id="car_thead"></thead><tbody id="car_tbody"></tbody></table></div>
@@ -719,23 +701,23 @@
   <!-- รายการลูกค้า -->
   <div id="mainLs" style="display:none">
     <div class="stabs">
-      <button class="stab active" onclick="lsSort('rev','desc',this)" data-i18n="list.sortRevDesc">💰 Revenue มาก→น้อย</button>
-      <button class="stab" onclick="lsSort('vol','desc',this)" data-i18n="list.sortVolDesc">📦 Volume มาก→น้อย</button>
-      <button class="stab" onclick="lsSort('avg','desc',this)" data-i18n="list.sortAvgDesc">📐 Avg Rev มาก→น้อย</button>
-      <button class="stab" onclick="lsSort('ap','desc',this)" data-i18n="list.sortApDesc">🏷️ Avg Rev/ชิ้น มาก→น้อย</button>
-      <button class="stab" onclick="lsSort('avd','desc',this)" data-i18n="list.sortAvdDesc">📦 Avg Vol/วัน มาก→น้อย</button>
-      <button class="stab" onclick="lsSort('diff','asc',this)" data-i18n="list.sortDiffAsc">⚠️ Diff ลดมากสุด</button>
+      <button class="stab active" onclick="lsSort('rev','desc',this)">💰 Revenue มาก→น้อย</button>
+      <button class="stab" onclick="lsSort('vol','desc',this)">📦 Volume มาก→น้อย</button>
+      <button class="stab" onclick="lsSort('avg','desc',this)">📐 Avg Rev มาก→น้อย</button>
+      <button class="stab" onclick="lsSort('ap','desc',this)">🏷️ Avg Rev/ชิ้น มาก→น้อย</button>
+      <button class="stab" onclick="lsSort('avd','desc',this)">📦 Avg Vol/วัน มาก→น้อย</button>
+      <button class="stab" onclick="lsSort('diff','asc',this)">⚠️ Diff ลดมากสุด</button>
     </div>
     <div class="tsec">
       <div class="tbar">
-        <h2 data-i18n="list.title">📋 รายการลูกค้าทั้งหมด</h2>
+        <h2>📋 รายการลูกค้าทั้งหมด</h2>
         <div class="ttools">
-          <input class="tsrch" id="tsrch" data-i18n-placeholder="list.searchAgent" placeholder="🔍 ชื่อ Agent / Agent Code..." oninput="tSearch()">
-          <input class="tsrch-phone" id="tsrchPhone" data-i18n-placeholder="list.searchPhone" placeholder="📱 เบอร์โทร..." oninput="tSearch()">
+          <input class="tsrch" id="tsrch" placeholder="🔍 ชื่อ Agent / Agent Code..." oninput="tSearch()">
+          <input class="tsrch-phone" id="tsrchPhone" placeholder="📱 เบอร์โทร..." oninput="tSearch()">
           <select class="tmonth-sel" id="tmonthSel" onchange="renderTable()">
-            <option value="" data-i18n="list.selectMonth">-- เลือกเดือน --</option>
+            <option value="">-- เลือกเดือน --</option>
           </select>
-          <button class="btnexp" id="table_compact_btn" onclick="toggleTableCompact()" data-i18n="list.fullView">มุมมองเต็ม</button>
+          <button class="btnexp" id="table_compact_btn" onclick="toggleTableCompact()">มุมมองเต็ม</button>
         </div>
       </div>
       <div class="twrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
@@ -749,27 +731,27 @@
 
       <!-- Header bar -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-        <h2 style="margin:0;color:var(--rd)" data-i18n="risk.title">⚠️ ลูกค้าเสี่ยง</h2>
+        <h2 style="margin:0;color:var(--rd)">⚠️ ลูกค้าเสี่ยง</h2>
         <!-- Threshold input -->
         <div class="badge-risk">
-          <span style="font-size:11px;color:var(--t2);font-weight:700;white-space:nowrap" data-i18n="risk.thresholdLabel">เกณฑ์ Avg/วัน ลดลง &gt;</span>
+          <span style="font-size:12px;color:var(--t2);font-weight:700;white-space:nowrap">เกณฑ์ Avg/วัน ลดลง &gt;</span>
           <input id="risk_threshold_inp" type="number" value="200" min="0" step="50"
             class="threshold-input-risk"
             onchange="setRiskThreshold()">
-          <span style="font-size:11px;color:var(--t2);font-weight:700" data-i18n="risk.currencySuffix">บาท/วัน</span>
+          <span style="font-size:12px;color:var(--t2);font-weight:700">บาท/วัน</span>
         </div>
         <span id="risk_count_badge" class="badge-risk-count"></span>
       </div>
 
       <!-- sub label -->
       <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-        <span id="risk_page_cnt" style="font-size:11px;color:var(--t2)"></span>
+        <span id="risk_page_cnt" style="font-size:12px;color:var(--t2)"></span>
       </div>
       <div class="risk-growth-shell">
         <div class="risk-growth-subtabs" role="tablist" aria-label="Risk customer views">
-          <button class="risk-growth-subtab active" id="risk_subtab_overview" onclick="swRiskSubTab('overview',this)" data-i18n="risk.tab.overview">ภาพรวม</button>
-          <button class="risk-growth-subtab" id="risk_subtab_operation" onclick="swRiskSubTab('operation',this)" data-i18n="risk.tab.operation">Operation Dashboard</button>
-          <button class="risk-growth-subtab" id="risk_subtab_work" onclick="swRiskSubTab('work',this)" data-i18n="risk.tab.work">ติดตามลูกค้า</button>
+          <button class="risk-growth-subtab active" id="risk_subtab_overview" onclick="swRiskSubTab('overview',this)">ภาพรวม</button>
+          <button class="risk-growth-subtab" id="risk_subtab_operation" onclick="swRiskSubTab('operation',this)">Operation Dashboard</button>
+          <button class="risk-growth-subtab" id="risk_subtab_work" onclick="swRiskSubTab('work',this)">ติดตามลูกค้า</button>
         </div>
 
         <div id="risk_overview_pane">
@@ -784,8 +766,8 @@
               <div class="ccard">
                 <div class="chdr">
                   <div>
-                    <div class="ctitle" data-i18n="risk.trend.count.title">📊 แนวโน้มจำนวนกลุ่มเสี่ยง (เดือนต่อเดือน)</div>
-                    <div class="csub" id="risk_trend_count_sub" data-i18n="risk.trend.count.sub">เปรียบเทียบจำนวนลูกค้าเสี่ยงรายเดือน</div>
+                    <div class="ctitle">📊 แนวโน้มจำนวนกลุ่มเสี่ยง (เดือนต่อเดือน)</div>
+                    <div class="csub" id="risk_trend_count_sub">เปรียบเทียบจำนวนลูกค้าเสี่ยงรายเดือน</div>
                   </div>
                   <span class="cbadge-red" id="risk_trend_count_badge"></span>
                 </div>
@@ -794,8 +776,8 @@
               <div class="ccard">
                 <div class="chdr">
                   <div>
-                    <div class="ctitle" data-i18n="risk.trend.rev.title">💸 แนวโน้ม Revenue ลดลง (MoM)</div>
-                    <div class="csub" id="risk_trend_rev_sub" data-i18n="risk.trend.rev.sub">รวม Revenue ที่ลดลงเทียบแต่ละเดือน</div>
+                    <div class="ctitle">💸 แนวโน้ม Revenue ลดลง (MoM)</div>
+                    <div class="csub" id="risk_trend_rev_sub">รวม Revenue ที่ลดลงเทียบแต่ละเดือน</div>
                   </div>
                   <span class="cbadge-red" id="risk_trend_rev_badge"></span>
                 </div>
@@ -805,8 +787,8 @@
             <div class="ccard" style="margin-bottom:10px">
               <div class="chdr">
                 <div>
-                  <div class="ctitle" data-i18n="risk.trend.avg.title">📉 แนวโน้ม Avg Rev/วัน ที่ลดลง (เดือนต่อเดือน)</div>
-                  <div class="csub" data-i18n="risk.trend.avg.sub">ยิ่งแท่งสั้นลง = สถานการณ์ดีขึ้น | เส้นประ = ค่าเฉลี่ย</div>
+                  <div class="ctitle">📉 แนวโน้ม Avg Rev/วัน ที่ลดลง (เดือนต่อเดือน)</div>
+                  <div class="csub">ยิ่งแท่งสั้นลง = สถานการณ์ดีขึ้น | เส้นประ = ค่าเฉลี่ย</div>
                 </div>
                 <span id="risk_trend_avg_badge" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px"></span>
               </div>
@@ -814,9 +796,9 @@
             </div>
           </div>
           <div class="g3" style="margin-bottom:12px">
-            <div class="ccard"><div class="chdr"><div class="ctitle" id="risk_chart_zone_title" data-i18n="risk.byZone">ราย Zone</div></div><div class="ch220"><canvas id="c_risk_zone"></canvas></div></div>
-            <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="risk.byPkg">📦 ราย Package</div></div><div class="ch220"><canvas id="c_risk_pkg"></canvas></div></div>
-            <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="risk.byProv">🗺️ ราย Province</div></div><div class="ch220"><canvas id="c_risk_prov"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle" id="risk_chart_zone_title">ราย Zone</div></div><div class="ch220" id="c_risk_zone_wrapper"><canvas id="c_risk_zone"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle">📦 ราย Package</div></div><div class="ch220" id="c_risk_pkg_wrapper"><canvas id="c_risk_pkg"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle">🗺️ ราย Province</div></div><div class="ch220" id="c_risk_prov_wrapper"><canvas id="c_risk_prov"></canvas></div></div>
           </div>
         </div>
 
@@ -827,19 +809,19 @@
         <div id="risk_work_pane" style="display:none">
           <div class="risk-growth-work-intro">
             <div>
-              <div class="risk-growth-work-title" data-i18n="risk.followTitle">ติดตามลูกค้าที่เริ่มมีสัญญาณเสี่ยง</div>
-              <div class="risk-growth-work-sub" data-i18n="risk.followSub">ตารางหลักซ่อนข้อมูลส่วนตัวไว้ก่อน แล้วเปิดดูรายละเอียดผ่านปุ่มรูปตาตามสิทธิ์ของผู้ใช้</div>
+              <div class="risk-growth-work-title">ติดตามลูกค้าที่เริ่มมีสัญญาณเสี่ยง</div>
+              <div class="risk-growth-work-sub">ตารางหลักซ่อนข้อมูลส่วนตัวไว้ก่อน แล้วเปิดดูรายละเอียดผ่านปุ่มรูปตาตามสิทธิ์ของผู้ใช้</div>
             </div>
             <div class="trk-bar" style="margin-bottom:0;padding:5px 12px;">
-              <span class="trk-bar-label" data-i18n="risk.followBarLabel">📋 บันทึกสถานะการติดตาม</span>
-              <button class="trk-save-all-btn" id="risk_save_all_btn" onclick="saveAllTracking('risk')" data-i18n="risk.saveAll">💾 บันทึกทั้งหมด</button>
-              <span class="trk-saved-all" id="risk_saved_all_msg" data-i18n="risk.saveSuccess">✅ บันทึกสำเร็จ!</span>
+              <span class="trk-bar-label">📋 บันทึกสถานะการติดตาม</span>
+              <button class="trk-save-all-btn" id="risk_save_all_btn" onclick="saveAllTracking('risk')">💾 บันทึกทั้งหมด</button>
+              <span class="trk-saved-all" id="risk_saved_all_msg">✅ บันทึกสำเร็จ!</span>
             </div>
           </div>
           <div id="risk_work_command" class="tracking-work-command"></div>
           <div class="ccard gfull">
             <div class="chdr">
-              <div class="ctitle" id="risk_tbl_title" data-i18n="risk.tblTitle">📋 รายชื่อลูกค้ากลุ่มเสี่ยง</div>
+              <div class="ctitle" id="risk_tbl_title">📋 รายชื่อลูกค้ากลุ่มเสี่ยง</div>
               <span class="cbadge-red" id="risk_tbl_label">0 ราย</span>
             </div>
             <div style="overflow-x:auto;max-height:500px;overflow-y:auto" id="risk_tbl"></div>
@@ -857,27 +839,27 @@
 
       <!-- Header bar -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-        <h2 style="margin:0;color:var(--gn)" data-i18n="growth.title">📈 ลูกค้าเติบโต</h2>
+        <h2 style="margin:0;color:var(--gn)">📈 ลูกค้าเติบโต</h2>
         <!-- Growth Threshold input -->
         <div class="badge-growth">
-          <span style="font-size:11px;color:var(--t2);font-weight:700;white-space:nowrap" data-i18n="growth.thresholdLabel">เกณฑ์ Avg/วัน เพิ่มขึ้น &gt;</span>
+          <span style="font-size:12px;color:var(--t2);font-weight:700;white-space:nowrap">เกณฑ์ Avg/วัน เพิ่มขึ้น &gt;</span>
           <input id="growth_threshold_inp" type="number" value="200" min="0" step="50"
             class="threshold-input-growth"
             onchange="setGrowthThreshold()">
-          <span style="font-size:11px;color:var(--t2);font-weight:700" data-i18n="growth.currencySuffix">บาท/วัน</span>
+          <span style="font-size:12px;color:var(--t2);font-weight:700">บาท/วัน</span>
         </div>
         <span id="growth_count_badge" class="badge-growth-count"></span>
       </div>
 
       <!-- sub label -->
       <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-        <span id="growth_page_cnt" style="font-size:11px;color:var(--t2)"></span>
+        <span id="growth_page_cnt" style="font-size:12px;color:var(--t2)"></span>
       </div>
       <div class="risk-growth-shell">
         <div class="risk-growth-subtabs risk-growth-subtabs-growth" role="tablist" aria-label="Growth customer views">
-          <button class="risk-growth-subtab active" id="growth_subtab_overview" onclick="swGrowthSubTab('overview',this)" data-i18n="growth.tab.overview">ภาพรวม</button>
-          <button class="risk-growth-subtab" id="growth_subtab_operation" onclick="swGrowthSubTab('operation',this)" data-i18n="growth.tab.operation">Operation Dashboard</button>
-          <button class="risk-growth-subtab" id="growth_subtab_work" onclick="swGrowthSubTab('work',this)" data-i18n="growth.tab.work">ต่อยอดลูกค้า</button>
+          <button class="risk-growth-subtab active" id="growth_subtab_overview" onclick="swGrowthSubTab('overview',this)">ภาพรวม</button>
+          <button class="risk-growth-subtab" id="growth_subtab_operation" onclick="swGrowthSubTab('operation',this)">Operation Dashboard</button>
+          <button class="risk-growth-subtab" id="growth_subtab_work" onclick="swGrowthSubTab('work',this)">ต่อยอดลูกค้า</button>
         </div>
 
         <div id="growth_overview_pane">
@@ -892,8 +874,8 @@
               <div class="ccard">
                 <div class="chdr">
                   <div>
-                    <div class="ctitle" data-i18n="growth.trend.count.title">📊 แนวโน้มจำนวนกลุ่มเติบโต (เดือนต่อเดือน)</div>
-                    <div class="csub" id="growth_trend_count_sub" data-i18n="growth.trend.count.sub">เปรียบเทียบจำนวนลูกค้าเติบโตรายเดือน</div>
+                    <div class="ctitle">📊 แนวโน้มจำนวนกลุ่มเติบโต (เดือนต่อเดือน)</div>
+                    <div class="csub" id="growth_trend_count_sub">เปรียบเทียบจำนวนลูกค้าเติบโตรายเดือน</div>
                   </div>
                   <span class="cbadge-green" id="growth_trend_count_badge"></span>
                 </div>
@@ -902,8 +884,8 @@
               <div class="ccard">
                 <div class="chdr">
                   <div>
-                    <div class="ctitle" data-i18n="growth.trend.rev.title">💚 แนวโน้ม Revenue เพิ่มขึ้น (MoM)</div>
-                    <div class="csub" id="growth_trend_rev_sub" data-i18n="growth.trend.rev.sub">รวม Revenue ที่เพิ่มขึ้นเทียบแต่ละเดือน</div>
+                    <div class="ctitle">💚 แนวโน้ม Revenue เพิ่มขึ้น (MoM)</div>
+                    <div class="csub" id="growth_trend_rev_sub">รวม Revenue ที่เพิ่มขึ้นเทียบแต่ละเดือน</div>
                   </div>
                   <span class="cbadge-green" id="growth_trend_rev_badge"></span>
                 </div>
@@ -913,8 +895,8 @@
             <div class="ccard" style="margin-bottom:10px">
               <div class="chdr">
                 <div>
-                  <div class="ctitle" data-i18n="growth.trend.avg.title">📈 แนวโน้ม Avg Rev/วัน ที่เพิ่มขึ้น (เดือนต่อเดือน)</div>
-                  <div class="csub" data-i18n="growth.trend.avg.sub">ยิ่งแท่งสูงขึ้น = สถานการณ์ดีขึ้น | เส้นประ = ค่าเฉลี่ย</div>
+                  <div class="ctitle">📈 แนวโน้ม Avg Rev/วัน ที่เพิ่มขึ้น (เดือนต่อเดือน)</div>
+                  <div class="csub">ยิ่งแท่งสูงขึ้น = สถานการณ์ดีขึ้น | เส้นประ = ค่าเฉลี่ย</div>
                 </div>
                 <span id="growth_trend_avg_badge" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px"></span>
               </div>
@@ -922,9 +904,9 @@
             </div>
           </div>
           <div class="g3" style="margin-bottom:12px">
-            <div class="ccard"><div class="chdr"><div class="ctitle" id="growth_chart_zone_title" data-i18n="growth.byZone">🟢 เติบโต ราย Zone</div></div><div class="ch220"><canvas id="c_growth_zone"></canvas></div></div>
-            <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="growth.byPkg">📦 ราย Package</div></div><div class="ch220"><canvas id="c_growth_pkg"></canvas></div></div>
-            <div class="ccard"><div class="chdr"><div class="ctitle" data-i18n="growth.byProv">🗺️ ราย Province</div></div><div class="ch220"><canvas id="c_growth_prov"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle" id="growth_chart_zone_title">🟢 เติบโต ราย Zone</div></div><div class="ch220" id="c_growth_zone_wrapper"><canvas id="c_growth_zone"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle">📦 ราย Package</div></div><div class="ch220" id="c_growth_pkg_wrapper"><canvas id="c_growth_pkg"></canvas></div></div>
+            <div class="ccard"><div class="chdr"><div class="ctitle">🗺️ ราย Province</div></div><div class="ch220" id="c_growth_prov_wrapper"><canvas id="c_growth_prov"></canvas></div></div>
           </div>
         </div>
 
@@ -935,19 +917,19 @@
         <div id="growth_work_pane" style="display:none">
           <div class="risk-growth-work-intro risk-growth-work-intro-growth">
             <div>
-              <div class="risk-growth-work-title" data-i18n="growth.followTitle">ต่อยอดลูกค้าที่พร้อมขยายยอด</div>
-              <div class="risk-growth-work-sub" data-i18n="growth.followSub">ตารางหลักเน้นข้อมูลวิเคราะห์และ action ที่ใช้จริง ส่วนรายละเอียดลูกค้าเปิดผ่านปุ่มรูปตาตามสิทธิ์ของผู้ใช้</div>
+              <div class="risk-growth-work-title">ต่อยอดลูกค้าที่พร้อมขยายยอด</div>
+              <div class="risk-growth-work-sub">ตารางหลักเน้นข้อมูลวิเคราะห์และ action ที่ใช้จริง ส่วนรายละเอียดลูกค้าเปิดผ่านปุ่มรูปตาตามสิทธิ์ของผู้ใช้</div>
             </div>
             <div class="trk-bar" style="margin-bottom:0;padding:5px 12px;">
-              <span class="trk-bar-label" data-i18n="growth.followBarLabel">📋 บันทึกสถานะการต่อยอด</span>
-              <button class="trk-save-all-btn" id="growth_save_all_btn" onclick="saveAllTracking('growth')" data-i18n="risk.saveAll">💾 บันทึกทั้งหมด</button>
-              <span class="trk-saved-all" id="growth_saved_all_msg" data-i18n="risk.saveSuccess">✅ บันทึกสำเร็จ!</span>
+              <span class="trk-bar-label">📋 บันทึกสถานะการต่อยอด</span>
+              <button class="trk-save-all-btn" id="growth_save_all_btn" onclick="saveAllTracking('growth')">💾 บันทึกทั้งหมด</button>
+              <span class="trk-saved-all" id="growth_saved_all_msg">✅ บันทึกสำเร็จ!</span>
             </div>
           </div>
           <div id="growth_work_command" class="tracking-work-command tracking-work-command-growth"></div>
           <div class="ccard gfull">
             <div class="chdr">
-              <div class="ctitle" id="growth_tbl_title" data-i18n="growth.tblTitle">📋 รายชื่อลูกค้ากลุ่มเติบโต</div>
+              <div class="ctitle" id="growth_tbl_title">📋 รายชื่อลูกค้ากลุ่มเติบโต</div>
               <span class="cbadge-green" id="growth_tbl_label">0 ราย</span>
             </div>
             <div style="overflow-x:auto;max-height:500px;overflow-y:auto" id="growth_tbl"></div>
@@ -961,15 +943,187 @@
   <div class="customer-card-modal" role="dialog" aria-modal="true" aria-labelledby="customerCardTitle">
     <div class="customer-card-header">
       <div>
-        <div class="customer-card-eyebrow" id="customerCardEyebrow" data-i18n="custCard.eyebrow">Customer card</div>
-        <div class="customer-card-title" id="customerCardTitle" data-i18n="custCard.title">รายละเอียดลูกค้า</div>
+        <div class="customer-card-eyebrow" id="customerCardEyebrow">Customer card</div>
+        <div class="customer-card-title" id="customerCardTitle">รายละเอียดลูกค้า</div>
       </div>
       <button type="button" class="customer-card-close" onclick="closeCustomerCardPopup()" aria-label="Close customer card">✕</button>
     </div>
     <div class="customer-card-body" id="customerCardBody"></div>
     <div class="customer-card-footer">
-      <button type="button" class="customer-card-btn" onclick="closeCustomerCardPopup()" data-i18n="custCard.footerClose">ปิด</button>
-      <button type="button" class="customer-card-btn customer-card-btn-primary" id="customerCardActionBtn" onclick="goToCustomerWorkTab()" data-i18n="custCard.footerWork">ไปยังหน้าทำงาน</button>
+      <button type="button" class="customer-card-btn" onclick="closeCustomerCardPopup()">ปิด</button>
+      <button type="button" class="customer-card-btn customer-card-btn-ai" id="customerCardAiBtn" onclick="requestAiFollowupGuideline()">✨ ขอแนวทางติดตามโดย AI</button>
+      <button type="button" class="customer-card-btn customer-card-btn-primary" id="customerCardActionBtn" onclick="goToCustomerWorkTab()">ไปยังหน้าทำงาน</button>
+    </div>
+  </div>
+</div>
+
+<div id="mainAiAnalytics" style="display:none">
+  <div class="main" style="padding-top:10px">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,var(--pr),var(--pl));border-radius:14px;padding:16px 20px;margin-bottom:12px;color:white;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:15px;font-weight:800" id="ai_analytics_title">🤖 วิเคราะห์และติดตามผล AI</div>
+        <div style="font-size:12px;opacity:.65;margin-top:3px" id="ai_analytics_sub">รายงานสถิติแนวทางติดตามผลของ AI และการบันทึกสถานะการดูแลลูกค้า</div>
+      </div>
+      <button id="ai_refresh_btn" onclick="loadAiLogs()" style="padding:7px 16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 รีเฟรช</button>
+    </div>
+
+    <!-- Sub-tabs for AI Dashboard -->
+    <div class="help-tabs" style="margin-bottom:14px;">
+      <button class="help-tab-btn active" id="ai_tab_btn_followup" onclick="swAiSubTab('followup')">📈 ติดตามลูกค้าโดย AI</button>
+      <button class="help-tab-btn" id="ai_tab_btn_issues" onclick="swAiSubTab('issues')">🛠️ รายงานปัญหาจากผู้ใช้</button>
+    </div>
+
+    <!-- PANE 1: AI FOLLOWUPS -->
+    <div id="ai_pane_followup" class="ai-tab-pane">
+      <!-- Summary KPI Cards -->
+      <div style="margin-bottom: 14px;">
+        <div class="kcard" style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0.01) 100%); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 14px; padding: 16px 20px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.03);">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #6366f1, #4f46e5); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(99,102,241,0.25);">
+              <span class="material-symbols-outlined" style="color: #fff; font-size: 24px;">smart_toy</span>
+            </div>
+            <div>
+              <div style="font-size: 13px; font-weight: 800; color: #4338ca; text-transform: uppercase; letter-spacing: 0.5px;">การขอคำแนะนำ AI (AI Requests)</div>
+              <div style="font-size: 11.5px; color: var(--t2); margin-top: 2px;">สถิติจำนวนครั้งที่ระบบขอแผนวิเคราะห์ประเมินความเสี่ยงและแนวทางต่อยอดของลูกค้าทั้งหมด</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <span style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, #4f46e5, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" id="ai_kpi_ai_requests">0</span>
+            <span style="font-size: 12.5px; font-weight: 800; color: #818cf8;">ครั้ง</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts and Analytics Grid -->
+      <div class="ai-analytics-charts-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:14px; margin-bottom:14px;">
+        <!-- Chart: Segment Split -->
+        <div style="background:var(--cd); border:1px solid var(--bd); border-radius:14px; padding:16px; display:flex; flex-direction:column; align-items:center;">
+          <div style="font-size:13px; font-weight:700; color:var(--pr); width:100%; margin-bottom:12px; text-align:left;">📊 สัดส่วนตามกลุ่มลูกค้า (Segment Split)</div>
+          <div style="width:180px; height:180px; position:relative;">
+            <canvas id="ai_chart_segment"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Requested Customers -->
+        <div style="background:var(--cd); border:1px solid var(--bd); border-radius:14px; padding:16px;">
+          <div style="font-size:13px; font-weight:700; color:var(--pr); margin-bottom:12px;">🏆 ลูกค้าที่ถูกขอแนวทางมากที่สุด (Top 5 Accounts)</div>
+          <div id="ai_top_customers" style="display:flex; flex-direction:column; gap:8px;">
+            <div style="color:var(--t2); text-align:center; padding:20px;">ไม่มีข้อมูล</div>
+          </div>
+        </div>
+
+        <!-- Top Requesters -->
+        <div style="background:var(--cd); border:1px solid var(--bd); border-radius:14px; padding:16px;">
+          <div style="font-size:13px; font-weight:700; color:var(--pr); margin-bottom:12px;">👤 ผู้ใช้งานที่ขอคำแนะนำมากที่สุด (Top Requesters)</div>
+          <div id="ai_top_requesters" style="display:flex; flex-direction:column; gap:8px;">
+            <div style="color:var(--t2); text-align:center; padding:20px;">ไม่มีข้อมูล</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Table Logs -->
+      <div style="background:var(--cd);border-radius:14px;border:1px solid var(--bd);box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:13px;font-weight:700;color:var(--pr)">ประวัติคำขอคำแนะนำและการติดตามผล</span>
+          <span id="ai_table_updated" style="font-size:12px;color:var(--t2)"></span>
+        </div>
+        <!-- Search bar -->
+        <div style="padding:10px 16px;background:var(--surface-2);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--bd);">
+          <input type="text" id="aiLogsSearchInput" oninput="onAiLogsSearch(this.value)" placeholder="🔍 ค้นหาประวัติ (วันที่, รหัสลูกค้า, ผู้เข้าถึง, วิเคราะห์)..." style="padding:6px 12px;border-radius:8px;border:1px solid var(--bd);background:#fff;font-size:12px;width:280px;box-sizing:border-box;color:var(--tx);">
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:12px;">
+            <thead id="ai_logs_table_head">
+              <tr style="background:var(--surface-2); border-bottom:1px solid var(--bd);">
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx);">วันที่เข้าถึง</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx);">ผู้เข้าถึง</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx);">รหัสลูกค้า</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx);">กลุ่มลูกค้า</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx); text-align:right;">ผลต่างเฉลี่ย (บาท/วัน)</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx); min-width:260px;">สรุปวิเคราะห์ AI / กิจกรรม</th>
+              </tr>
+            </thead>
+            <tbody id="ai_logs_table_body">
+              <tr><td colspan="7" style="padding:30px; text-align:center; color:var(--t2);">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANE 2: SYSTEM ISSUES -->
+    <div id="ai_pane_issues" class="ai-tab-pane" style="display:none;">
+      <!-- Summary KPI Cards -->
+      <div class="kgrid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 14px; display: grid; gap: 14px;">
+        <div class="kcard" style="border-left: 4px solid var(--pr); background: var(--cd); border-radius: 12px; padding: 14px; border-right: 1px solid var(--bd); border-top: 1px solid var(--bd); border-bottom: 1px solid var(--bd);">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--t2);">จำนวนแจ้งปัญหาทั้งหมด</div>
+          <div style="font-size: 24px; font-weight: 900; color: var(--pr); margin: 6px 0 2px 0;" id="issues_kpi_total">0</div>
+          <div style="font-size: 11px; color: var(--t2);">รายงานจากระบบช่วยเหลือ</div>
+        </div>
+        <div class="kcard" style="border-left: 4px solid var(--or); background: var(--cd); border-radius: 12px; padding: 14px; border-right: 1px solid var(--bd); border-top: 1px solid var(--bd); border-bottom: 1px solid var(--bd);">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--t2);">ปัญหาที่รอดำเนินการ (Pending)</div>
+          <div style="font-size: 24px; font-weight: 900; color: var(--or); margin: 6px 0 2px 0;" id="issues_kpi_pending">0</div>
+          <div style="font-size: 11px; color: var(--t2);">รอแอดมินแก้ไขประเด็น</div>
+        </div>
+        <div class="kcard" style="border-left: 4px solid var(--gn); background: var(--cd); border-radius: 12px; padding: 14px; border-right: 1px solid var(--bd); border-top: 1px solid var(--bd); border-bottom: 1px solid var(--bd);">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--t2);">แก้ไขเสร็จสิ้นแล้ว (Resolved)</div>
+          <div style="font-size: 24px; font-weight: 900; color: var(--gn); margin: 6px 0 2px 0;" id="issues_kpi_resolved">0</div>
+          <div style="font-size: 11px; color: var(--t2);">แอดมินแก้ไขเรียบร้อย</div>
+        </div>
+      </div>
+
+      <!-- Charts and Analytics Grid -->
+      <div class="ai-analytics-charts-grid" style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:14px; margin-bottom:14px;">
+        <!-- Chart: Issues Category Frequency -->
+        <div style="background:var(--cd); border:1px solid var(--bd); border-radius:14px; padding:16px; display:flex; flex-direction:column; align-items:center;">
+          <div style="font-size:13px; font-weight:700; color:var(--pr); width:100%; margin-bottom:12px; text-align:left;">📊 ประเภทปัญหาที่รายงานบ่อยสุด (Category Frequency)</div>
+          <div style="width:100%; height:200px; position:relative;">
+            <canvas id="ai_chart_issue_categories"></canvas>
+          </div>
+        </div>
+
+        <!-- Info: Admin Quick Guidance -->
+        <div style="background:var(--cd); border:1px solid var(--bd); border-radius:14px; padding:16px;">
+          <div style="font-size:13px; font-weight:700; color:var(--pr); margin-bottom:12px;">💡 ข้อแนะนำสำหรับผู้ดูแลระบบ</div>
+          <p style="font-size:12.5px; line-height:1.6; color:var(--t2); margin:0 0 10px 0;">ระบบวิเคราะห์ปัญหาและร่างคู่มือแก้ไขเบื้องต้นถูกส่งกลับหาผู้แจ้งรายงานแล้ว แอดมินสามารถ:</p>
+          <ul style="font-size:12px; line-height:1.6; color:var(--t2); padding-left:18px; margin:0;">
+            <li>ตรวจสอบรายละเอียดปัญหาเชิงเทคนิคที่แท้จริงจากผู้แจ้ง</li>
+            <li>แก้ไขปัญหาใน Google Sheets หรือ Script แล้วจึงเปลี่ยนสถานะเป็น <b style="color:var(--gn);">แก้ไขแล้ว</b></li>
+            <li>ค้นหาหรือสืบหาปัญหาระบบตามหมวดหมู่ที่มีรายงานซ้ำบ่อย</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Issues Table Logs -->
+      <div style="background:var(--cd);border-radius:14px;border:1px solid var(--bd);box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:13px;font-weight:700;color:var(--pr)">รายการแจ้งปัญหาระบบและสถานะความคืบหน้า</span>
+          <span id="issues_table_updated" style="font-size:12px;color:var(--t2)"></span>
+        </div>
+        <!-- Search bar -->
+        <div style="padding:10px 16px;background:var(--surface-2);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--bd);">
+          <input type="text" id="issuesSearchInput" oninput="onIssuesSearch(this.value)" placeholder="🔍 ค้นหารายงานปัญหา (วันที่, ผู้แจ้ง, รหัสลูกค้า, รายละเอียด)..." style="padding:6px 12px;border-radius:8px;border:1px solid var(--bd);background:#fff;font-size:12px;width:280px;box-sizing:border-box;color:var(--tx);">
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:12px;">
+            <thead id="issues_logs_table_head">
+              <tr style="background:var(--surface-2); border-bottom:1px solid var(--bd);">
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx);">วันที่แจ้ง</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx);">ผู้แจ้ง</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx);">หมวดหมู่</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx);">ลูกค้าที่เกี่ยวข้อง</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx); min-width:180px;">รายละเอียดปัญหา</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx); min-width:200px;">สรุปวิเคราะห์ AI</th>
+                <th style="padding:10px 12px; font-weight:700; color:var(--tx); text-align:center;">การดำเนินการ</th>
+              </tr>
+            </thead>
+            <tbody id="issues_logs_table_body">
+              <tr><td colspan="7" style="padding:30px; text-align:center; color:var(--t2);">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -979,61 +1133,449 @@
     <!-- Header -->
     <div style="background:linear-gradient(135deg,var(--pr),var(--pl));border-radius:14px;padding:16px 20px;margin-bottom:12px;color:white;display:flex;align-items:center;justify-content:space-between;">
       <div>
-        <div style="font-size:15px;font-weight:800" data-i18n="userMgmt.title">🔐 จัดการผู้ใช้งาน</div>
-        <div style="font-size:11px;opacity:.65;margin-top:3px" data-i18n="userMgmt.sub">ปลดล็อกบัญชี / ดูสถานะ Session</div>
+        <div style="font-size:15px;font-weight:800" id="um_title">🔐 จัดการระบบและผู้ใช้งาน</div>
+        <div style="font-size:12px;opacity:.65;margin-top:3px" id="um_sub">บริหารสิทธิ์ผู้ใช้งาน ตรวจสอบเซสชัน และตั้งค่าระบบ AI / LINE API</div>
       </div>
-      <button onclick="loadUserStatus()" style="padding:7px 16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700" data-i18n="action.refresh">🔄 รีเฟรช</button>
+      <button id="um_refresh_btn" onclick="loadUserStatus()" style="padding:7px 16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 รีเฟรช</button>
     </div>
 
-    <!-- Status message -->
-    <div id="um_msg" style="display:none;margin-bottom:10px;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;text-align:center"></div>
+    <!-- Sub-tabs for System Admin -->
+    <div class="help-tabs" style="margin-bottom:14px;">
+      <button class="help-tab-btn active" id="um_tab_btn_users" onclick="swUmSubTab('users')">👤 จัดการสิทธิ์ผู้ใช้งาน</button>
+      <button class="help-tab-btn" id="um_tab_btn_settings" onclick="swUmSubTab('settings')">⚙️ ตั้งค่าระบบ & AI</button>
+    </div>
 
-    <!-- User table -->
-    <div style="background:#fff;border-radius:14px;border:1px solid var(--bd);box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden">
-      <div style="padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:13px;font-weight:700;color:var(--pr)" data-i18n="userMgmt.listTitle">รายชื่อผู้ใช้ทั้งหมด</span>
-        <span id="um_updated" style="font-size:11px;color:var(--t2)"></span>
+    <!-- PANE 1: USERS MANAGEMENT -->
+    <div id="um_pane_users" class="um-tab-pane">
+      <!-- Status message -->
+      <div id="um_msg" style="display:none;margin-bottom:10px;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;text-align:center"></div>
+
+      <!-- User table -->
+      <div style="background:var(--cd);border-radius:14px;border:1px solid var(--bd);box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:13px;font-weight:700;color:var(--pr)">รายชื่อผู้ใช้ทั้งหมด</span>
+          <span id="um_updated" style="font-size:12px;color:var(--t2)"></span>
+        </div>
+        <div id="um_table_wrap" style="overflow-x:auto">
+          <div style="padding:30px;text-align:center;color:var(--t2)">กด รีเฟรช เพื่อโหลดข้อมูล</div>
+        </div>
       </div>
-      <div id="um_table_wrap" style="overflow-x:auto">
-        <div style="padding:30px;text-align:center;color:var(--t2)" data-i18n="userMgmt.refreshHint">กด รีเฟรช เพื่อโหลดข้อมูล</div>
+    </div>
+
+    <!-- PANE 2: SYSTEM SETTINGS -->
+    <div id="um_pane_settings" class="um-tab-pane" style="display:none;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:14px; margin-bottom:14px;">
+
+        <!-- API Credentials Card -->
+        <div style="background:var(--cd); border:1px solid var(--bd); border-radius:14px; padding:16px;">
+          <div style="font-size:13.5px; font-weight:700; color:var(--pr); margin-bottom:12px; border-bottom:1px solid var(--bd); padding-bottom:8px;">🔑 กุญแจเชื่อมโยง API (API Credentials)</div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="display:block; font-size:11.5px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="settings_ai_provider">ผู้ให้บริการ AI หลัก (Active AI Provider)</label>
+              <select id="settings_ai_provider" onchange="toggleSettingsProviderFields()" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12.5px; color:var(--tx); box-sizing:border-box;">
+                <option value="gemini">Google Gemini (Default)</option>
+                <option value="openai">OpenAI</option>
+              </select>
+            </div>
+
+            <div id="settings_gemini_key_container">
+              <label style="display:block; font-size:11.5px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="settings_gemini_key">Gemini API Key</label>
+              <div style="position:relative; display:flex; align-items:center;">
+                <input type="password" id="settings_gemini_key" placeholder="AI Studio API Key" style="width:100%; padding:8px 36px 8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12.5px; color:var(--tx); box-sizing:border-box;">
+                <span onclick="toggleInputVisibility('settings_gemini_key', this)" style="position:absolute; right:10px; cursor:pointer; font-size:14px; user-select:none;">👁️</span>
+              </div>
+              <div style="font-size:10.5px; color:var(--t2); margin-top:2px;">คีย์เชื่อมต่อบริการ Google AI Studio สำหรับระบบผู้ช่วยและคำแนะนำ</div>
+            </div>
+
+            <div id="settings_openai_key_container" style="display:none;">
+              <label style="display:block; font-size:11.5px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="settings_openai_key">OpenAI API Key</label>
+              <div style="position:relative; display:flex; align-items:center;">
+                <input type="password" id="settings_openai_key" placeholder="sk-proj-..." style="width:100%; padding:8px 36px 8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12.5px; color:var(--tx); box-sizing:border-box;">
+                <span onclick="toggleInputVisibility('settings_openai_key', this)" style="position:absolute; right:10px; cursor:pointer; font-size:14px; user-select:none;">👁️</span>
+              </div>
+              <div style="font-size:10.5px; color:var(--t2); margin-top:2px;">คีย์เชื่อมต่อบริการ OpenAI API สำหรับระบบผู้ช่วยและคำแนะนำ</div>
+            </div>
+
+            <div>
+              <label style="display:block; font-size:11.5px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="settings_admin_email">อีเมลสำหรับแจ้งเตือนระบบ (Notification Email)</label>
+              <div style="position:relative; display:flex; align-items:center;">
+                <input type="email" id="settings_admin_email" placeholder="admin@example.com" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12.5px; color:var(--tx); box-sizing:border-box;">
+              </div>
+              <div style="font-size:10.5px; color:var(--t2); margin-top:2px;">อีเมลปลายทางสำหรับรับแจ้งเตือนเมื่อมีผู้รายงานปัญหาระบบเข้ามา (หากเว้นว่างจะส่งไปยังเจ้าของชีตโดยอัตโนมัติ)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Model Card -->
+        <div style="background:var(--cd); border:1px solid var(--bd); border-radius:14px; padding:16px;">
+          <div style="font-size:13.5px; font-weight:700; color:var(--pr); margin-bottom:12px; border-bottom:1px solid var(--bd); padding-bottom:8px;">🤖 การตั้งค่าโมเดลวิเคราะห์ (AI Model Settings)</div>
+
+          <div id="settings_gemini_model_container">
+            <label style="display:block; font-size:11.5px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="settings_gemini_model">รุ่นโมเดล Gemini เริ่มต้น (Default Model)</label>
+            <select id="settings_gemini_model" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12.5px; color:var(--tx);">
+              <option value="gemini-2.0-flash">gemini-2.0-flash (แนะนำ - รวดเร็วและแม่นยำ)</option>
+              <option value="gemini-1.5-flash">gemini-1.5-flash (เสถียรและเร็ว)</option>
+              <option value="gemini-2.5-flash">gemini-2.5-flash (ประมวลผลดีขึ้น)</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro (ฉลาดที่สุด - สำหรับเคสซับซ้อน)</option>
+            </select>
+            <div style="font-size:10.5px; color:var(--t2); margin-top:4px; line-height:1.4;">
+              * โมเดลเริ่มต้นจะถูกเรียกใช้งานเป็นอันดับแรก หากเกิดปัญหาเซิร์ฟเวอร์หนาแน่น (HTTP 503) ระบบจะสลับไปใช้โมเดลอื่นในคิวสำรองโดยอัตโนมัติเพื่อป้องกันระบบขัดข้อง
+            </div>
+          </div>
+
+          <div id="settings_openai_model_container" style="display:none;">
+            <label style="display:block; font-size:11.5px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="settings_openai_model">รุ่นโมเดล OpenAI เริ่มต้น (Default Model)</label>
+            <select id="settings_openai_model" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12.5px; color:var(--tx);">
+              <option value="gpt-4o-mini">gpt-4o-mini (แนะนำ - รวดเร็วและประหยัด)</option>
+              <option value="gpt-4o">gpt-4o (ฉลาดที่สุด - คุณภาพสูง)</option>
+              <option value="gpt-3.5-turbo">gpt-3.5-turbo (โมเดลรุ่นเดิม)</option>
+            </select>
+            <div style="font-size:10.5px; color:var(--t2); margin-top:4px; line-height:1.4;">
+              * โมเดล OpenAI เริ่มต้นสำหรับการประมวลผลและให้คำแนะนำในการแก้ไขปัญหาของลูกค้า
+            </div>
+          </div>
+        </div>
+
       </div>
+
+      <!-- Prompts Configuration Card -->
+      <div style="background:var(--cd); border:1px solid var(--bd); border-radius:14px; padding:16px; margin-bottom:14px;">
+        <div style="font-size:13.5px; font-weight:700; color:var(--pr); margin-bottom:12px; border-bottom:1px solid var(--bd); padding-bottom:8px;">📝 กำหนด Prompt คำสั่งสำหรับปัญญาประดิษฐ์ (AI System Prompts)</div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="settings_prompt_followup">แม่แบบ Prompt วิเคราะห์ติดตามลูกค้า (Follow-up Prompt)</label>
+            <textarea id="settings_prompt_followup" rows="5" placeholder="เว้นว่างไว้หากต้องการใช้ Prompt เริ่มต้นของระบบ..." style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12px; color:var(--tx); resize:vertical; box-sizing:border-box; font-family:inherit;"></textarea>
+            <div style="font-size:10px; color:var(--t2); margin-top:2px;">คำสั่งเริ่มต้นของระบบจะวิเคราะห์ยอดขาย MTD, ชิ้นงาน และจัดทำคำพูดสำหรับการโทรเจรจา (Call Script)</div>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="settings_prompt_trouble">แม่แบบ Prompt แก้ไขปัญหาและคู่มือระบบ (Troubleshooting Prompt)</label>
+            <textarea id="settings_prompt_trouble" rows="5" placeholder="เว้นว่างไว้หากต้องการใช้ Prompt เริ่มต้นของระบบ..." style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12px; color:var(--tx); resize:vertical; box-sizing:border-box; font-family:inherit;"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Button -->
+      <button id="settings_save_btn" onclick="saveSystemSettingsForm()" style="width:100%; padding:11px; background:linear-gradient(135deg, var(--pr), var(--pl)); border:none; color:#fff; border-radius:10px; font-size:13px; font-weight:800; cursor:pointer; box-shadow:0 4px 12px rgba(17,50,71,0.2); transition:all 0.2s ease;" onmouseover="this.style.filter='brightness(1.05)'" onmouseout="this.style.filter='none'">
+        💾 บันทึกการตั้งค่าระบบ
+      </button>
     </div>
   </div>
 </div>
 
 <!-- UX Sprint 9: Help / Onboarding Modal -->
 <div class="ui-overlay" id="helpOverlay">
-  <div class="ui-modal" style="max-width:600px;">
+  <div class="ui-modal">
     <div class="ui-modal-header">
-      <div class="ui-modal-title" data-i18n="help.modalTitle">ยินดีต้อนรับสู่ Dashboard 🚀</div>
+      <div class="ui-modal-title" data-i18n="help.modalTitle">❓ ช่วยเหลือ & แจ้งปัญหาระบบ</div>
       <div class="ui-modal-close" onclick="closeHelpModal()">✖</div>
     </div>
-    <div class="ui-modal-body" style="font-size:13px;line-height:1.6;color:var(--t2);">
-      <p style="margin-bottom:12px;" data-i18n="help.modalSub">แดชบอร์ดนี้ออกแบบมาเพื่อช่วยให้คุณติดตามผลงานระดับทีมและรายบุคคลได้อย่างรวดเร็ว</p>
-      
-      <div style="background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:16px;">
-        <h4 style="margin:0 0 8px;color:var(--t1);font-size:14px;" data-i18n="help.vocabTitle">💡 คำศัพท์ที่พบบ่อย</h4>
-        <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;">
-          <li data-i18n-html="help.vocabRev"><b>Rev (Revenue):</b> รายได้รวม หรือยอดเงิน</li>
-          <li data-i18n-html="help.vocabVol"><b>Vol (Volume):</b> จำนวนออเดอร์ หรือปริมาณงาน</li>
-          <li data-i18n-html="help.vocabTarget"><b>Target / เป้า:</b> สามารถกำหนดเป้าหมายเพื่อใช้วัด Performance (เฉพาะ Director/AM)</li>
-          <li data-i18n-html="help.vocabThreshold"><b>Threshold (เฝ้าระวัง):</b> เกณฑ์ % ที่ถ้าทำได้ต่ำกว่าจะถูกจัดอยู่ในกลุ่มเสี่ยง</li>
-        </ul>
+
+    <!-- 2-column layout: vertical nav + content area -->
+    <div class="help-layout">
+      <nav class="help-sidenav">
+        <button class="help-sidenav-btn active" onclick="switchHelpTab('help-vocab', this)" data-i18n="help.tabVocab">
+          <span class="help-sidenav-icon">💡</span>
+          <span class="help-sidenav-label">คำศัพท์พบบ่อย</span>
+        </button>
+        <button class="help-sidenav-btn" onclick="switchHelpTab('help-cutoff', this)" data-i18n="help.tabCutoff">
+          <span class="help-sidenav-icon">📅</span>
+          <span class="help-sidenav-label">รอบตัดรอบ</span>
+        </button>
+        <button class="help-sidenav-btn" onclick="switchHelpTab('help-shortcuts', this)" data-i18n="help.tabShortcuts">
+          <span class="help-sidenav-icon">⌨️</span>
+          <span class="help-sidenav-label">ปุ่มลัด</span>
+        </button>
+        <button class="help-sidenav-btn" id="help_manual_tab_btn" onclick="switchHelpTab('help-manual', this)">
+          <span class="help-sidenav-icon">📖</span>
+          <span class="help-sidenav-label">คู่มือบทบาท</span>
+        </button>
+        <button class="help-sidenav-btn" onclick="switchHelpTab('help-report', this)" data-i18n="help.tabReport">
+          <span class="help-sidenav-icon">📝</span>
+          <span class="help-sidenav-label">แจ้งปัญหา</span>
+        </button>
+        <div class="help-sidenav-footer">
+          <button class="cmp-run-btn" onclick="closeHelpModal()">เข้าใจแล้ว เริ่มใช้งาน</button>
+        </div>
+      </nav>
+
+      <div class="help-content-area">
+
+        <!-- Tab: Vocab -->
+        <div id="help-vocab" class="help-tab-content active">
+        <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:16px;">
+          <h4 style="margin:0 0 8px; color:var(--pr); font-size:14px;" data-i18n="help.vocabTitle">💡 คำศัพท์สำคัญ</h4>
+          <ul style="margin:0;padding-left:20px;">
+            <li><b>Rev (Revenue):</b> รายได้รวม หรือยอดเงินที่เกิดจากลูกค้าแต่ละราย</li>
+            <li><b>Vol (Volume):</b> จำนวนชิ้น หรือออเดอร์ของลูกค้า</li>
+            <li><b>Avg Rev/Day:</b> ยอดรายได้เฉลี่ยต่อวัน ช่วยป้องกันการเทียบเดือนปัจจุบันที่ยอดสะสมยังไม่เต็มเดือน</li>
+            <li><b>Avg Rev/ชิ้น:</b> ค่าเฉลี่ยรายได้ต่อ 1 ชิ้นงาน (Revenue ÷ Volume)</li>
+          </ul>
+        </div>
       </div>
 
-      <div style="background:#f0fdf4;padding:12px;border-radius:8px;border:1px solid #bbf7d0;margin-bottom:16px;">
-        <h4 style="margin:0 0 8px;color:#166534;font-size:14px;" data-i18n="help.shortcutTitle">⌨️ Keyboard Shortcuts (ปุ่มลัด)</h4>
-        <p style="margin:0 0 8px;" data-i18n="help.shortcutSub">ทำงานได้เร็วขึ้นโดยไม่ต้องใช้เมาส์:</p>
-        <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:#15803d;">
-          <li data-i18n-html="help.shortcut1">กด <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">1</kbd> ถึง <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">5</kbd> เพื่อสลับหน้าเมนูหลัก</li>
-          <li data-i18n-html="help.shortcutCtrlK">กด <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">Ctrl</kbd> + <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">K</kbd> เพื่อค้นหา Agent / BD อย่างรวดเร็ว</li>
-          <li data-i18n-html="help.shortcutEsc">กด <kbd style="background:white;border:1px solid #bbf7d0;padding:1px 5px;border-radius:4px;font-size:11px;">Esc</kbd> เพื่อปิดหน้าต่างหรือยกเลิกการพิมพ์</li>
-        </ul>
+        <!-- Tab: Cutoff -->
+        <div id="help-cutoff" class="help-tab-content">
+        <h4 style="margin:0 0 12px;font-size:14px;color:var(--pr);">📅 ระบบการตัดรอบข้อมูล (Cutoff Period)</h4>
+        <p style="margin-bottom:12px;">ระบบการติดตามสถานะลูกค้า (การตั้งรอดำเนินการ, ติดต่อแล้ว, สำเร็จ ฯลฯ) ทำงานด้วยระบบตัดรอบเดือนละ 2 ครั้ง เพื่อช่วยล้างสถานะงานเก่าและเริ่มต้นติดตามใหม่ในรอบถัดไป:</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div style="background:var(--surface-2);padding:12px;border:1px solid var(--bd);border-radius:10px;">
+            <h5 style="margin:0 0 6px;color:var(--tx);font-size:12px;font-weight:800;">📍 รอบแรก (ทุกวันที่ 8 ของเดือน)</h5>
+            <p style="margin:0;font-size:12px;color:var(--t2);">เก็บข้อมูลสถานะที่บันทึกระหว่างวันที่ 22 (เดือนก่อน) ถึงวันที่ 7 (เดือนปัจจุบัน) และจะ<b>รีเซ็ตสถานะเป็นค่าว่าง</b>เมื่อเข้าสู่วันที่ 8 เพื่อเริ่มงานรอบใหม่</p>
+          </div>
+          <div style="background:var(--surface-2);padding:12px;border:1px solid var(--bd);border-radius:10px;">
+            <h5 style="margin:0 0 6px;color:var(--tx);font-size:12px;font-weight:800;">📍 รอบสอง (ทุกวันที่ 22 ของเดือน)</h5>
+            <p style="margin:0;font-size:12px;color:var(--t2);">เก็บข้อมูลสถานะที่บันทึกระหว่างวันที่ 8 ถึงวันที่ 21 และจะ<b>รีเซ็ตสถานะเป็นค่าว่าง</b>เมื่อเข้าสู่วันที่ 22 เพื่อเริ่มงานรอบใหม่</p>
+          </div>
+        </div>
+
+        <div style="background:var(--warn-bg);padding:12px;border-radius:8px;border:1px solid var(--warn);font-size:12px;color:var(--warn);">
+          <b>ℹ️ ข้อมูลไม่สูญหาย:</b> ข้อมูลสถานะที่ถูกล้างจะไม่ได้หายไปไหน แต่จะถูกเก็บประวัติแยกตามรอบข้อมูล (เช่น 2026-05-22 หรือ 2026-06-08) ในแท็บประวัติและใน Google Sheets เพื่อรายงานย้อนหลัง
+        </div>
       </div>
 
-      <div style="text-align:right;">
-        <button class="cmp-run-btn" onclick="closeHelpModal()" data-i18n="help.startBtn">เข้าใจแล้ว เริ่มใช้งานเลย</button>
+        <!-- Tab: Shortcuts -->
+        <div id="help-shortcuts" class="help-tab-content">
+        <h4 style="margin:0 0 8px;font-size:14px;color:var(--pr);">⌨️ ปุ่มลัด (Keyboard Shortcuts)</h4>
+        <p style="margin:0 0 12px;">ใช้งานร่วมกับแป้นพิมพ์เพื่อให้ทำงานได้สะดวกรวดเร็วยิ่งขึ้น:</p>
+
+        <table class="help-table" style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+          <thead>
+            <tr style="border-bottom:1px solid #e2e8f0;text-align:left;">
+              <th style="padding:6px 0;font-size:12px;">ปุ่มลัด</th>
+              <th style="padding:6px 0;font-size:12px;">การทำงาน</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:8px 0;"><kbd class="help-kbd">1</kbd> ถึง <kbd class="help-kbd">5</kbd></td>
+              <td style="padding:8px 0;">สลับระหว่างหน้าเมนูหลักของแดชบอร์ด</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:8px 0;"><kbd class="help-kbd">Ctrl</kbd> + <kbd class="help-kbd">K</kbd></td>
+              <td style="padding:8px 0;">เปิดกล่องค้นหา Agent / BD ด่วนเพื่อกรองข้อมูล</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:8px 0;"><kbd class="help-kbd">Esc</kbd></td>
+              <td style="padding:8px 0;">ปิดป๊อปอัปหรือยกเลิกการค้นหา</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4 style="margin:0 0 8px;font-size:14px;color:var(--pr);">📞 การรายงานปัญหาและการติดต่อ</h4>
+        <p style="margin:0;">หากพบข้อมูลไม่ตรงหรือต้องการแก้ไขระบบ สามารถติดต่อทีมผู้พัฒนาได้โดยตรงผ่าน LINE กลุ่มของโครงการ</p>
       </div>
+
+        <!-- Tab: Report Issue -->
+        <div id="help-report" class="help-tab-content">
+        <div style="max-width:600px; margin:0 auto;">
+          <h4 style="margin:0 0 4px;font-size:14px;color:var(--pr);">📝 แจ้งปัญหาการใช้งานหรือข้อผิดพลาดข้อมูล</h4>
+          <p style="margin:0 0 12px;font-size:12px;color:var(--t2);">ปัญหานี้จะถูกจัดส่งให้ผู้พัฒนา และ AI จะประมวลผลคู่มือแก้ปัญหาเบื้องต้นส่งกลับให้ท่านทางอีเมลทันที</p>
+
+          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+            <div>
+              <label style="display:block; font-size:11px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="issue_category">หมวดหมู่ปัญหา <span style="color:var(--rd)">*</span></label>
+              <select id="issue_category" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12.5px; color:var(--tx);">
+                <option value="">-- เลือกประเภทปัญหา --</option>
+                <option value="ข้อมูลผิดพลาด/ไม่ตรง">📊 ข้อมูลผิดพลาด / ตัวเลขไม่ตรง</option>
+                <option value="ระบบค้าง/โหลดช้า">⏳ ระบบค้าง / โหลดช้าผิดปกติ</option>
+                <option value="ล็อกอินไม่ได้/สิทธิ์ผู้ใช้">🔐 เข้าสู่ระบบไม่ได้ / ปัญหาเรื่องสิทธิ์</option>
+                <option value="บั๊กของหน้าจอ/ฟังก์ชันอื่น">🐞 พบข้อบกพร่องการทำงานอื่น ๆ (Bugs)</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="display:block; font-size:11px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="issue_customer_code">รหัสลูกค้าที่พบปัญหา (ถ้ามี)</label>
+              <input type="text" id="issue_customer_code" placeholder="เช่น AG001234" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12.5px; color:var(--tx); box-sizing:border-box;">
+            </div>
+
+            <div>
+              <label style="display:block; font-size:11px; font-weight:800; color:var(--pr); margin-bottom:4px;" for="issue_description">รายละเอียดปัญหา <span style="color:var(--rd)">*</span></label>
+              <textarea id="issue_description" rows="4" placeholder="กรุณาระบุรายละเอียด เช่น ลำดับขั้นตอนการเกิดปัญหา ข้อความแสดงความผิดพลาด หรือความแตกต่างของตัวเลขข้อมูล..." style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:#fff; font-size:12.5px; color:var(--tx); resize:vertical; box-sizing:border-box; font-family:inherit;"></textarea>
+            </div>
+          </div>
+
+          <div id="issue_submit_msg" style="display:none; font-size:12px; font-weight:700; margin-bottom:12px; text-align:center; padding:6px 12px; border-radius:8px;"></div>
+
+          <button id="issue_submit_btn" onclick="submitSystemIssueReport()" style="width:100%; padding:10px; background:linear-gradient(135deg, var(--pr), var(--pl)); border:none; color:#fff; border-radius:8px; font-size:13px; font-weight:800; cursor:pointer; transition:brightness 0.15s;">
+            🚀 ส่งรายงานและวิเคราะห์วิธีแก้ไขโดย AI
+          </button>
+        </div>
+      </div>
+
+        <!-- Tab: System Manual -->
+        <div id="help-manual" class="help-tab-content">
+          <!-- Dynamic manual will be loaded here based on user role -->
+        </div>
+
+      </div><!-- end help-content-area -->
+    </div><!-- end help-layout -->
+  </div><!-- end ui-modal -->
+</div><!-- end helpOverlay -->
+<!-- Logout Confirmation Modal -->
+<div class="ui-overlay" id="logoutConfirmOverlay" style="display:none; z-index:99999;">
+  <div class="ui-modal" style="max-width:380px; text-align:center; padding:28px 24px; border-radius:16px;">
+    <div style="font-size:44px; margin-bottom:16px; display:inline-block;">🚪</div>
+    <h3 style="margin:0 0 8px 0; font-size:16px; font-weight:800; color:var(--pr);">คุณต้องการออกจากระบบใช่หรือไม่?</h3>
+    <p style="margin:0 0 24px 0; font-size:12.5px; color:var(--t2); line-height:1.5;">เซสชันการทำงานปัจจุบันของคุณจะสิ้นสุดลงและสิทธิ์การเข้าถึงข้อมูลจะถูกปิดล็อกทันที</p>
+    <div style="display:flex; gap:12px; justify-content:center;">
+      <button onclick="closeLogoutConfirmModal()" style="flex:1; padding:10px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; color:#475569; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">ยกเลิก</button>
+      <button onclick="executeLogout()" style="flex:1; padding:10px; background:var(--rd); border:none; color:#fff; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; transition:all 0.15s ease; box-shadow:0 4px 12px rgba(239,68,68,0.2);" onmouseover="this.style.filter='brightness(1.05)'" onmouseout="this.style.filter='none'">ออกจากระบบ</button>
     </div>
   </div>
 </div>
+
+
+<!-- Generic Text Details Popup Modal -->
+<div class="ui-overlay" id="textDetailsOverlay" style="z-index:99999;" onclick="if(event.target===this)closeTextDetailsModal()">
+  <div class="ui-modal" style="max-width:600px; padding:24px; border-radius:16px; position:relative;">
+    <h3 id="textDetailsTitle" style="margin:0 0 12px 0; font-size:16px; font-weight:800; color:var(--pr); border-bottom:1px solid var(--bd); padding-bottom:8px;">รายละเอียด</h3>
+    <div id="textDetailsContent" style="font-size:13px; color:var(--tx); line-height:1.6; max-height:400px; overflow-y:auto; white-space:pre-wrap; word-break:break-word; margin-bottom:20px;"></div>
+    <div style="display:flex; justify-content:flex-end;">
+      <button onclick="closeTextDetailsModal()" style="padding:8px 20px; background:var(--pr); border:none; color:#fff; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.filter='brightness(1.05)'" onmouseout="this.style.filter='none'">ปิด</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Global Loading Overlay -->
+<div id="global_loader_overlay" style="display:none; opacity:0; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.72); backdrop-filter:blur(4px); z-index:20000; justify-content:center; align-items:center; flex-direction:column; gap:16px; transition: opacity 0.2s ease;">
+  <div class="global-spinner" style="width:48px; height:48px; border:4px solid rgba(17,50,71,0.1); border-top-color:var(--pr,#113247); border-radius:50%; animation: global-spin 0.8s linear infinite;"></div>
+  <div id="global_loader_message" style="font-family:Inter, sans-serif; font-size:14px; font-weight:700; color:var(--pr,#113247); letter-spacing:-0.2px;">กำลังโหลด...</div>
+</div>
+
+<style>
+@keyframes global-spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+
+
+
+<!-- Collapsible AI Insights Panel -->
+<div id="ai_insights_panel">
+
+  <!-- Panel Header -->
+  <div style="padding:16px 20px; border-bottom:1px solid #e2e8f0; background:#fff; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:20px;">🤖</span>
+      <div>
+        <h3 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">AI Insights Assistant</h3>
+        <span id="ai_insights_active_tab_label" style="font-size:11px; color:#64748b; font-weight:700;">วิเคราะห์หน้า: หน้าแรก</span>
+      </div>
+    </div>
+    <button onclick="toggleAiInsightsPanel(false)" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer; padding:4px; line-height:1; transition:color 0.15s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">✕</button>
+  </div>
+
+  <!-- Panel Content (Scrollable Chat History) -->
+  <div id="ai_insights_chat_history" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; background:#f8fafc;">
+    <!-- Chat messages will be dynamically appended here -->
+  </div>
+
+  <!-- Panel Footer / Control -->
+  <div style="padding:12px 16px; border-top:1px solid #e2e8f0; background:#fff; display:flex; flex-direction:column; gap:8px; flex-shrink:0;">
+    <!-- Controls rail -->
+    <div style="display:flex; gap:6px; align-items:center;">
+      <button id="ai_insights_action_btn" onclick="triggerPageAiAnalysis()" style="flex:1; padding:8px 12px; background:linear-gradient(135deg, #2563eb, #7c3aed); border:none; color:#fff; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; box-shadow:0 2px 6px rgba(124,58,237,0.15); transition:all 0.2s ease;" onmouseover="this.style.filter='brightness(1.05)'" onmouseout="this.style.filter='none'">
+        ⚡ วิเคราะห์ด่วน
+      </button>
+      <button id="ai_insights_copy_btn" onclick="copyAiInsightsToClipboard()" style="display:none; padding:8px 12px; background:#f1f5f9; border:1px solid #e2e8f0; color:#475569; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+        📋 คัดลอก
+      </button>
+      <button id="ai_insights_clear_btn" onclick="clearAiChat()" style="padding:8px 12px; background:#f1f5f9; border:1px solid #e2e8f0; color:#475569; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'" title="ล้างการคุย">
+        🗑️ ล้างแชท
+      </button>
+    </div>
+
+    <!-- Chat Input Box -->
+    <div style="display:flex; gap:6px; align-items:center; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:8px; padding:3px 8px; transition:border-color 0.15s; margin-top:2px;" id="ai_chat_input_wrap">
+      <input type="text" id="ai_chat_input" placeholder="ถาม AI เกี่ยวกับหน้านี้..." onkeydown="handleAiChatKey(event)" style="flex:1; background:transparent; border:none; outline:none; font-size:12px; color:#1e293b; padding:6px 0; font-family:inherit;" />
+      <button id="ai_chat_send_btn" onclick="sendAiChatMessage()" style="background:none; border:none; color:#2563eb; cursor:pointer; padding:4px; font-size:15px; display:flex; align-items:center; justify-content:center; transition:transform 0.15s; line-height:1;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='none'">
+        ➔
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<style>
+#ai_insights_panel {
+  position: fixed;
+  top: 0;
+  right: -390px;
+  width: 380px;
+  height: 100%;
+  z-index: 10000;
+  background: #f8fafc;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -10px 0 30px rgba(15,23,42,0.1);
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  font-family: inherit;
+  color: #1e293b;
+}
+#ai_insights_panel.open {
+  right: 0 !important;
+}
+@media (max-width: 480px) {
+  #ai_insights_panel {
+    width: 100% !important;
+    right: -105% !important;
+  }
+}
+
+@keyframes ai-spin-kf {
+  to { transform: rotate(360deg); }
+}
+.ai-md-p { margin: 0 0 10px 0; }
+.ai-md-p:last-child { margin-bottom: 0; }
+.ai-md-h4 { margin: 16px 0 8px 0; font-size: 13px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px; }
+.ui-v2 .ai-md-h4 span { font-size: 13px; }
+.ai-md-ul { margin: 0 0 12px 0; padding-left: 18px; }
+.ai-md-li { margin-bottom: 6px; }
+.ai-md-strong { color: #0f172a; font-weight: 700; }
+
+/* AI chat bubble styles */
+.ai-chat-bubble-user {
+  align-self: flex-end;
+  max-width: 85%;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #ffffff;
+  border-radius: 12px 12px 2px 12px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.12);
+  word-break: break-word;
+}
+.ai-chat-bubble-model {
+  align-self: flex-start;
+  max-width: 85%;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 12px 12px 12px 2px;
+  padding: 11px 15px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(15,23,42,0.03);
+  word-break: break-word;
+}
+.ai-chat-bubble-system {
+  align-self: center;
+  max-width: 90%;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+  border: 1px solid #bfdbfe;
+}
+</style>

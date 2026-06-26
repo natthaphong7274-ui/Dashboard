@@ -87,8 +87,31 @@ function getAllData(token, options) {
       });
     });
   });
+
   var baseColIdx = {};
-  baseHeaders.forEach(function(h,i){ if(wantedCols.indexOf(h)>=0) baseColIdx[h]=i; });
+  STATIC_COLS.forEach(function(c) {
+    var idx = baseHeaders.indexOf(c);
+    if (idx >= 0) baseColIdx[c] = idx;
+  });
+
+  MONTH_SHEETS.filter(function(m){ return m.isBase; }).forEach(function(m){
+    var revIdx = findHeaderIndex(baseHeaders, 'rev', m.monthKey, DATA_YEAR, true);
+    var volIdx = findHeaderIndex(baseHeaders, 'vol', m.monthKey, DATA_YEAR, true);
+    var avgIdx = findHeaderIndex(baseHeaders, 'avg', m.monthKey, DATA_YEAR, true);
+    if (revIdx >= 0) baseColIdx[m.colRev] = revIdx;
+    if (volIdx >= 0) baseColIdx[m.colVol] = volIdx;
+    if (avgIdx >= 0) baseColIdx[m.colAvg] = avgIdx;
+  });
+
+  MONTH_SHEETS.filter(function(m){ return (m.isBase || m.hasCarrierInBase) && m.hasCarrier; }).forEach(function(m){
+    CARRIERS.forEach(function(carrier){
+      ['Rev','Vol'].forEach(function(type){
+        var col = carrier+' '+type+' ('+DATA_YEAR+'-'+m.label+')';
+        var idx = findCarrierHeaderIndex(baseHeaders, carrier, type, DATA_YEAR, m.label);
+        if (idx >= 0) baseColIdx[col] = idx;
+      });
+    });
+  });
 
   // ── extra sheets ──
   var sheetCache    = {};
@@ -107,18 +130,46 @@ function getAllData(token, options) {
     if(!cache || cache.aIdx<0) return;
 
     var kpiCols = [];
-    [m.colRev,m.colVol,m.colAvg,m.colDiff,m.colPct,m.colDiff2,m.colPct2].forEach(function(c){
+    var revIdx = findHeaderIndex(cache.headers, 'rev', m.monthKey, DATA_YEAR, false);
+    var volIdx = findHeaderIndex(cache.headers, 'vol', m.monthKey, DATA_YEAR, false);
+    var avgIdx = findHeaderIndex(cache.headers, 'avg', m.monthKey, DATA_YEAR, false);
+
+    if (revIdx >= 0) {
+      kpiCols.push({name: m.colRev, idx: revIdx});
+      if (extraCols.indexOf(m.colRev) < 0) extraCols.push(m.colRev);
+    }
+    if (volIdx >= 0) {
+      kpiCols.push({name: m.colVol, idx: volIdx});
+      if (extraCols.indexOf(m.colVol) < 0) extraCols.push(m.colVol);
+    }
+    if (avgIdx >= 0) {
+      kpiCols.push({name: m.colAvg, idx: avgIdx});
+      if (extraCols.indexOf(m.colAvg) < 0) extraCols.push(m.colAvg);
+    }
+
+    [m.colDiff, m.colPct, m.colDiff2, m.colPct2].forEach(function(c){
       if(!c) return;
       var idx = cache.headers.indexOf(c);
-      if(idx>=0) kpiCols.push({name:c, idx:idx});
-      if(extraCols.indexOf(c)<0) extraCols.push(c);
+      if (idx < 0) {
+        var cleanC = c.toLowerCase().trim();
+        for (var h = 0; h < cache.headers.length; h++) {
+          if (String(cache.headers[h] || '').toLowerCase().trim() === cleanC) {
+            idx = h;
+            break;
+          }
+        }
+      }
+      if(idx>=0) {
+        kpiCols.push({name:c, idx:idx});
+        if(extraCols.indexOf(c)<0) extraCols.push(c);
+      }
     });
+
     if(m.hasCarrier){
       CARRIERS.forEach(function(carrier){
         ['Rev','Vol'].forEach(function(type){
           var col = carrier+' '+type+' ('+DATA_YEAR+'-'+m.label+')';
-          var idx = cache.headers.indexOf(col);
-          // ★ แก้: push เฉพาะ column ที่มีอยู่จริงใน sheet เท่านั้น
+          var idx = findCarrierHeaderIndex(cache.headers, carrier, type, DATA_YEAR, m.label);
           if(idx>=0){
             kpiCols.push({name:col, idx:idx});
             if(extraCols.indexOf(col)<0) extraCols.push(col);
@@ -126,6 +177,7 @@ function getAllData(token, options) {
         });
       });
     }
+
     for(var i=1; i<cache.data.length; i++){
       var row  = cache.data[i];
       var code = String(row[cache.aIdx]||'').trim();
@@ -158,9 +210,17 @@ function getAllData(token, options) {
       if(!code) continue;
       if(!extraStaticMap[code]) extraStaticMap[code] = {};
       staticKeys.forEach(function(k){
-        // ถ้ายังไม่มีค่า → เติมจาก sheet นี้
         if(extraStaticMap[code][k]!==undefined && extraStaticMap[code][k]!=='') return;
         var idx = cache.headers.indexOf(k);
+        if (idx < 0) {
+          var cleanK = k.toLowerCase().trim();
+          for (var h = 0; h < cache.headers.length; h++) {
+            if (String(cache.headers[h] || '').toLowerCase().trim() === cleanK) {
+              idx = h;
+              break;
+            }
+          }
+        }
         if(idx>=0 && row[idx]!==null && row[idx]!==undefined && row[idx]!=='')
           extraStaticMap[code][k]=row[idx];
       });
@@ -222,7 +282,7 @@ function getAllData(token, options) {
   ];
   var months = MONTH_SHEETS.map(function(m,i){
     var cl = palette[i % palette.length];
-    return { key:m.monthKey, th:monthThName(m.monthKey), en:monthEnName(m.monthKey),
+    return { key:m.monthKey, label:m.label, th:monthThName(m.monthKey), en:monthEnName(m.monthKey),
       colRev:m.colRev, colVol:m.colVol, colAvg:m.colAvg,
       colDiff:m.colDiff||null, colPct:m.colPct||null,
       colDiff2:m.colDiff2||null, colPct2:m.colPct2||null,

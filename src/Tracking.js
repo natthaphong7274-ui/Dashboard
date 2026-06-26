@@ -157,14 +157,15 @@ function _trackingCutoffPeriodKey(dateOpt) {
 
 function _trackingNormalizeCutoffPeriod(value) {
   if (value === null || value === undefined || value === '') return '';
+  var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
-    return Utilities.formatDate(value, 'Asia/Bangkok', 'yyyy-MM-dd');
+    return Utilities.formatDate(value, tz, 'yyyy-MM-dd');
   }
   var raw = String(value || '').trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
   var parsed = new Date(raw);
   if (!isNaN(parsed.getTime())) {
-    return Utilities.formatDate(parsed, 'Asia/Bangkok', 'yyyy-MM-dd');
+    return Utilities.formatDate(parsed, tz, 'yyyy-MM-dd');
   }
   return raw;
 }

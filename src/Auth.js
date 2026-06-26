@@ -362,4 +362,90 @@ function logout(token) {
   return { ok: true };
 }
 
+/**
+ * Endpoint สำหรับส่งคำขอประมวลผลลูกค้าด้วย AI
+ */
+function requestAiFollowup(token, customerData) {
+  var session = getSession(token);
+  if (!session || !session.ok) {
+    return { ok: false, error: 'Session ของคุณหมดอายุแล้ว กรุณาล็อกอินใหม่' };
+  }
+
+  try {
+    // 1. ค้นหาอีเมลผู้รับ (จากชีต Users หรือประเมินจาก username หรือ Apps Script session)
+    var recipientEmail = '';
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(USERS_SHEET);
+      if (sheet) {
+        var values = sheet.getDataRange().getValues();
+        var headers = values[0].map(function(h) { return String(h).trim(); });
+        var uIdx = headers.indexOf('Username');
+        var eIdx = headers.indexOf('Email');
+        if (uIdx >= 0 && eIdx >= 0) {
+          var userLower = String(session.username || '').trim().toLowerCase();
+          for (var i = 1; i < values.length; i++) {
+            var row = values[i];
+            var u = String(row[uIdx] || '').trim().toLowerCase();
+            if (u === userLower) {
+              recipientEmail = String(row[eIdx] || '').trim();
+              break;
+            }
+          }
+        }
+      }
+    } catch(e) {
+      console.warn('Failed email lookup:', e.message);
+    }
+
+    // Fallbacks
+    if (!recipientEmail && session.username.indexOf('@') >= 0) {
+      recipientEmail = session.username;
+    }
+    if (!recipientEmail) {
+      recipientEmail = Session.getActiveUser().getEmail() || Session.getEffectiveUser().getEmail();
+    }
+    if (!recipientEmail) {
+      return { ok: false, error: 'ไม่พบคอนฟิกอีเมลของผู้ใช้ในระบบ และไม่สามารถอ่านอีเมล Active User ได้' };
+    }
+
+    // 2. เรียกใช้บริการ AI API เพื่อร่างแผนงาน
+    var aiResult = callAiFollowupAPI(customerData);
+
+    // 3. บันทึกข้อมูลการประมวลผลลงใน Logs Sheet
+    logAiFollowupRequest(session.username, customerData, aiResult.summary);
+
+    // 4. จัดส่งอีเมลแผนงานการติดตามลูกค้า
+    sendFollowupEmail(recipientEmail, customerData, aiResult);
+
+    // 5. บันทึก Log กิจกรรมการขอใช้งานลงในระบบ logs ของ dashboard ด้วย
+    logActivity(session.username, session.role, 'AI_FOLLOWUP_REQUEST', 'ขอแนวทางติดตามลูกค้า: ' + (customerData.name || customerData.code));
+
+    return { ok: true, summary: aiResult.summary, provider: aiResult.provider, model: aiResult.model };
+  } catch(err) {
+    console.error('requestAiFollowup error:', err.message);
+    return { ok: false, error: err.message };
+  }
+}
+
 // ============================================================
+
+// โหลด HTML คู่มือตามบทบาทผู้ใช้
+function loadRoleManualHtml(role) {
+  var fileName = 'dashboard_manual_bd';
+  if (role === 'AM') {
+    fileName = 'dashboard_manual_am';
+  } else if (role === 'Director') {
+    fileName = 'dashboard_manual_director';
+  }
+  try {
+    var content = HtmlService.createHtmlOutputFromFile(fileName).getContent();
+    var bodyMatch = content.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+    if (bodyMatch && bodyMatch[1]) {
+      return bodyMatch[1];
+    }
+    return content;
+  } catch (e) {
+    return '<h3>ไม่พบไฟล์คู่มือการใช้งานสำหรับสิทธิ์ ' + role + '</h3><p>' + e.toString() + '</p>';
+  }
+}

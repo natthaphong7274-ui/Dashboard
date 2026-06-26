@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <title>Dashboard Manual Director</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'neutral',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            },
+            securityLevel: 'loose'
+        });
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #334155;
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            background-color: #ffffff;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #0f172a;
+            font-weight: 700;
+            margin-top: 2.5rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.3;
+        }
+        h1 {
+            font-size: 2.5rem;
+            border-bottom: 3px solid #e2e8f0;
+            padding-bottom: 0.75rem;
+            margin-top: 1rem;
+        }
+        h2 {
+            font-size: 1.85rem;
+            border-bottom: 1.5px solid #cbd5e1;
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+            page-break-before: always;
+        }
+        h2:first-of-type {
+            page-break-before: avoid;
+        }
+        h3 {
+            font-size: 1.4rem;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 0.25rem;
+        }
+        p {
+            margin-bottom: 1.25rem;
+        }
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        ul, ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-size: 0.95rem;
+            break-inside: avoid;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        code {
+            font-family: Consolas, Monaco, monospace;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        pre {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            break-inside: avoid;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.85rem;
+        }
+        blockquote {
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            background-color: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            border-radius: 0.25rem;
+            color: #475569;
+        }
+        blockquote p {
+            margin-bottom: 0;
+        }
+        .mermaid {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .mermaid svg {
+            display: block !important;
+            margin: 0 auto !important;
+            max-width: 100% !important;
+            max-height: 220mm !important;
+            width: auto !important;
+            height: auto !important;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #e2e8f0;
+            margin: 3rem 0;
+        }
+        @media print {
+            body {
+                padding: 0;
+                max-width: 100%;
+            }
+            @page {
+                margin: 20mm 15mm 20mm 15mm;
+            }
+            .mermaid {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            pre, table, blockquote {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            hr {
+                display: none;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <h1>คู่มือการใช้งานแดชบอร์ดสำหรับผู้อำนวยการ (Director Manual)</h1>
+<h3>ระบบ: Customer Insight &amp; Performance Tracking Dashboard</h3>
+<p><strong>ระดับสิทธิ์การเข้าใช้งาน: ผู้อำนวยการระบบ (Director / Administrator)</strong></p>
+<hr />
+<h2>1. การแนะนำและภาพรวมทุกระบบของโครงการ (Project Subsystems Overview)</h2>
+<p>เพื่อให้เข้าใจกลไกและสามารถดูแลรักษา บริหารจัดการตัวแปรเชิงโครงสร้างระบบได้ในระดับผู้ดูแลระบบสูงสุด เอกสารนี้แนะนำโครงสร้างและกลไกการทำงานของทั้ง <strong>9 ระบบย่อย (Subsystems)</strong> ที่ประกอบกันขึ้นเป็นโครงการนี้:</p>
+<div class="sys-flow-container">
+    <div class="sys-flow-row">
+        <div class="sys-flow-node highlight">
+            <div class="node-title">💻 Dashboard UI</div>
+            <div class="node-desc">ส่วนติดต่อผู้ใช้งานหลัก (Frontend)</div>
+        </div>
+        <div class="sys-flow-arrow">➡️</div>
+        <div class="sys-flow-node">
+            <div class="node-title">⚙️ Google Apps Script</div>
+            <div class="node-desc">เซิร์ฟเวอร์ประมวลผลหลัก (Backend Server)</div>
+        </div>
+    </div>
+    <div class="sys-flow-arrow vertical">⬇️</div>
+    <div class="sys-flow-grid">
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">📦 Cache Layer</div>
+            <div class="sub-desc">บีบอัดแคชและแบ่งชิ้นส่วน 25KB โหลดเร็วพิเศษ</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">🔐 Security (RBAC)</div>
+            <div class="sub-desc">จำกัดสิทธิ์พื้นที่และป้องกันรหัสล็อกอิน 5 ครั้ง</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">📊 Google Sheets</div>
+            <div class="sub-desc">ฐานข้อมูลกลางเก็บชีตระบบทั้งหมด</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">🤖 Gemini / OpenAI AI</div>
+            <div class="sub-desc">ระบบวิเคราะห์ลูกค้าและเขียนร่างรายงาน</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">✉️ Gmail API</div>
+            <div class="sub-desc">ส่งเมลร่างเจรจาเข้ามือถือ BD อัตโนมัติ</div>
+        </div>
+    </div>
+</div>
+<h3>1. ระบบฐานข้อมูลเชิงสัมพันธ์บน Google Sheets (Database Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: ระบบทำงานโดยใช้ Google Sheets เป็นฐานข้อมูลเก็บตารางข้อมูล 10 ชีต (เช่น <code>Users</code>, <code>Tracking</code>, <code>ActivityLog</code>, <code>AI_Followup_Logs</code> ฯลฯ) ข้อมูลยอดขายและชิ้นงานดิบรายวันจะถูกนำเข้าสเปรดชีตนี้เพื่อทำการกรอง ประมวลผล และซิงก์ข้อมูลไปที่หน้าจอผู้ใช้</li>
+</ul>
+<h3>2. ระบบประมวลผลเซิร์ฟเวอร์หลังบ้าน (Backend Server Subsystem - Google Apps Script)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: เซิร์ฟเวอร์ทำหน้าที่ผ่าน V8 Engine ของ Google Apps Script (GAS) โดยรับข้อมูลหรือข้อร้องเรียนจากหน้าบ้านผ่านชุดคำสั่ง <code>google.script.run</code> และทำหน้าที่ดึงข้อมูล ยืนยันสิทธิ์ เขียนประวัติ หรือส่งเรื่องไปประมวลผลภายนอก</li>
+</ul>
+<h3>3. ระบบรักษาความปลอดภัยและการจำกัดสิทธิ์พื้นที่ (Security &amp; Role-Based Access Control Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: ตรวจสอบบัญชีด้วยการเข้ารหัส SHA-256 + Salt และจำกัดขอบเขตการดูข้อมูล โดยระดับ Director สามารถเข้าถึงข้อมูลทุกโซนทั่วประเทศพร้อมสิทธิ์การตั้งค่าระบบ ความลับ API และจัดการปลดล็อกผู้ใช้งาน</li>
+</ul>
+<h3>4. ระบบจัดการแคชข้อมูลความเร็วสูง (High-Performance Caching Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: เนื่องจากการดึงข้อมูลผู้ประกอบการมีปริมาณมากและขีดจำกัด Google Apps Script แคชต่อชิ้นมีขนาดเพียง 100KB โค้ดหลังบ้านจึงทำระบบบดอัดบีบไฟล์ข้อมูล และแบ่งส่วนออกเป็นชิ้นเล็กๆ (Chunks ละ 25KB) เมื่อเรียกใช้งาน ระบบจะรวมส่วนแคชมาประกอบขึ้นรูป (Reassembly) คืนกลับเป็นออบเจกต์ข้อมูลภายในชั่วพริบตาเพื่อลดความหน่วงหน้าจอ</li>
+</ul>
+<h3>5. ระบบภูมิสารสนเทศแผนที่อินเทอร์แอคทีฟ (Geospatial Mapping Subsystem - Leaflet.js)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: แสดงแผนที่ขอบเขตโซนสีตามระดับคะแนนเกณฑ์ผลงาน (Map Score) วาดขอบเขตผ่านพิกัด GeoJSON มีระบบตรวจจับการชนคิว (Timeout Race Condition) เพื่อรีเซ็ตหน้าจอแผนที่ใหม่อย่างปลอดภัย</li>
+</ul>
+<h3>6. ระบบแผนภูมิสรุปยอดวิเคราะห์และอันดับ (Visualization Subsystem - Chart.js)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: เรนเดอร์กราฟวิเคราะห์แนวโน้มยอดขายสะสม MTD เทียบกับเส้นระดับเป้าหมาย และวิเคราะห์ส่วนแบ่งการตลาดขนส่ง เพื่อเป็นพิกัดให้ AM และ BD ทราบตำแหน่งผลงานรายพื้นที่</li>
+</ul>
+<h3>7. ระบบวิเคราะห์ปัญญาประดิษฐ์ (AI Insights Engine Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: ระบบ AI แบบ Multi-Provider Routing สามารถสลับการทำงานไปมาระหว่าง Google Gemini และ OpenAI ได้โดยมีระบบกู้ภัยความผิดพลาด เช่น การวนลูปส่งซ้ำ 3 ครั้งแบบหน่วงเวลา (Exponential Retry Backoff) และฟังก์ชันทำความสะอาดโค้ดมาร์กดาวน์จาก AI (JSON Sanitizer) ป้องกันระบบแชทพัง</li>
+</ul>
+<h3>8. ระบบผู้ช่วยบอทวิเคราะห์หน้าจอสด (Live Chatbot Assistant Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: บอทสนทนาที่มุมล่างขวาของแดชบอร์ด มีความสามารถในการอ่านและเก็บค่าบริบทหน้าจอที่ท่านกำลังเปิดอยู่ (Context-Aware) ทำให้บอทสามารถวิเคราะห์ตัวเลขและแผนภูมิที่กำลังแสดงอยู่เพื่อตอบคำถามท่านได้แบบเรียลไทม์</li>
+</ul>
+<h3>9. ระบบส่งต่อรายงานเมลอัตโนมัติ (Email Dispatcher Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: ประกอบโครงสร้าง HTML แม่แบบพรีเมียมที่รวบรวมตัวเลขและแผนเจรจาจาก AI ส่งเข้าสู่ระบบอีเมล Gmail ส่วนตัวของ BD ทันทีผ่าน API ของกูเกิลหลังจากท่านกดปุ่มวิเคราะห์</li>
+</ul>
+<hr />
+<h2>2. บทบาทและหน้าที่หลักของ Director ในระบบ (Director Role Overview)</h2>
+<p>ในฐานะ <strong>ผู้อำนวยการ (Director)</strong> ท่านคือผู้ควบคุมดูแลระบบทั้งหมด มีสิทธิ์สูงสุดในการเข้าถึงข้อมูลทั่วประเทศ กำหนดนโยบายเป้าหมาย ประเมินความมั่นคงปลอดภัย และจัดการตัวแปรทางเทคนิคของระบบ AI รวมถึงบริหารจัดการบัญชีผู้ใช้งานพนักงานทั้งหมด ฟังก์ชันการควบคุมระบบของท่านจะประกอบไปด้วย:
+1. การดูข้อมูลภาพรวมระดับประเทศแบบครบถ้วนทุกโซน (All Zones View Scope)
+2. การกำหนดค่าตัวเลขเป้าหมายเปรียบเทียบผลงานประจำเดือน (Monthly Target Setting)
+3. การจัดการสิทธิ์ผู้ใช้งานและปลดล็อกบัญชีพนักงานที่ถูกบล็อก (User Management &amp; Lockout Release)
+4. การตั้งค่าสลับเครื่องยนต์ผู้ให้บริการ AI และคีย์ความปลอดภัยระบบ (Advanced AI Engine Configuration)
+5. การตรวจสอบประวัติการทำกิจกรรมเชิงสืบสวน (Audit Trail Logs Analysis)</p>
+<hr />
+<h2>3. การควบคุมเป้าหมายเปรียบเทียบระดับประเทศ (National Target Settings)</h2>
+<h3>3.1 สิทธิ์การคัดกรองระดับประเทศ (All Zones Scope)</h3>
+<p>ในแผงควบคุมตัวกรองด้านบน ช่อง <strong>AREA</strong> จะมีตัวเลือกพิเศษคือ <strong>"All"</strong> ซึ่งระบบจะรวมค่าและดึงไฟล์พิกัด GeoJSON ทั่วประเทศมารวมกันวาดเป็นจุดสีและกราฟเส้นประเมินผลยอดขายเปรียบเทียบพร้อมกันทันที</p>
+<h3>3.2 การปรับปรุงตัวเลขเป้าหมายเดือนถัดไป (Monthly Target Configuration)</h3>
+<p>ที่กล่องพริเซนเทชันการ์ดในหน้าหลัก จะมีปุ่ม Action Card สำหรับ <strong>"ตั้งเป้าเป้าหมายรายเดือน"</strong>
+1. คลิกปุ่มตั้งเป้าหมายประจำประเทศ
+2. กรอกตัวเลขในแบบฟอร์มภาษาไทย:
+   * <strong>เป้าหมายรายได้เฉลี่ยรายวัน (Daily Revenue Target)</strong>: ค่าเริ่มต้นสำหรับลากเส้นเปรียบเทียบกับยอดขายเฉลี่ยจริงสะสม
+   * <strong>เป้าหมายชิ้นงานสะสมประจำเดือน (Monthly Volume Target)</strong>: ยอดเป้าหมายชิ้นงานขนส่งสะสมของเขตประเทศ
+3. กดยืนยันป๊อปอัป ระบบจะนำค่าเหล่านี้ไปอัปเดตลงตัวแปรสภาพแวดล้อมระบบ และอัปเดตเส้นปะเป้าหมายบนกราฟ Chart.js ของพนักงานทุกคนทันทีในวินาทีนั้น</p>
+<hr />
+<h2>4. ระบบจัดการผู้ใช้และการปลดล็อกบัญชี (User Management &amp; Account Unlock)</h2>
+<h3>4.1 นโยบายการล็อกบัญชีป้องกันการสุ่มเจาะระบบ (Account Lockout Policy)</h3>
+<p>เพื่อความปลอดภัยสูงสุดของสเปรดชีตองค์กร ระบบหลังบ้านได้รับการพัฒนาให้มีระบบตรวจจับการเข้าสู่ระบบ:
+* หากผู้ใช้บัญชีใดกรอกรหัสผ่านไม่ถูกต้องติดต่อกันเกิน <strong>5 ครั้ง</strong> ระบบหลังบ้านจะนำชื่อบัญชีและข้อมูล IP ดังกล่าวไปเขียนติดสถานะถูกบล็อก (Locked) ใน Script Properties และขัดขวางไม่ให้เข้าระบบทันทีแม้จะกรอกรหัสผ่านที่ถูกต้องในภายหลังก็ตาม</p>
+<h3>4.2 ขั้นตอนการตรวจสอบและกดยืนยันปลดล็อกพนักงาน (Step-by-step Unlock)</h3>
+<p>เมื่อได้รับการประสานงานจากเจ้าหน้าที่ BD หรือ AM ว่าบัญชีผู้ใช้ถูกล็อก:
+1. คลิกเลือกแท็บเมนูหลัก <strong>"🔐 จัดการผู้ใช้" (User Management)</strong>
+2. ในตารางรายชื่อพนักงาน ให้มองหาพนักงานที่ระบุสถานะสีแดงว่า <strong>"Locked" (ถูกล็อก)</strong>
+3. คลิกปุ่ม <strong>"ปลดล็อก" (Unlock)</strong> บนแถวข้อมูลของบัญชีนั้น
+4. ระบบจะเปิดหน้าจอยืนยันพรีเซนเทชันสีทอง (Lockout Release Confirmation Modal) เพื่อให้ผู้อำนวยการยืนยันตัวตน
+5. กดยืนยันปลดล็อก ระบบจะทำการ:
+   * เคลียร์ตัวเลขนับจำนวนประวัติการเดารหัสผ่านผิดพลาด (Password Guess History) ของผู้ใช้รายนั้นกลับไปเป็น 0
+   * นำสถานะถูกบล็อกออกจากระบบพนักงาน ทำให้บัญชีสามารถกรอกรหัสล็อกอินใหม่ได้ทันที
+   * บันทึกบันทึกประวัติการกระทำลงในประวัติของระบบ (Activity Log) ว่าบัญชีดังกล่าวถูกปลดล็อกโดยผู้อำนวยการคนใด</p>
+<hr />
+<h2>5. การจัดการตัวแปรสภาพแวดล้อมและสถาปัตยกรรม AI (Settings &amp; AI Provider Setup)</h2>
+<p>ที่แถบเมนู <strong>"⚙️ ตั้งค่าระบบ" (Settings Panel)</strong> ท่านสามารถปรับสถาปัตยกรรม AI Engine ได้อย่างไร้รอยต่อ:</p>
+<h3>5.1 การสลับผู้ให้บริการหลัก (AI_PROVIDER Switch)</h3>
+<ul>
+<li>ในช่องตัวเลือก <strong>Active AI Provider</strong> ท่านสามารถสลับเลือกระหว่าง <strong>Google Gemini</strong> และ <strong>OpenAI</strong> ได้ตามต้องการ </li>
+<li>เมื่อทำการสลับ ค่าระบบจะเปลี่ยนเส้นทางเรียกใช้ (Endpoint) ไปยังเซิร์ฟเวอร์คลาวด์ของค่ายนั้นโดยอัตโนมัติ</li>
+</ul>
+<h3>5.2 การใส่คีย์และความเป็นส่วนตัว (API Keys Management)</h3>
+<ul>
+<li>กรอกคีย์ลับที่ช่อง <code>GEMINI_API_KEY</code> หรือ <code>OPENAI_API_KEY</code></li>
+<li>สำหรับความปลอดภัยด้านสิทธิ์ข้อมูลและป้องกันการรั่วไหลขณะบันทึกหน้าจอพรีเซนเทชัน ช่องอินพุต OpenAI API Key ได้รับการพัฒนาให้มีสัญลักษณ์รูปดวงตา <strong>(Password Visibility Toggle)</strong> ผู้อำนวยการสามารถกดไอคอนเพื่อแสดงหรือบดบังข้อมูลตัวอักษรของคีย์ได้</li>
+</ul>
+<h3>5.3 การระบุรุ่นโมเดลและลำดับสำรอง (Model Defaults &amp; Fallback Chain)</h3>
+<ul>
+<li>ช่องเลือก Dropdown <strong>Default Model</strong> อนุญาตให้เลือกโมเดลความเร็วสูงราคาประหยัดที่พร้อมให้บริการ (เช่น <code>gemini-2.0-flash</code>, <code>gemini-2.5-flash</code>, <code>gpt-4o-mini</code>, <code>gpt-4o</code>)</li>
+<li>ในส่วนของ GeminiService.js ระบบสำรองโมเดล (Failover Chain) จะทำหน้าที่อัตโนมัติเมื่อโมเดลหลักโควตาเต็ม โดยข้ามไปยิงเรียกใช้งานโมเดลสำรองถัดไปในรายการที่ตั้งค่าไว้ล่วงหน้าทันที</li>
+</ul>
+<h3>5.4 ระบบแอนิเมชันปุ่มโหลดความปลอดภัยสูง (Global Loader Timeout Safety)</h3>
+<p>ทุกครั้งที่กด <strong>"บันทึกการตั้งค่าระบบ" (Save Settings)</strong> หรือกดยืนยันการปลดล็อกผู้ใช้งาน:
+* ระบบจะเปิดแอนิเมชัน <strong>Global Loader Overlay</strong> ซ้อนทับการทำงานทั้งหมดทันที เพื่อความปลอดภัยป้องกันไม่ให้พนักงานกดย้ำส่งคำร้องไปที่กูเกิลเซิร์ฟเวอร์พร้อมกันจนเกิดปัญหา (Race Conditions)
+* <strong>กลไกการกู้ภัยอัตโนมัติ 15 วินาที</strong>: เพื่อป้องกันไม่ให้ผู้ใช้งานติดหน้าจอโหลดค้างตลอดชีวิตในกรณีโครงข่ายเชื่อมต่อกูเกิลเซิร์ฟเวอร์ล้มเหลว ระบบโหลดเต็มหน้าจอนี้จะติดตั้งฟังก์ชัน <code>setTimeout</code> ยกเลิกหน้ากาก (Auto-Dismiss) ตัวเองทิ้งภายใน 15 วินาทีทันทีหากเซิร์ฟเวอร์ยังไม่มีการตอบสนองกลับมา</p>
+<hr />
+<h2>6. การสืบสวนประวัติและกิจกรรมระบบ (Audit Trail Logs Analysis)</h2>
+<p>ผู้อำนวยการสามารถดึงประวัติการทำกิจกรรมจากชีต <strong><code>ActivityLog</code></strong> เพื่อมาประเมินเหตุการณ์และคัดกรองภัยคุกคามในระบบ โดยข้อมูลที่เก็บบันทึกประกอบด้วย:</p>
+<ol>
+<li><strong>Timestamp</strong>: วันและเวลาจริงในระดับวินาที</li>
+<li><strong>Username &amp; Role</strong>: ระบุชัดเจนว่าบัญชีผู้ใช้ใดในฐานข้อมูลระดับสิทธิ์ใดเป็นผู้กระทำกิจกรรม</li>
+<li><strong>Action (คีย์คำสั่ง)</strong>:
+<ul>
+<li><code>LOGIN</code>: การเข้าใช้ระบบสำเร็จ</li>
+<li><code>LOGIN_FAILED</code>: รหัสผ่านผิดพลาด (ใช้ตรวจสอบการสุ่มรหัสผ่าน)</li>
+<li><code>ACCOUNT_LOCKED</code>: บัญชีถูกล็อกเนื่องจากใส่รหัสผิดครบ 5 ครั้ง</li>
+<li><code>ACCOUNT_UNLOCKED</code>: ผู้อำนวยการทำการปลดล็อกบัญชีพนักงาน</li>
+<li><code>CACHE_REFRESH</code>: การคลิกบังคับดึงข้อมูลจริงจากสเปรดชีต</li>
+<li><code>UPDATE_STATUS</code>: การเปลี่ยนสถานะตัวแทนกลุ่มเสี่ยง/เติบโต</li>
+<li><code>AI_REQUEST</code>: การประมวลผลร้องขอ Call Script จากปัญญาประดิษฐ์</li>
+<li><code>OPEN_CUSTOMER_CARD</code>: การเข้าดึงข้อมูลหรือเปิดดูนามบัตรของลูกค้า (Data Access Log)</li>
+</ul>
+</li>
+<li><strong>Token (Short)</strong>: ลายนิ้วมือโทเค็นความยาว 8 อักขระสุดท้ายเพื่อใช้ยืนยันกิจกรรมในเซสชันเดียวกัน</li>
+</ol>
+<h3>6.1 ระบบประวัติการเข้าถึงข้อมูลและการเคลื่อนไหวข้อมูลลูกค้า (AI Access Log & Data Audit Trail)</h3>
+<p>นอกจากบันทึกการทำงานทั่วไปแล้ว แดชบอร์ดได้เปลี่ยนจากการติดตามสถานะแบบเดิมมาเป็น <strong>ระบบการเข้าถึงข้อมูลลูกค้า (Data Access Audit System)</strong>:</p>
+<ul>
+<li><strong>ชีตเก็บข้อมูล AI_Followup_Logs</strong>: ทุกครั้งที่มีการเปิดหน้าต่างข้อมูลนามบัตรลูกค้า (Customer Card) ระบบจะบันทึก Log ลงชีตนี้โดยอัตโนมัติ โดยระบุสรุปเป็น <code>🔍 ดึงข้อมูล/ดูนามบัตรลูกค้า</code> เพื่อบันทึกว่า "ใครเรียกดูข้อมูลลูกค้ารายใด ในเวลาใดบ้าง"</li>
+<li><strong>แท็บวิเคราะห์และติดตามผล AI</strong>: ผู้อำนวยการและ AM สามารถติดตามความเคลื่อนไหวเหล่านี้ในตารางประวัติได้ทันที โดยสามารถทำการค้นหาและคลิกหัวคอลัมน์เพื่อจัดเรียงลำดับ (Sort) จากมากไปน้อย หรือน้อยไปมากได้ สะดวกต่อการตรวจดูพฤติกรรมการเรียกดูข้อมูลลูกค้าของทีมงาน</li>
+</ul>
+<hr />
+<h2>7. คู่มือการแก้ไขปัญหาด้านการดูแลระบบสำหรับผู้อำนวยการ (Technical Troubleshooting)</h2>
+<div class="troubleshoot-grid">
+  <!-- Card 1 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาการบันทึก</span>
+      <h4>ตั้งค่า API Key ใหม่และกดบันทึกแล้วขึ้นแถบสีแดงว่าบันทึกล้มเหลว</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุหลังบ้าน:</div>
+        <div class="ts-value">สิทธิ์เข้าถึง Script Properties ของกูเกิลติดขัด หรือโควตาบันทึกของ Script เต็ม</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 วิธีแก้ไขสำหรับ Director:</div>
+        <div class="ts-value">ให้เข้าไปอัปเดตค่าความลับผ่านหน้าต่างควบคุมคีย์ (Project Settings) บนกูเกิลคลาวด์ Apps Script หลังบ้านโดยตรง</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาการวิเคราะห์ AI</span>
+      <h4>บอทวิเคราะห์ค้างและหน้าต่างแจ้งโควตาใช้งาน API เต็มอย่างแน่นอน</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุหลังบ้าน:</div>
+        <div class="ts-value">บัญชีผู้ใช้อาจใช้ API Key ของ Free Tier และมีการส่งข้อมูลถี่เกินไป</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 วิธีแก้ไขสำหรับ Director:</div>
+        <div class="ts-value">
+          1. ปรับเปลี่ยนผู้ให้บริการ AI กลับเป็นค่ายสำรอง<br>
+          2. เปลี่ยนประเภทคีย์ API เป็นแบบเรียกเก็บเงินรายเดือน (Pay-as-you-go) บนคอนโซล Google Cloud หรือ OpenAI
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาระบบช้า</span>
+      <h4>ตารางข้อมูลในระบบโหลดช้าอย่างมาก</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุหลังบ้าน:</div>
+        <div class="ts-value">ขนาดไฟล์ประวัติรายชิ้นสะสมมีขนาดเกินขีดจำกัด 100KB</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 วิธีแก้ไขสำหรับ Director:</div>
+        <div class="ts-value">แดชบอร์ดจะแบ่งเก็บข้อมูลแบบ Chunks (25KB/ชิ้น) หากข้อมูลโตเกินไป ให้เข้าไปล้างแคชโดยกดปุ่ม <strong>🔄 รีเฟรช</strong> หรือเคลียร์แถวประวัติที่เสร็จสิ้นแล้วย้ายไปเก็บที่ชีต <code>Archive</code> ย้อนหลัง</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาการกรองข้อมูล</span>
+      <h4>มีรายงานบั๊กการกรองข้อมูลพนักงานข้ามพื้นที่รับผิดชอบ</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุหลังบ้าน:</div>
+        <div class="ts-value">ข้อมูลการจับคู่ Zone หรือสิทธิ์พนักงานในชีต <code>Users</code> ขัดแย้งกัน</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 วิธีแก้ไขสำหรับ Director:</div>
+        <div class="ts-value">เข้าไปเปิดไฟล์สเปรดชีตฐานข้อมูล เช็กคอลัมน์ <code>Zones</code> ของพนักงานคนนั้น หากต้องการให้มองเห็นได้หลายโซนให้พิมพ์คั่นด้วยคอมม่า เช่น <code>Zone 1, Zone 2</code> และเว้นวรรคให้ถูกต้องตามหลักฐานข้อมูล</div>
+      </div>
+    </div>
+  </div>
+</div>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>ระบบยืนยันป้องกันล็อกเอาท์ (Logout Confirm Modal)</strong>:
+เมื่อผู้อำนวยการกดยืนยันปุ่ม <strong>"ออกจากระบบ" (Logout)</strong> บนแดชบอร์ด ระบบจะแสดงป๊อปอัปยืนยันการออกจากระบบ เพื่อป้องกันการตัดการทำงานขณะที่ท่านกำลังเปิดแก้ไขหน้าจอจัดระดับสิทธิ์ผู้ใช้หรือเปลี่ยนคีย์ความปลอดภัยของระบบแดชบอร์ดค้างไว้</p>
+</blockquote>
+</body>
+</html>

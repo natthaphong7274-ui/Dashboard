@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <title>Dashboard Manual Am</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'neutral',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            },
+            securityLevel: 'loose'
+        });
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #334155;
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            background-color: #ffffff;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #0f172a;
+            font-weight: 700;
+            margin-top: 2.5rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.3;
+        }
+        h1 {
+            font-size: 2.5rem;
+            border-bottom: 3px solid #e2e8f0;
+            padding-bottom: 0.75rem;
+            margin-top: 1rem;
+        }
+        h2 {
+            font-size: 1.85rem;
+            border-bottom: 1.5px solid #cbd5e1;
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+            page-break-before: always;
+        }
+        h2:first-of-type {
+            page-break-before: avoid;
+        }
+        h3 {
+            font-size: 1.4rem;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 0.25rem;
+        }
+        p {
+            margin-bottom: 1.25rem;
+        }
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        ul, ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-size: 0.95rem;
+            break-inside: avoid;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        code {
+            font-family: Consolas, Monaco, monospace;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        pre {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            break-inside: avoid;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.85rem;
+        }
+        blockquote {
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            background-color: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            border-radius: 0.25rem;
+            color: #475569;
+        }
+        blockquote p {
+            margin-bottom: 0;
+        }
+        .mermaid {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .mermaid svg {
+            display: block !important;
+            margin: 0 auto !important;
+            max-width: 100% !important;
+            max-height: 220mm !important;
+            width: auto !important;
+            height: auto !important;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #e2e8f0;
+            margin: 3rem 0;
+        }
+        @media print {
+            body {
+                padding: 0;
+                max-width: 100%;
+            }
+            @page {
+                margin: 20mm 15mm 20mm 15mm;
+            }
+            .mermaid {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            pre, table, blockquote {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            hr {
+                display: none;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <h1>คู่มือการใช้งานแดชบอร์ดสำหรับผู้จัดการพื้นที่ (AM Manual)</h1>
+<h3>ระบบ: Customer Insight &amp; Performance Tracking Dashboard</h3>
+<p><strong>ระดับสิทธิ์การเข้าใช้งาน: ผู้จัดการพื้นที่ (Area Manager - AM)</strong></p>
+<hr />
+<h2>1. การแนะนำและภาพรวมทุกระบบของโครงการ (Project Subsystems Overview)</h2>
+<p>เพื่อให้เข้าใจลоจิกการทำงานและสามารถบริหารจัดการวิเคราะห์ข้อมูลการทำงานของทีมงานในสังกัดได้อย่างถูกต้อง เอกสารนี้แนะนำโครงสร้างและกลไกการทำงานของทั้ง <strong>9 ระบบย่อย (Subsystems)</strong> ที่ประกอบกันขึ้นเป็นโครงการนี้:</p>
+<div class="sys-flow-container">
+    <div class="sys-flow-row">
+        <div class="sys-flow-node highlight">
+            <div class="node-title">💻 Dashboard UI</div>
+            <div class="node-desc">ส่วนติดต่อผู้ใช้งานหลัก (Frontend)</div>
+        </div>
+        <div class="sys-flow-arrow">➡️</div>
+        <div class="sys-flow-node">
+            <div class="node-title">⚙️ Google Apps Script</div>
+            <div class="node-desc">เซิร์ฟเวอร์ประมวลผลหลัก (Backend Server)</div>
+        </div>
+    </div>
+    <div class="sys-flow-arrow vertical">⬇️</div>
+    <div class="sys-flow-grid">
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">📦 Cache Layer</div>
+            <div class="sub-desc">บีบอัดแคชและแบ่งชิ้นส่วน 25KB โหลดเร็วพิเศษ</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">🔐 Security (RBAC)</div>
+            <div class="sub-desc">จำกัดสิทธิ์พื้นที่และป้องกันรหัสล็อกอิน 5 ครั้ง</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">📊 Google Sheets</div>
+            <div class="sub-desc">ฐานข้อมูลกลางเก็บชีตระบบทั้งหมด</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">🤖 Gemini / OpenAI AI</div>
+            <div class="sub-desc">ระบบวิเคราะห์ลูกค้าและเขียนร่างรายงาน</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">✉️ Gmail API</div>
+            <div class="sub-desc">ส่งเมลร่างเจรจาเข้ามือถือ BD อัตโนมัติ</div>
+        </div>
+    </div>
+</div>
+<h3>1. ระบบฐานข้อมูลเชิงสัมพันธ์บน Google Sheets (Database Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: ระบบทำงานโดยใช้ Google Sheets เป็นฐานข้อมูลเก็บตารางข้อมูล 10 ชีต (เช่น <code>Users</code>, <code>Tracking</code>, <code>ActivityLog</code>, <code>AI_Followup_Logs</code> ฯลฯ) ข้อมูลยอดขายและชิ้นงานดิบรายวันจะถูกนำเข้าสเปรดชีตนี้เพื่อทำการกรอง ประมวลผล และซิงก์ข้อมูลไปที่หน้าจอผู้ใช้</li>
+</ul>
+<h3>2. ระบบประมวลผลเซิร์ฟเวอร์หลังบ้าน (Backend Server Subsystem - Google Apps Script)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: เซิร์ฟเวอร์ทำหน้าที่ผ่าน V8 Engine ของ Google Apps Script (GAS) โดยรับข้อมูลหรือข้อร้องเรียนจากหน้าบ้านผ่านชุดคำสั่ง <code>google.script.run</code> และทำหน้าที่ดึงข้อมูล ยืนยันสิทธิ์ เขียนประวัติ หรือส่งเรื่องไปประมวลผลภายนอก</li>
+</ul>
+<h3>3. ระบบรักษาความปลอดภัยและการจำกัดสิทธิ์พื้นที่ (Security &amp; Role-Based Access Control Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: ตรวจสอบบัญชีด้วยการเข้ารหัส SHA-256 + Salt และจำกัดขอบเขตการดูข้อมูล โดยผู้จัดการพื้นที่ (AM) จะเห็นสถิติและวิเคราะห์ข้อมูลได้เฉพาะจังหวัดที่อยู่ภายใต้การบริหารจัดการของตนเท่านั้น โดยระบบจะปิดกั้นข้อมูลจังหวัดอื่น</li>
+</ul>
+<h3>4. ระบบจัดการแคชข้อมูลความเร็วสูง (High-Performance Caching Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: เนื่องจากการดึงข้อมูลผู้ประกอบการมีปริมาณมากและขีดจำกัด Google Apps Script แคชต่อชิ้นมีขนาดเพียง 100KB โค้ดหลังบ้านจึงทำระบบบดอัดบีบไฟล์ข้อมูล และแบ่งส่วนออกเป็นชิ้นเล็กๆ (Chunks ละ 25KB) เมื่อเรียกใช้งาน ระบบจะรวมส่วนแคชมาประกอบขึ้นรูป (Reassembly) คืนกลับเป็นออบเจกต์ข้อมูลภายในชั่วพริบตาเพื่อลดความหน่วงหน้าจอ</li>
+</ul>
+<h3>5. ระบบภูมิสารสนเทศแผนที่อินเทอร์แอคทีฟ (Geospatial Mapping Subsystem - Leaflet.js)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: แสดงแผนที่ขอบเขตโซนสีตามระดับคะแนนเกณฑ์ผลงาน (Map Score) วาดขอบเขตผ่านพิกัด GeoJSON มีระบบตรวจจับการชนคิว (Timeout Race Condition) เพื่อรีเซ็ตหน้าจอแผนที่ใหม่อย่างปลอดภัย</li>
+</ul>
+<h3>6. ระบบแผนภูมิสรุปยอดวิเคราะห์และอันดับ (Visualization Subsystem - Chart.js)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: เรนเดอร์กราฟวิเคราะห์แนวโน้มยอดขายสะสม MTD เทียบกับเส้นระดับเป้าหมาย และวิเคราะห์ส่วนแบ่งการตลาดขนส่ง เพื่อเป็นพิกัดให้ AM และ BD ทราบตำแหน่งผลงานรายพื้นที่</li>
+</ul>
+<h3>7. ระบบวิเคราะห์ปัญญาประดิษฐ์ (AI Insights Engine Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: ระบบ AI แบบ Multi-Provider Routing สามารถสลับการทำงานไปมาระหว่าง Google Gemini และ OpenAI ได้โดยมีระบบกู้ภัยความผิดพลาด เช่น การวนลูปส่งซ้ำ 3 ครั้งแบบหน่วงเวลา (Exponential Retry Backoff) และฟังก์ชันทำความสะอาดโค้ดมาร์กดาวน์จาก AI (JSON Sanitizer) ป้องกันระบบแชทพัง</li>
+</ul>
+<h3>8. ระบบผู้ช่วยบอทวิเคราะห์หน้าจอสด (Live Chatbot Assistant Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: บอทสนทนาที่มุมล่างขวาของแดชบอร์ด มีความสามารถในการอ่านและเก็บค่าบริบทหน้าจอที่ท่านกำลังเปิดอยู่ (Context-Aware) ทำให้บอทสามารถวิเคราะห์ตัวเลขและแผนภูมิที่กำลังแสดงอยู่เพื่อตอบคำถามท่านได้แบบเรียลไทม์</li>
+</ul>
+<h3>9. ระบบส่งต่อรายงานเมลอัตโนมัติ (Email Dispatcher Subsystem)</h3>
+<ul>
+<li><strong>การทำงาน</strong>: ประกอบโครงสร้าง HTML แม่แบบพรีเมียมที่รวบรวมตัวเลขและแผนเจรจาจาก AI ส่งเข้าสู่ระบบอีเมล Gmail ส่วนตัวของ BD ทันทีผ่าน API ของกูเกิลหลังจากท่านกดปุ่มวิเคราะห์</li>
+</ul>
+<hr />
+<h2>2. บทบาทและหน้าที่หลักของ AM ในระบบ (AM Role Overview)</h2>
+<p>ในฐานะ <strong>ผู้จัดการพื้นที่ (AM)</strong> ท่านมีหน้าที่รับผิดชอบในการวิเคราะห์ประสิทธิภาพเชิงภาพรวมระดับจังหวัด ตรวจสอบการเติบโต และกำกับดูแลการปฏิบัติงานติดตามลูกค้าของทีมงานพัฒนาธุรกิจ (BD) ในพื้นที่ดูแลของท่าน ระบบสนับสนุนการทำงานของท่านดังนี้:
+1. ตรวจสอบเปรียบเทียบผลยอดขายและจำนวนชิ้นงานของทุกโซนพร้อมกัน (Multi-Zone Analysis)
+2. วิเคราะห์แนวโน้มผลงานและส่วนแบ่งทางการตลาดผ่านระบบแผนภูมิวิเคราะห์เชิงลึก (Chart.js Graphs)
+3. ติดตามและควบคุมประเมินผลความคืบหน้าการทำงาน (KPI Progress) ของเจ้าหน้าที่ BD ในความรับผิดชอบ</p>
+<blockquote>
+<p>[!NOTE]
+<strong>ขอบเขตสิทธิ์ข้อมูล (Data Scope)</strong>: ท่านสามารถเลือกสลับจังหวัดหรือพื้นที่กรองได้เฉพาะพื้นที่ที่ท่านได้รับมอบหมายดูแลเท่านั้น (ดูแลได้หลายจังหวัดในส่วนภูมิภาคของตนเอง) โดยระบบความปลอดภัยจะบล็อกไม่ให้สลับไปเลือกโซนของภูมิภาคอื่น</p>
+</blockquote>
+<hr />
+<h2>3. การวิเคราะห์ข้อมูลสถิติเชิงปริมาณ (Overview Analytics &amp; Charts)</h2>
+<p>ในเมนูหลักของแดชบอร์ด ท่านจะพบแถบข้อมูลสรุปประสิทธิภาพซึ่งเชื่อมต่อกับบริการ <strong>Chart.js</strong> ในการวาดกราฟวิเคราะห์ 3 หัวข้อหลัก:</p>
+<h3>3.1 แผนภูมิเส้นเปรียบเทียบยอดเป้าหมายประจำเดือน (Revenue Trend vs Target)</h3>
+<ul>
+<li><strong>การตีความ</strong>: </li>
+<li>เส้นทึบสีน้ำเงินแสดงยอดสะสมรายได้จริง ณ ปัจจุบันในพื้นที่ดูแลของท่าน</li>
+<li>เส้นปะสีเทาแสดงอัตราวิ่งของยอดสะสมขั้นต่ำรายวัน (Run Rate Target Line) เพื่อไปให้ถึงเป้าหมายสิ้นเดือนที่กำหนดไว้</li>
+<li><strong>จุดประสงค์</strong>: ใช้สำหรับประเมินว่าตัวเลข ณ วันปัจจุบันของพื้นที่ท่านตกลงต่ำกว่ามาตรฐานหรือเหนือมาตรฐาน (Gap Analysis) เพื่อเตรียมจัดกิจกรรมส่งเสริมการขายเพิ่มเติม</li>
+</ul>
+<h3>3.2 แผนภูมิวงกลมส่วนแบ่งผู้ให้บริการขนส่ง (Carrier Market Share)</h3>
+<ul>
+<li><strong>การตีความ</strong>: แสดงสัดส่วนเปอร์เซ็นต์ที่ผู้ประกอบการ (Agent) ทั้งหมดในพื้นที่ใช้บริการฝากส่งพัสดุแยกตามแบรนด์ขนส่งค่ายต่างๆ</li>
+<li><strong>จุดประสงค์</strong>: วิเคราะห์พฤติกรรมความผูกพันของตัวแทน หากพบว่าสัดส่วนขนส่งแบรนด์หลักของคู่แข่งพุ่งสูงขึ้นอย่างกะทันหันในจังหวัดใด AM สามารถสั่งการให้ BD เข้าพบตัวแทนกลุ่มนั้นเพื่อสอบถามปัญหาการใช้บริการหรือนำเสนอโปรโมชันชิงยอดขายกลับคืนมา</li>
+</ul>
+<h3>3.3 ตารางรายงานลำดับผลงานดีที่สุดและตกต่ำที่สุด (Top Rankings Table)</h3>
+<p>ตารางนี้จะจัดอันดับ 5 ลำดับผู้ประกอบการในพื้นที่ของท่านที่มีการเปลี่ยนแปลงสูงสุด:
+* <strong>Top 5 Drop Agents (ยอดตกสูงสุด)</strong>: แสดงรายชื่อร้านค้าที่ทำรายได้ตกลงมากที่สุดเมื่อเทียบกับเดือนฐาน ตัวเลขอัตราตกจะเป็นสีแดงสะดุดตา เพื่อใช้ระบุพิกัดสำหรับการส่งทีมเข้าช่วยเหลือเร่งด่วน
+* <strong>Top 5 Growth Agents (โตสูงสุด)</strong>: แสดงรายชื่อร้านค้าที่ทำยอดเติบโตเพิ่มขึ้นสูงสุด ตัวเลขเป็นสีเขียว เพื่อใช้ศึกษาปัจจัยความสำเร็จของร้านค้าเป้าหมายและนำมาถอดบทเรียนเพื่อใช้เปรียบเทียบกับร้านอื่น</p>
+<blockquote>
+<p>[!TIP]
+<strong>การแก้ไขปัญหากราฟไม่แสดงผลหรือแอนิเมชันกระตุก (Asynchronous Repaint Deferral)</strong>:
+ในโค้ดหน้าบ้านมีการจัดสัดส่วนการโหลดกราฟ โดยหน่วงเวลา 40 มิลลิวินาทีหลังการสลับแท็บเมนู เพื่อให้กราฟเรนเดอร์ไม่ทับซ้อนกับระบบหน้ากากโหลด Skeleton Loading
+* หากกดสลับแท็บแล้วพบว่ากราฟแสดงผลไม่สมบูรณ์ หรือตัวเลขซ้อนกัน ให้<strong>กดเปลี่ยนแท็บไปมาอีกครั้ง</strong> หรือคลิกปุ่ม <strong>🔄 รีเฟรช</strong> ด้านบนขวา ระบบจะสั่งเคลียร์แคชและเรนเดอร์กราฟใหม่ให้สมบูรณ์ทันที</p>
+</blockquote>
+<hr />
+<h2>4. การใช้งานแผนที่วิเคราะห์เป้าหมายการส่งทีม BD (Map Operations for AM)</h2>
+<p>หน้าแผนที่ Leaflet.js บนแดชบอร์ดมีประโยชน์สูงสุดในการบริหารวางแผนกำลังคนของ AM:</p>
+<ol>
+<li><strong>คัดกรองขอบเขตการดูพื้นที่ (Filtering Zones)</strong>: AM สามารถเลือกดูโซนสีแยกรายจังหวัดในส่วนพื้นที่รับผิดชอบ</li>
+<li><strong>การวางแผนและจ่ายงาน</strong>:<ul>
+<li>หากตรวจสอบพบพื้นที่โซนสีแดง <code>🔴 (ฟื้นฟูเร่งด่วน / Recovery)</code> บ่อยครั้งติดต่อกัน AM ควรคลิกดูที่ป๊อปอัปพิกัดเพื่อตรวจสอบว่ามีร้านค้าขนส่งค่ายใดที่ฉุดคะแนนภาพรวมลง</li>
+<li>ดับเบิ้ลคลิกปุ่มนำทางด่วน <code>ดู Risk</code> เพื่อเข้าไปเอาชื่อและพิกัดของกลุ่มเป้าหมาย จากนั้นมอบหมายให้ BD รับผิดชอบเข้าตรวจสอบเป็นรายบุคคล</li>
+</ul>
+</li>
+</ol>
+<hr />
+<h2>5. การกำกับดูแลการติดตามและประเมินผลทีม BD (BD Progress Audit Trail)</h2>
+<p>เพื่อวัดผลความคืบหน้าในการเข้าช่วยเหลือลูกค้า AM สามารถตรวจสอบความเคลื่อนไหวผ่านแดชบอร์ดได้โดยตรงดังนี้:</p>
+<h3>5.1 การตรวจสอบคอลัมน์กิจกรรมผู้เข้าบันทึก (Activity Verification Columns)</h3>
+<p>In the Tracking tables, AM can see:
+* <strong>แก้ไขล่าสุดโดย (updatedBy)</strong>: จะบันทึก Username/อีเมลของเจ้าหน้าที่ BD ที่กดส่งข้อมูลบันทึกติดตามลูกค้าล่าสุด
+* <strong>วันเวลาบันทึกล่าสุด (updatedAt)</strong>: ระบุ Timestamp วันเวลาจริงในการบันทึกข้อมูล
+* <strong>แนวทางใช้งานสำหรับ AM</strong>: ตรวจสอบว่าหลังจากจ่ายงานให้ BD ลงไปแก้ไขปัญหาตัวแทนกลุ่มเสี่ยง ยอดในคอลัมน์ <code>Status</code> มีการเปลี่ยนจาก <code>รอดำเนินการ</code> หรือไม่ และตรวจดูว่าผู้กดบันทึกเป็น BD สังกัดโซนนั้นจริงหรือไม่เพื่อประเมินความโปร่งใส</p>
+<h3>5.2 การสืบค้นประวัติติดตามย้อนหลังถาวร (Tracking Status History Archive)</h3>
+<p>กรณีตัวแทนขนส่งรายเดิมเคยเข้าระบบกลุ่มเสี่ยงงวดที่แล้ว และทีมงานได้ทำการเคลียร์สถานะไปแล้วในการตัดรอบ Cutoff Period ข้อมูลสถานะการติดตามจะถูกโอนย้ายไปเก็บอย่างถาวรในตารางหลังบ้าน <code>TrackingStatusHistory</code>
+* หาก AM ต้องการตรวจสอบว่าลูกค้าเป้าหมายรายนี้มียอดขายวูบวาบและเข้าเกณฑ์ความเสี่ยงบ่อยเพียงใด (ประเมินความเสถียรของยอด) AM สามารถสอบถามขอดึงข้อมูลประวัติ (Streak) จากตารางประวัติสถานะถาวรเพื่อประเมินผลความยั่งยืนของมาตรการช่วยเหลือได้</p>
+<h3>5.3 ระบบประวัติการเคลื่อนไหวข้อมูลและการเข้าถึงข้อมูลลูกค้า (AI Access Log & Data Audit Trail)</h3>
+<p>ระบบได้เปลี่ยนจากการติดตามสถานะแบบเดิมมาเป็นการบันทึกประวัติการเข้าถึงข้อมูลลูกค้า (Data Access Log) แบบเรียลไทม์ เพื่อช่วยให้ AM สามารถตรวจสอบการเคลื่อนไหวของข้อมูลได้อย่างละเอียด:</p>
+<ul>
+<li><strong>บันทึกกิจกรรมอัตโนมัติ</strong>: เมื่อใดก็ตามที่มีการเปิดดูหน้าต่างนามบัตรลูกค้า (Customer Card) ระบบจะบันทึกข้อมูลการเข้าถึงลงในประวัติโดยอัตโนมัติ โดยระบุวันเวลา, ผู้เข้าดู, รหัสลูกค้า, กลุ่มของลูกค้า, และค่าส่วนต่างรายได้</li>
+<li><strong>การตรวจสอบแบบรวมศูนย์</strong>: ประวัตินี้จะรวมอยู่กับประวัติการขอคำแนะนำจาก AI ในแถบ "วิเคราะห์และติดตามผล AI" ทำให้เห็นว่าข้อมูลลูกค้าถูกเรียกใช้งานโดยใครบ้าง</li>
+<li><strong>ระบบค้นหาและเรียงลำดับ</strong>: AM สามารถค้นหาประวัติได้ทันทีผ่านช่องค้นหา และสามารถคลิกหัวตารางเพื่อเรียงลำดับข้อมูลจากมากไปน้อย หรือน้อยไปมากได้ เพื่อความสะดวกในการติดตามความเคลื่อนไหวข้อมูลปริมาณมาก</li>
+</ul>
+<hr />
+<h2>6. ข้อแนะนำการแก้ไขปัญหาเชิงปฏิบัติสำหรับผู้จัดการพื้นที่ (AM Troubleshooting Guide)</h2>
+<div class="troubleshoot-grid">
+  <!-- Card 1 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาการแสดงผล</span>
+      <h4>ตัวเลขในแผนภูมิวงกลมและตาราง Top Rankings ไม่สอดคล้องกัน</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุทางเทคนิค:</div>
+        <div class="ts-value">อาจมีการเลือกตัวกรองเดือนที่ดึงข้อมูลคนละชุด หรือข้อมูลยังไม่ได้รีเฟรช</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 แนวทางแก้ไขและแนวทางปฏิบัติ:</div>
+        <div class="ts-value">กดปุ่ม <strong>🔄 รีเฟรช</strong> เพื่อสั่งซิงก์ใหม่ หรือรีเซ็ตตัวกรอง AREA และ MONTH ใหม่อีกครั้ง</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาสิทธิ์การเข้าถึง</span>
+      <h4>BD แจ้งว่าเข้าบันทึกข้อมูลลูกค้าบางโซนไม่ได้หรือหาชื่อลูกค้าไม่เจอ</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุทางเทคนิค:</div>
+        <div class="ts-value">บัญชีผู้ใช้งานของ BD คนนั้นไม่ได้ลงทะเบียนรหัสโซนดังกล่าวไว้ในชีตสิทธิ์</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 แนวทางแก้ไขและแนวทางปฏิบัติ:</div>
+        <div class="ts-value">ประสานงานแจ้ง <strong>Director (ผู้อำนวยการ)</strong> เพื่อเพิ่มรหัสโซนที่รับผิดชอบให้บัญชี BD คนนั้นในตารางสิทธิ์หน้า <code>Users</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาข้อมูลค้าง</span>
+      <h4>ตัวเลข MTD บนกราฟเส้นไม่ขยับหลังผ่านไปหลายวัน</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุทางเทคนิค:</div>
+        <div class="ts-value">ข้อมูลดิบจากแผ่นชีตรายเดือนยังไม่มีการอัปเดต หรือแคชระบบค้างนานเกินไป</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 แนวทางแก้ไขและแนวทางปฏิบัติ:</div>
+        <div class="ts-value">กดปุ่ม <strong>🔄 รีเฟรช</strong> ด้านบนขวาเพื่อล้างแคช Chunks และเรียกดึงไฟล์ข้อมูล Google Sheets ตัวจริงแบบบังคับอัปเดต</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาระบบค้าง</span>
+      <h4>กดออกจากระบบแต่หน้าจอยังค้างอยู่</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุทางเทคนิค:</div>
+        <div class="ts-value">เกิดข้อผิดพลาดของสคริปต์เซสชันหลังบ้านค้าง</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 แนวทางแก้ไขและแนวทางปฏิบัติ:</div>
+        <div class="ts-value">ปิดแท็บบราวเซอร์ทั้งหมดแล้วเข้าลิงก์แดชบอร์ดใหม่อีกครั้งเพื่อเคลียร์ Session Token ในตัวคุกกี้ระบบ</div>
+      </div>
+    </div>
+  </div>
+</div>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>การล็อกเอาท์โดยอุบัติเหตุ (Logout Prevention)</strong>:
+เมื่อ AM กดปุ่ม <strong>"ออกจากระบบ" (Logout)</strong> บนหน้าเมนู ระบบจะแสดงกล่องยืนยันพรีเซนเทชันป๊อปอัปให้ท่านกดเพื่อตรวจสอบความถูกต้องของข้อมูลอีกครั้ง ป้องกันการกดพลาดระหว่างการบันทึกสรุปผลงานระดับโซน</p>
+</blockquote>
+</body>
+</html>

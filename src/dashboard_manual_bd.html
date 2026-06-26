@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <title>Dashboard Manual Bd</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'neutral',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            },
+            securityLevel: 'loose'
+        });
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #334155;
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            background-color: #ffffff;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #0f172a;
+            font-weight: 700;
+            margin-top: 2.5rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.3;
+        }
+        h1 {
+            font-size: 2.5rem;
+            border-bottom: 3px solid #e2e8f0;
+            padding-bottom: 0.75rem;
+            margin-top: 1rem;
+        }
+        h2 {
+            font-size: 1.85rem;
+            border-bottom: 1.5px solid #cbd5e1;
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+            page-break-before: always;
+        }
+        h2:first-of-type {
+            page-break-before: avoid;
+        }
+        h3 {
+            font-size: 1.4rem;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 0.25rem;
+        }
+        p {
+            margin-bottom: 1.25rem;
+        }
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        ul, ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-size: 0.95rem;
+            break-inside: avoid;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        code {
+            font-family: Consolas, Monaco, monospace;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        pre {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            break-inside: avoid;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.85rem;
+        }
+        blockquote {
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            background-color: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            border-radius: 0.25rem;
+            color: #475569;
+        }
+        blockquote p {
+            margin-bottom: 0;
+        }
+        .mermaid {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .mermaid svg {
+            display: block !important;
+            margin: 0 auto !important;
+            max-width: 100% !important;
+            max-height: 220mm !important;
+            width: auto !important;
+            height: auto !important;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #e2e8f0;
+            margin: 3rem 0;
+        }
+        @media print {
+            body {
+                padding: 0;
+                max-width: 100%;
+            }
+            @page {
+                margin: 20mm 15mm 20mm 15mm;
+            }
+            .mermaid {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            pre, table, blockquote {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            hr {
+                display: none;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <h1>คู่มือการใช้งานแดชบอร์ดสำหรับเจ้าหน้าที่พัฒนาธุรกิจ (BD Manual)</h1>
+<h3>ระบบ: Customer Insight &amp; Performance Tracking Dashboard</h3>
+<p><strong>ระดับสิทธิ์: เจ้าหน้าที่ปฏิบัติการพื้นที่ (Business Development - BD)</strong></p>
+<hr />
+<h2>1. แนะนำระบบย่อยต่างๆ ในรูปแบบที่เข้าใจง่าย (Simple System Overview)</h2>
+<p>แดชบอร์ดตัวนี้เปรียบเสมือน <strong>"ผู้ช่วยอัจฉริยะประจำตัว"</strong> ของเจ้าหน้าที่ BD ในการลงพื้นที่ดูแลลูกค้า โดยเบื้องหลังการทำงานประกอบด้วยระบบย่อยต่างๆ ที่ทำงานประสานกันดังนี้ครับ:</p>
+<div class="sys-flow-container">
+    <div class="sys-flow-row">
+        <div class="sys-flow-node highlight">
+            <div class="node-title">💻 Dashboard UI</div>
+            <div class="node-desc">ส่วนติดต่อผู้ใช้งานหลัก (Frontend)</div>
+        </div>
+        <div class="sys-flow-arrow">➡️</div>
+        <div class="sys-flow-node">
+            <div class="node-title">⚙️ Google Apps Script</div>
+            <div class="node-desc">เซิร์ฟเวอร์ประมวลผลหลัก (Backend Server)</div>
+        </div>
+    </div>
+    <div class="sys-flow-arrow vertical">⬇️</div>
+    <div class="sys-flow-grid">
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">📦 Cache Layer</div>
+            <div class="sub-desc">บีบอัดแคชและแบ่งชิ้นส่วน 25KB โหลดเร็วพิเศษ</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">🔐 Security (RBAC)</div>
+            <div class="sub-desc">จำกัดสิทธิ์พื้นที่และป้องกันรหัสล็อกอิน 5 ครั้ง</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">📊 Google Sheets</div>
+            <div class="sub-desc">ฐานข้อมูลกลางเก็บชีตระบบทั้งหมด</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">🤖 Gemini / OpenAI AI</div>
+            <div class="sub-desc">ระบบวิเคราะห์ลูกค้าและเขียนร่างรายงาน</div>
+        </div>
+        <div class="sys-flow-sub-node">
+            <div class="sub-title">✉️ Gmail API</div>
+            <div class="sub-desc">ส่งเมลร่างเจรจาเข้ามือถือ BD อัตโนมัติ</div>
+        </div>
+    </div>
+</div>
+<ul>
+<li><strong>1. สมุดบันทึกกลาง (Google Sheets)</strong>: แหล่งเก็บข้อมูลตัวเลข ยอดขาย และสถานะการติดตามลูกค้าทั้งหมดเปรียบเสมือนสมุดบันทึกเล่มใหญ่ของบริษัท</li>
+<li><strong>2. ท่อส่งข้อมูลหลังบ้าน (Google Apps Script)</strong>: ตัวเชื่อมต่อข้อมูล คอยรับยอดสะสมที่คุณกดส่งจากหน้าจอแดชบอร์ดไปบันทึกลงในสเปรดชีตโดยตรงแบบเรียลไทม์</li>
+<li><strong>3. ระบบเช็คโซนและล็อครหัสความปลอดภัย (Security &amp; RBAC)</strong>: ตัวคัดกรองความปลอดภัยที่จะเปิดให้คุณดูข้อมูลและรายชื่อเฉพาะร้านค้าใน <strong>โซนที่ตัวเองได้รับมอบหมาย</strong> เท่านั้น และคอยดูแลล็อกบัญชีอัตโนมัติหากมีคนอื่นเดารหัสผ่านผิดเกิน 5 ครั้งเพื่อป้องกันข้อมูลรั่วไหล</li>
+<li><strong>4. ตัวช่วยโหลดข้อมูลด่วน (Cache System)</strong>: แดชบอร์ดนี้เก็บข้อมูลร้านค้าจำนวนมหาศาล ระบบนี้จะช่วยบดอัดและแบ่งชิ้นส่วนข้อมูลเพื่อให้หน้าจอแดชบอร์ดโหลดเสร็จภายในพริบตาเมื่อคุณกดเปิดหน้าจอ ไม่ต้องนั่งหมุนรอเน็ตหน่วง</li>
+<li><strong>5. แผนที่ระบายสีตรวจสุขภาพพื้นที่ (Leaflet Map)</strong>: แผนที่แสดงขอบเขตอำเภอที่ระบายสี แดง-ส้ม-เขียว-น้ำเงิน เพื่อบอกสถานะสุขภาพยอดขายของแต่ละพื้นที่ให้เข้าใจง่ายในพริบตา</li>
+<li><strong>6. กราฟสรุปผลงานและร้านค้ายอดแย่/ยอดดีประจำเขต (Charts)</strong>: กราฟแท่งและกราฟวงกลมที่สรุปทันทีว่าในโซนของคุณยอดงานห่างจากเป้าหมายบริษัทเท่าใด และผู้ประกอบการเริ่มหันไปส่งพัสดุกับคู่แข่งค่ายไหนบ้าง</li>
+<li><strong>7. ระบบสมองกล AI ช่วยร่างบทพูดเจรจาลูกค้า (AI Engine)</strong>: สมองกลอัจฉริยะ (Gemini/OpenAI) ที่จะวิเคราะห์และคิดแผนการเจรจากับลูกค้าเจาะลึกให้คุณทันทีเมื่อคุณกดปุ่มวิเคราะห์</li>
+<li><strong>8. กล่องแชทถาม-ตอบบอทอัจฉริยะ (Live Chatbot)</strong>: บอทกลมๆ ที่มุมขวาล่างที่คุณสามารถคุยสอบถามข้อมูล หรือให้บอทอ่านตัวเลขที่แสดงอยู่บนหน้าจอวิเคราะห์ให้ฟังได้ทันที</li>
+<li><strong>9. ระบบส่งรายงานบทพูดเข้าเมลส่วนตัว (Gmail Notification)</strong>: ตัวส่งบทพูดที่ AI คิดเสร็จแล้วเข้าอีเมล Gmail ของคุณโดยตรง เพื่อให้คุณพร้อมเปิดอ่านและโทรหาลูกค้าได้ทันทีระหว่างเดินทางข้างนอก</li>
+</ul>
+<hr />
+<h2>2. บทบาทและหน้าที่ของ BD ในแดชบอร์ด (BD Core Role)</h2>
+<p>ในฐานะ <strong>เจ้าหน้าที่ BD</strong> หน้าที่หลักของคุณคือการวิเคราะห์และฟื้นฟูยอดขายในพื้นที่ดูแล:
+1. เข้าไปตรวจสอบแผนที่ระบายสีเพื่อหาอำเภอที่มีปัญหา
+2. เข้าไปตรวจสอบรายชื่อในตาราง <strong>"กลุ่มเสี่ยง" (Risk)</strong> เพื่อดูตัวแทนที่มียอดงานดิ่งลง และตาราง <strong>"กลุ่มเติบโต" (Growth)</strong> เพื่อดูตัวแทนดาวรุ่ง
+3. ลงมือประสานงาน โทรติดต่อ หรือลงพื้นที่จริงเพื่อคุยกับลูกค้า
+4. กดปุ่มวิเคราะห์เพื่อใช้ <strong>AI</strong> ช่วยร่างข้อเสนอและบทพูดทางโทรศัพท์
+5. บันทึกผลลัพธ์และเหตุผลกลับเข้ามาในระบบหลังดำเนินการช่วยเหลือเสร็จสิ้น</p>
+<blockquote>
+<p>[!NOTE]
+<strong>ระบบแสดงผลเฉพาะโซนของคุณ</strong>: หากคุณดูแลโซน 1 หน้าจอของคุณจะแสดงเฉพาะจังหวัด อำเภอ และตารางร้านค้าในโซน 1 เท่านั้น เพื่อป้องกันไม่ให้ข้อมูลสับสนปนกับโซนอื่นๆ</p>
+</blockquote>
+<hr />
+<h2>3. วิธีการนำทางและใช้แผงควบคุมเบื้องต้น (Basic Controls)</h2>
+<h3>3.1 แผงกรองข้อมูลด้านบน (Filters)</h3>
+<ul>
+<li><strong>พื้นที่ (AREA)</strong>: เลือกจังหวัดหรืออำเภอที่คุณกำลังจะลงพื้นที่จริงวันนี้</li>
+<li><strong>รหัสขนส่ง (21.00)</strong>: กรองดูเฉพาะบริษัทขนส่งรายย่อยที่คุณต้องการตรวจสอบเป็นพิเศษ</li>
+<li><strong>เดือน (MONTH)</strong>: เลือกดูข้อมูลย้อนหลังรายเดือนเพื่อนำมาเปรียบเทียบผลงาน</li>
+</ul>
+<h3>3.2 แถบเรืองแสงระว่างโหลดข้อมูล (Skeleton Loading)</h3>
+<p>เมื่อคุณกดสลับตัวกรอง หรือกดปุ่ม <strong>🔄 รีเฟรช</strong> หน้าจอจะเปลี่ยนเป็น <strong>แถบสีเทาเรืองแสงวิ่งผ่านชั่วขณะ</strong> เป็นหน้ากากซ้อนทับการเรนเดอร์:
+* <strong>ความหมาย</strong>: แปลว่าระบบกำลังดึงข้อมูลล่าสุดจากตารางส่วนกลางอยู่ ให้รอสักครู่ ห้ามกดรีเฟรชซ้ำ หน้ากากนี้จะหายไปเองเมื่อข้อมูลจริงโหลดเสร็จ</p>
+<hr />
+<h2>4. แผนที่ช่วยบอกเป้าหมายการทำงาน (Using the Map)</h2>
+<p>หน้าแผนที่ในหน้าหลักคือเครื่องมือนำทางชั้นดีในการลงพื้นที่ครับ:</p>
+<h3>4.1 ดูสีของโซนเพื่อประเมินสถานการณ์ (Zone Colors)</h3>
+<ul>
+<li><code>🔴 โดนระบายสีแดง (ฟื้นฟูเร่งด่วน / Recovery)</code>: พื้นที่วิกฤต ยอดขายตกอย่างรุนแรง (MoM Rev ลดลงมากกว่า 5% หรือคะแนน 70+ เสี่ยงสูง) จำเป็นต้องรีบเข้าไปช่วยเหลือลูกค้าในอำเภอนี้ก่อนใคร</li>
+<li><code>🟡 โดนระบายสีเหลือง/ส้ม (เฝ้าระวัง / Monitor)</code>: พื้นที่เริ่มคงที่ ยอดขายทรงตัวแต่ยังอยู่ในระดับต่ำ หรือยอดขายลดลงไม่เกิน 5% (MoM Rev ลดลงไม่เกิน 5% หรือคะแนน 40-69 ควรทบทวน) ต้องกระตุ้นยอดส่งเพิ่ม</li>
+<li><code>🟢 โดนระบายสีเขียว (เสถียร / Stable)</code>: พื้นที่ยอดขายผ่านเกณฑ์ ทรงตัวได้ดี (MoM Rev 0% ถึง +5% หรือคะแนนต่ำกว่า 40 ติดตามทั่วไป)</li>
+<li><code>🔵 โดนระบายสีน้ำเงิน/ฟ้า (โอกาสเติบโต / Opportunity)</code>: พื้นที่ที่ร้านค้าทำยอดขายพุ่งสูง (MoM Rev เติบโตมากกว่า 5% หรือคะแนน 70+ โตโดดเด่น) มีโอกาสเสนอโปรโมชันหรือแพ็กเกจส่งจำนวนมากเพิ่ม</li>
+</ul>
+<h3>4.2 วิธีคลิกดูข้อมูลด่วนและทางลัดนำทาง (Map Popups)</h3>
+<ol>
+<li>เมื่อคุณคลิกไปที่อำเภอในพื้นที่สีแดงบนแผนที่ จะมีหน้าจอป๊อปอัปภาษาไทยโผล่ขึ้นมา</li>
+<li>ป๊อปอัปจะบอกข้อมูลทันที เช่น ยอดขายเฉลี่ยต่อวัน, ขนส่งค่ายคู่แข่งที่ลูกค้าหันไปใช้มากที่สุด และแผนงานแนะนำเบื้องต้น</li>
+<li><strong>ปุ่มทางลัด</strong>:</li>
+<li>หากต้องการแก้ไขปัญหาอำเภอนี้ทันที ให้คลิกปุ่ม <strong><code>ดู Risk</code></strong> ระบบจะเด้งไปที่หน้ารายชื่อกลุ่มเสี่ยงและคัดกรองเอาเฉพาะรายชื่อร้านค้าในอำเภอนี้มาแสดงให้คุณแก้ไขได้ทันทีโดยไม่ต้องไปไล่หาเองในตารางใหญ่</li>
+</ol>
+<hr />
+<h2>5. วิธีอัปเดตและบันทึกประวัติการติดต่อลูกค้า (Updating Progress)</h2>
+<p>หลังจากคุณโทรติดต่อลูกค้าหรือลงพื้นที่เข้าไปคุยแล้ว ต้องทำการบันทึกข้อมูลเข้าระบบดังนี้ครับ:</p>
+<h3>5.1 การอ่านแถบประวัติต้นตอปัญหา (Criteria Snapshot)</h3>
+<p>ในตาราง ข้อมูลคอลัมน์ <strong>"ประเภทเกณฑ์ / SnapShot"</strong> จะบอกคุณทันทีว่าลูกค้ารายนี้ยอดตกลงเรื่องอะไร (เช่น ยอดขายเฉลี่ยหายไปกี่บาทต่อวัน ณ วันแรกที่เริ่มเข้าเกณฑ์) เพื่อใช้เป็นข้อมูลอ้างอิงและเปิดประเด็นคุยกับลูกค้าได้ง่ายขึ้น</p>
+<h3>5.2 ขั้นตอนการลงบันทึกทีละขั้นตอน (Step-by-Step Update)</h3>
+<ol>
+<li><strong>ดับเบิ้ลคลิก (กดสองครั้งติดกัน)</strong> ที่แถวรายชื่อลูกค้าในตารางที่คุณเพิ่งไปคุยมา</li>
+<li>จะมีหน้าต่างกล่องบันทึกข้อมูลเด้งขึ้นมา</li>
+<li>ปรับเปลี่ยนข้อมูลตามจริง:</li>
+<li><strong>สถานะติดตาม (Status)</strong>: <ul>
+<li>ปรับเป็น <code>ติดต่อแล้ว รอตอบกลับ</code> หากคุยสายหรือเข้าพบแล้วกำลังรอการตอบกลับ</li>
+<li>ปรับเป็น <code>กำลังแก้ปัญหา</code> หากกำลังดำเนินการประสานงานช่วยเหลือหรือแก้ไขปัญหาให้ลูกค้า</li>
+<li>ปรับเป็น <code>สำเร็จ</code> เมื่อดึงยอดส่งพัสดุของลูกค้ากลับมาได้สำเร็จ</li>
+<li>ปรับเป็น <code>ไม่สำเร็จ</code> เมื่อไม่สามารถดึงยอดขายลูกค้ากลับมาได้ (ย้ายค่าย)</li>
+</ul>
+</li>
+<li><strong>เหตุผล (Reason)</strong>: เลือกหรือพิมพ์บอกสาเหตุสั้นๆ (เช่น <em>ลูกค้าแจ้งว่าช่วงนี้เน้นส่งชิ้นใหญ่คู่แข่งราคาถูกกว่า</em> หรือ <em>เครื่องพิมพ์สติกเกอร์เสีย</em>)</li>
+<li><strong>หมายเหตุ (Note)</strong>: พิมพ์ข้อมูลเพิ่มเติมเพื่อกันลืม</li>
+<li>กดปุ่ม <strong>"บันทึกข้อมูล"</strong></li>
+<li><strong>เช็คผลบันทึก</strong>: ดูมุมล่างขวาของแดชบอร์ด หากบันทึกเข้าระบบสำเร็จ จะมีกล่องแจ้งเตือน <strong>Toast สีเขียว</strong> โผล่ขึ้นมาบอกว่าบันทึกเสร็จเรียบร้อย</li>
+</ol>
+<hr />
+<h2>6. เครื่องมือ AI ช่วยคิดบทพูดและบอทแชทสด (AI Tools)</h2>
+<h3>6.1 ปุ่มวิเคราะห์ AI และการส่งรายงานเข้าเมลส่วนตัว</h3>
+<p>หากคุณต้องการโทรหาลูกค้ากลุ่มเสี่ยงแต่ไม่รู้จะเสนอโปรโมชันหรือเริ่มเปิดการเจรจาอย่างไร:
+1. ไปที่การ์ดข้อมูลส่วนตัวลูกค้าเป้าหมาย (Customer Card)
+2. กดปุ่ม <strong>"วิเคราะห์ AI" (AI Recommendation)</strong>
+3. <strong>สิ่งที่ AI จะทำ</strong>: ระบบจะประมวลผลตัวเลขรายได้เฉลี่ยของลูกค้ารายนี้ เทียบกับค่าเฉลี่ยปกติ ส่งไปให้ปัญญาประดิษฐ์ประมวลผล
+4. <strong>สิ่งที่คุณได้รับบนหน้าจอ</strong>: AI จะส่งคำวิเคราะห์ภาษาไทย พร้อม <strong>Call Script (แนวการโทรพูดคุยเจาะลึกเฉพาะราย)</strong> มาแสดงบนหน้าจอทันที
+5. <strong>สิทธิพิเศษส่งเมลเข้ามือถือ</strong>: ระบบจะทำการส่งเนื้อหารายงานบทพูดเจรจา HTML รูปแบบสวยงามนี้เข้าสู่กล่องจดหมาย <strong>Gmail ส่วนตัว</strong>ของคุณโดยอัตโนมัติ ทำให้คุณเปิดอ่านและโทรหาลูกค้าจากโทรศัพท์มือถือระหว่างเดินทางปฏิบัติงานได้อย่างสะดวก</p>
+<h3>6.2 การคุยกับบอทผู้ช่วยอัจฉริยะ (Live Chatbot)</h3>
+<p>ปุ่มบอทกลมๆ ที่ลอยอยู่มุมล่างขวาคือผู้ช่วยประจำตัวของคุณ:
+* <strong>ถามตอบข้อมูลหน้าจอ</strong>: คุณสามารถกดพิมพ์ถามคำถาม เช่น <em>"ช่วยสรุปยอดรวมของอำเภอนี้ให้หน่อย"</em> หรือ <em>"สัปดาห์นี้มีผู้ดูแลคนไหนอัปเดตงานสำเร็จสูงสุด"</em> บอทจะทำการอ่านข้อมูลจริงที่กำลังแสดงอยู่บนหน้าจอของคุณมาวิเคราะห์ตอบกลับให้ทันทีโดยที่คุณไม่ต้องกดเครื่องคิดเลขเอง
+* <strong>วิธีกดลองใหม่เมื่อแชทเอเรอร์</strong>: หากเจอข้อความเอเรอร์สีแดงเนื่องจากสัญญาณเน็ตขาดหาย คุณไม่ต้องพิมพ์ใหม่ ให้กดปุ่ม <strong>"ลองใหม่ (Retry)"</strong> บนแถบสีแดงได้ทันที</p>
+<hr />
+<h2>7. วิธีแก้ไขปัญหาเบื้องต้นด้วยตัวเอง (Troubleshooting)</h2>
+<div class="troubleshoot-grid">
+  <!-- Card 1 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ แผนที่ผิดพลาด</span>
+      <h4>แผนที่บนแดชบอร์ดโหลดไม่ขึ้นหรือเป็นพื้นที่ว่างเปล่า</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุ:</div>
+        <div class="ts-value">กดเปลี่ยนเมนูหรือตัวกรองเร็วเกินไปจนคิวระบบทับกัน หรือสัญญาณเน็ตขาดช่วง</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 วิธีแก้:</div>
+        <div class="ts-value">กดปุ่ม <strong>🔄 รีเฟรช</strong> ที่มุมขวาบน 1 ครั้ง ระบบจะวาดแผนที่ใหม่ทันที</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ บันทึกล้มเหลว</span>
+      <h4>กดปุ่มบันทึกข้อมูลในตารางแล้วมีกล่องแจ้งเตือนสีแดงว่าบันทึกล้มเหลว</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุ:</div>
+        <div class="ts-value">โทเค็นความปลอดภัยหมดอายุ (คุณเปิดแดชบอร์ดค้างไว้นานเกินไปโดยไม่ได้ใช้งาน)</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 วิธีแก้:</div>
+        <div class="ts-value">รีโหลดเบราว์เซอร์หรือกดรีเฟรช 1 ครั้งเพื่อเข้าสู่ระบบใหม่ แล้วลองบันทึกอีกครั้ง</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาการวิเคราะห์ AI</span>
+      <h4>กดวิเคราะห์ AI แล้วคำตอบไม่ขึ้นแสดง</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุ:</div>
+        <div class="ts-value">โควตาสัญญาณระบบหลักแน่นชั่วคราว</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 วิธีแก้:</div>
+        <div class="ts-value">รอสักครู่ (ระบบจะยกเลิกคิวรออัตโนมัติใน 15 วินาทีหากค้างนาน) แล้วลองกดส่งใหม่อีกครั้ง</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4 -->
+  <div class="ts-card">
+    <div class="ts-card-header">
+      <span class="ts-badge ts-badge-err">⚠️ ปัญหาการส่งเมล</span>
+      <h4>ส่งข้อมูลวิเคราะห์ AI สำเร็จแต่ไม่มียอดรายงานส่งเข้า Gmail</h4>
+    </div>
+    <div class="ts-card-body">
+      <div class="ts-row">
+        <div class="ts-label">🔍 สาเหตุ:</div>
+        <div class="ts-value">อีเมลอาจตกหล่นในกล่องจดหมายหมวดหมู่อื่น</div>
+      </div>
+      <div class="ts-row">
+        <div class="ts-label">💡 วิธีแก้:</div>
+        <div class="ts-value">เข้าไปเช็คในโฟลเดอร์ <strong>"จดหมายขยะ" (Spam)</strong> หรือโฟลเดอร์ <strong>"โปรโมชัน" (Promotions)</strong> ในกล่องจดหมาย Gmail ของคุณ</div>
+      </div>
+    </div>
+  </div>
+</div>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>ระบบป้องกันการเผลอกดปุ่มออกจากระบบ (Accidental Logout)</strong>:
+หากคุณมือลั่นไปกดปุ่ม <strong>ออกจากระบบ (Logout)</strong> โดยไม่ได้ตั้งใจ แดชบอร์ดจะมีป๊อปอัปถามยืนยันการออกจากระบบขึ้นมาก่อน เพื่อช่วยป้องกันไม่ให้ข้อมูลที่คุณกำลังพิมพ์โน้ตค้างไว้หลุดหายครับ</p>
+</blockquote>
+</body>
+</html>

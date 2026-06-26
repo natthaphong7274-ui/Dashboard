@@ -179,14 +179,31 @@ function getBdMonthlyTarget(token, monthKey, bdUsername) {
 function setBdMonthlyTarget(token, bdUsername, monthKey, type, value, note) {
   var session = _requireSession(token || '', 'SET_BD_MONTHLY_TARGET');
   if (!session.ok) return session;
-  var roleCheck = _requireRole(session, 'Director', 'SET_BD_MONTHLY_TARGET');
-  if (!roleCheck.ok) return roleCheck;
+  // Allow Director or AM (with zone check) to set BD monthly target
+  if (session.role !== 'Director' && session.role !== 'AM') return { ok: false, error: 'Permission denied' };
   if (!monthKey || !bdUsername) return { ok: false, error: 'monthKey and bdUsername are required' };
   if (type !== 'pct' && type !== 'fixed') return { ok: false, error: 'type must be pct or fixed' };
   var v = parseFloat(value);
   if (isNaN(v) || v <= 0) return { ok: false, error: 'Invalid target value' };
   if (type === 'pct' && v > 1000) return { ok: false, error: '% should not exceed 1000' };
   var userKey = String(bdUsername).toLowerCase();
+  // If AM, ensure BD belongs to AM's zones
+  if (session.role === 'AM') {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(USERS_SHEET);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0].map(function(h){ return String(h).trim(); });
+    var uIdx = headers.indexOf('Username');
+    var zIdx = headers.indexOf('ZoneAccess');
+    var bdZone = null;
+    for (var i = 1; i < data.length; i++) {
+      var uname = String(data[i][uIdx] || '').trim().toLowerCase();
+      if (uname === userKey) { bdZone = String(data[i][zIdx] || '').trim(); break; }
+    }
+    if (!bdZone || !(session.zones && session.zones.includes(bdZone))) {
+      return { ok: false, error: 'AM cannot set target for BD outside their zones' };
+    }
+  }
   var target = { type: type, value: v, note: note || '', bdUsername: userKey, setBy: session.username, setAt: _bkkTimestamp() };
   PropertiesService.getScriptProperties().setProperty(_bdTargetKey(monthKey, userKey), JSON.stringify(target));
   logActivity(session.username, session.role, 'SET_BD_MONTHLY_TARGET', monthKey + ' / ' + userKey + ' = ' + (type === 'pct' ? v + '%' : 'fixed ' + v));
@@ -198,10 +215,27 @@ function setBdMonthlyTarget(token, bdUsername, monthKey, type, value, note) {
 function clearBdMonthlyTarget(token, bdUsername, monthKey) {
   var session = _requireSession(token || '', 'CLEAR_BD_MONTHLY_TARGET');
   if (!session.ok) return session;
-  var roleCheck = _requireRole(session, 'Director', 'CLEAR_BD_MONTHLY_TARGET');
-  if (!roleCheck.ok) return roleCheck;
+  // Allow Director or AM (with zone check) to clear BD monthly target
+  if (session.role !== 'Director' && session.role !== 'AM') return { ok: false, error: 'Permission denied' };
   if (!monthKey || !bdUsername) return { ok: false, error: 'monthKey and bdUsername are required' };
   var userKey = String(bdUsername).toLowerCase();
+  // If AM, ensure BD belongs to AM's zones before deleting
+  if (session.role === 'AM') {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(USERS_SHEET);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0].map(function(h){ return String(h).trim(); });
+    var uIdx = headers.indexOf('Username');
+    var zIdx = headers.indexOf('ZoneAccess');
+    var bdZone = null;
+    for (var i = 1; i < data.length; i++) {
+      var uname = String(data[i][uIdx] || '').trim().toLowerCase();
+      if (uname === userKey) { bdZone = String(data[i][zIdx] || '').trim(); break; }
+    }
+    if (!bdZone || !(session.zones && session.zones.includes(bdZone))) {
+      return { ok: false, error: 'AM cannot clear target for BD outside their zones' };
+    }
+  }
   PropertiesService.getScriptProperties().deleteProperty(_bdTargetKey(monthKey, userKey));
   logActivity(session.username, session.role, 'CLEAR_BD_MONTHLY_TARGET', monthKey + ' / ' + userKey);
   return { ok: true };
@@ -221,7 +255,28 @@ function getAllBdMonthlyTargets(token) {
     if (sep < 0) return;
     var monthKey = rest.slice(0, sep);
     var bdUser = rest.slice(sep + 1);
-    if (session.role !== 'Director' && bdUser !== String(session.username || '').toLowerCase()) return;
+    // Allow Director to see all, AM to see only BD in their zones
+    if (session.role === 'Director') {
+      // Director sees all
+    } else if (session.role === 'AM') {
+      // Retrieve BD's zone from Users sheet
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(USERS_SHEET);
+      var data = sheet.getDataRange().getValues();
+      var headers = data[0].map(function(h){ return String(h).trim(); });
+      var uIdx = headers.indexOf('Username');
+      var zIdx = headers.indexOf('ZoneAccess');
+      var bdZone = null;
+      for (var i = 1; i < data.length; i++) {
+        var uname = String(data[i][uIdx] || '').trim().toLowerCase();
+        if (uname === bdUser) { bdZone = String(data[i][zIdx] || '').trim(); break; }
+      }
+      if (!bdZone || !(session.zones && session.zones.includes(bdZone))) {
+        return; // Skip BD outside AM zones
+      }
+    } else if (bdUser !== String(session.username || '').toLowerCase()) {
+      return; // Other roles can only see their own target
+    }
     try {
       if (!result[monthKey]) result[monthKey] = {};
       result[monthKey][bdUser] = JSON.parse(all[k]);
@@ -273,8 +328,8 @@ function _userSessionIndex_() {
 function getUserStatus(token) {
   var session = _requireSession(token || '', 'GET_USER_STATUS');
   if (!session.ok) return session;
-  var roleCheck = _requireRole(session, 'Director', 'GET_USER_STATUS');
-  if (!roleCheck.ok) return roleCheck;
+  // Allow Director or AM to view user status
+  if (session.role !== 'Director' && session.role !== 'AM') return { ok: false, error: 'Permission denied' };
 
   try {
     var ss    = SpreadsheetApp.getActiveSpreadsheet();
@@ -334,6 +389,10 @@ function getUserStatus(token) {
       });
     }
 
+    // If AM, filter to only BD users within AM's zones
+    if (session.role === 'AM') {
+      users = users.filter(u => u.role === 'BD' && session.zones && session.zones.includes(u.zone));
+    }
     return { ok: true, users: users };
   } catch(e) {
     return { ok: false, error: e.message };
